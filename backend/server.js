@@ -8,12 +8,19 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 // Importar configuración de seguridad
-const { 
-    createSecureRateLimit, 
-    createSlowDown, 
-    detectThreats,
-    securityLogger 
-} = require('./src/config/security');
+const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
+
+// Función simple para detectar amenazas
+const detectThreats = (req, body) => {
+    const threats = ['<script>', 'union select', '../'];
+    const found = threats.some(threat => 
+        body.toLowerCase().includes(threat.toLowerCase())
+    );
+    if (found) {
+        console.warn(`⚠️ Amenaza detectada desde ${req.ip}: ${body.substring(0, 100)}`);
+    }
+};
 
 // Importar rutas
 const authRoutes = require('./src/routes/auth');
@@ -94,18 +101,18 @@ app.use((req, res, next) => {
 // ============================================================================
 
 // Slow down para requests abusivos
-const slowDown = createSlowDown({
+const slowDownConfig = slowDown({
     windowMs: 15 * 60 * 1000, // 15 minutos
     delayAfter: 50, // después de 50 requests, empezar a ralentizar
-    delayMs: 100, // incrementar delay 100ms por request
+    delayMs: () => 100, // delay fijo de 100ms
     maxDelayMs: 20000, // máximo delay de 20 segundos
 });
 
-app.use(slowDown);
+app.use(slowDownConfig);
 console.log('✅ Slow down configurado');
 
 // Rate limiting general
-const generalRateLimit = createSecureRateLimit({
+const generalRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 1000, // 1000 requests por IP por ventana
     message: {
@@ -114,20 +121,36 @@ const generalRateLimit = createSecureRateLimit({
         code: 'RATE_LIMIT_GENERAL'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({
+            success: false,
+            message: 'Demasiadas requests. Intente de nuevo más tarde',
+            code: 'RATE_LIMIT_GENERAL'
+        });
+    }
 });
 
 app.use(generalRateLimit);
 console.log('✅ Rate limiting general configurado');
 
 // Rate limiting para API endpoints
-const apiRateLimit = createSecureRateLimit({
+const apiRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // 100 requests por IP por ventana para /api/*
     message: {
         success: false,
         message: 'Límite de API excedido',
         code: 'RATE_LIMIT_API'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({
+            success: false,
+            message: 'Límite de API excedido',
+            code: 'RATE_LIMIT_API'
+        });
     }
 });
 

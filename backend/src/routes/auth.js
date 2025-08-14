@@ -9,15 +9,15 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Importar rate limiting desde config de seguridad
-const { createSecureRateLimit } = require('../config/security');
+// Importar rate limiting directamente
+const rateLimit = require('express-rate-limit');
 
 // ============================================================================
 // 🔒 CONFIGURACIÓN DE RATE LIMITING ESPECÍFICO PARA AUTH
 // ============================================================================
 
 // Rate limiting para login (más estricto)
-const loginRateLimit = createSecureRateLimit({
+const loginRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 5, // máximo 5 intentos por IP
     message: {
@@ -26,28 +26,53 @@ const loginRateLimit = createSecureRateLimit({
         code: 'RATE_LIMIT_LOGIN'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({
+            success: false,
+            message: 'Demasiados intentos de login. Intente de nuevo en 15 minutos',
+            code: 'RATE_LIMIT_LOGIN'
+        });
+    }
 });
 
 // Rate limiting para refresh token
-const refreshRateLimit = createSecureRateLimit({
+const refreshRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 10, // máximo 10 refresh por IP
     message: {
         success: false,
         message: 'Demasiados intentos de refresh. Intente de nuevo en 15 minutos',
         code: 'RATE_LIMIT_REFRESH'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({
+            success: false,
+            message: 'Demasiados intentos de refresh. Intente de nuevo en 15 minutos',
+            code: 'RATE_LIMIT_REFRESH'
+        });
     }
 });
 
 // Rate limiting general para auth endpoints
-const authRateLimit = createSecureRateLimit({
+const authRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 50, // máximo 50 requests por IP
     message: {
         success: false,
         message: 'Demasiadas requests de autenticación',
         code: 'RATE_LIMIT_AUTH'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({
+            success: false,
+            message: 'Demasiadas requests de autenticación',
+            code: 'RATE_LIMIT_AUTH'
+        });
     }
 });
 
