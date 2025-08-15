@@ -15,20 +15,9 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'https://webapp-hidrocolon-production.up.railway.app',
+        target: 'https://webapp-hidrocolon-production.up.railway.app',
         changeOrigin: true,
         secure: true,
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
       },
     },
   },
@@ -43,23 +32,6 @@ export default defineConfig({
           ui: ['@headlessui/vue', '@heroicons/vue'],
           utils: ['axios'],
         },
-      },
-    },
-  },
-  preview: {
-    port: process.env.PORT || 4173,
-    host: '0.0.0.0',
-    allowedHosts: [
-      'localhost',
-      '127.0.0.1',
-      'servicio-frontend-production.up.railway.app',
-      '.up.railway.app' // Permite cualquier subdominio de Railway
-    ],
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_URL || 'https://webapp-hidrocolon-production.up.railway.app',
-        changeOrigin: true,
-        secure: true,
       },
     },
   },
