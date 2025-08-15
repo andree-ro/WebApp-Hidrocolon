@@ -63,9 +63,14 @@ console.log('✅ Headers de seguridad configurados');
 
 // CORS configurado por ambiente
 const corsOptions = {
-    origin: NODE_ENV === 'production' 
-        ? ['https://hidrocolon.com', 'https://www.hidrocolon.com'] // Ajustar dominios reales
-        : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'],
+    origin: [
+        'http://localhost:3000', 
+        'http://localhost:5173', 
+        'http://127.0.0.1:3000',
+        'https://web-app-hidrocolon.vercel.app',
+        'https://web-app-hidrocolon-git-main-andree-ros-projects.vercel.app',
+        /^https:\/\/web-app-hidrocolon-.*\.vercel\.app$/
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
