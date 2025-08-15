@@ -15,8 +15,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        // Tu URL de Railway (cambiar por la tuya)
-        target: 'https://webapp-hidrocolon-production.up.railway.app',
+        target: process.env.VITE_API_URL || 'https://webapp-hidrocolon-production.up.railway.app',
         changeOrigin: true,
         secure: true,
         configure: (proxy, options) => {
@@ -48,11 +47,23 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 4173,
-    host: true,
+    port: process.env.PORT || 4173,
+    host: '0.0.0.0',
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'servicio-frontend-production.up.railway.app',
+      '.up.railway.app' // Permite cualquier subdominio de Railway
+    ],
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'https://webapp-hidrocolon-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   define: {
-    // Variables de entorno para desarrollo/producción
     __VUE_PROD_DEVTOOLS__: false,
   },
 })
