@@ -37,7 +37,7 @@ const TRUSTED_IPS = [
 // Configuración de Rate Limiting seguro
 const createSecureRateLimit = (options = {}) => {
     const defaults = {
-        windowMs: 15 * 60 * 1000, // 15 minutos
+        windowMs: 0.5 * 60 * 1000, // 15 minutos
         max: 100, // límite por ventana
         message: {
             error: 'Demasiadas peticiones desde esta IP',
@@ -84,7 +84,7 @@ const createSecureRateLimit = (options = {}) => {
 const rateLimiters = {
     // Rate limiter general
     general: createSecureRateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutos
+        windowMs: 0.5 * 60 * 1000, // 15 minutos
         max: 1000, // 1000 requests por IP
         message: {
             error: 'Demasiadas peticiones. Intente nuevamente en unos minutos.',
@@ -92,12 +92,12 @@ const rateLimiters = {
         }
     }),
 
-    // Rate limiter para autenticación (más restrictivo)
+    // Rate limiter para autenticación (más permisivo para desarrollo)
     auth: createSecureRateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutos
-        max: 5, // Solo 5 intentos de login por IP
+        windowMs: 30 * 1000, // 30 segundos en lugar de 15 minutos
+        max: 50, // 50 intentos en lugar de 5
         message: {
-            error: 'Demasiados intentos de autenticación. Intente nuevamente en 15 minutos.',
+            error: 'Demasiados intentos de autenticación. Intente nuevamente en 30 segundos.',
             code: 'AUTH_RATE_LIMIT_EXCEEDED'
         }
     }),
@@ -126,7 +126,7 @@ const rateLimiters = {
 // Configuración de Slow Down (ralentizar requests sospechosos)
 const createSlowDown = () => {
     return slowDown({
-        windowMs: 15 * 60 * 1000, // 15 minutos
+        windowMs: 0.5 * 60 * 1000, // 15 minutos
         delayAfter: 50, // Después de 50 requests, empezar a ralentizar
         delayMs: 100, // Incrementar delay en 100ms por request
         maxDelayMs: 5000, // Máximo delay de 5 segundos
