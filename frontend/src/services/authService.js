@@ -1,8 +1,11 @@
 import axios from 'axios'
 
-// Configuración base de Axios
+// Configuración base de Axios para Vercel
 const api = axios.create({
-  baseURL: '/api', // Usará el proxy configurado en vite.config.js
+  // En producción, conectar directamente con Railway
+  baseURL: import.meta.env.PROD 
+    ? 'https://webapp-hidrocolon-production.up.railway.app/api'
+    : '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -66,14 +69,6 @@ export const authService = {
       
       // 🔍 DEBUG: Ver estructura completa de la respuesta
       console.log('📦 Respuesta completa del API:', JSON.stringify(data, null, 2))
-      console.log('📦 Estructura de data:', {
-        hasAccessToken: !!data.accessToken,
-        hasRefreshToken: !!data.refreshToken,
-        hasUser: !!data.user,
-        hasUsuario: !!data.usuario,
-        hasData: !!data.data,
-        keys: Object.keys(data)
-      })
       
       // Intentar diferentes estructuras posibles
       let userData = null
@@ -81,22 +76,15 @@ export const authService = {
       let refreshToken = null
       
       // Buscar usuario en diferentes ubicaciones
-      if (data.user) {
-        userData = data.user
-      } else if (data.usuario) {
-        userData = data.usuario
-      } else if (data.data && data.data.user) {
+      if (data.data && data.data.user) {
         userData = data.data.user
-      } else if (data.data && data.data.usuario) {
-        userData = data.data.usuario
+        accessToken = data.data.accessToken
+        refreshToken = data.data.refreshToken
+      } else if (data.user) {
+        userData = data.user
+        accessToken = data.accessToken
+        refreshToken = data.refreshToken
       }
-      
-      // Buscar tokens en diferentes ubicaciones
-      accessToken = data.accessToken || data.access_token || data.token || 
-                   (data.data && (data.data.accessToken || data.data.access_token || data.data.token))
-      
-      refreshToken = data.refreshToken || data.refresh_token || 
-                    (data.data && (data.data.refreshToken || data.data.refresh_token))
       
       console.log('🔍 Datos extraídos:', {
         userData: userData,
@@ -118,8 +106,6 @@ export const authService = {
       if (userData) {
         localStorage.setItem('user_data', JSON.stringify(userData))
         console.log('💾 Datos de usuario guardados:', userData.nombres || userData.usuario || 'Usuario sin nombre')
-      } else {
-        console.warn('⚠️ No se encontraron datos de usuario en la respuesta')
       }
       
       // Retornar estructura consistente
