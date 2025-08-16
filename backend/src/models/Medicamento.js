@@ -57,7 +57,7 @@ class Medicamento {
                     m.precio_tarjeta,
                     m.precio_efectivo,
                     m.costo_compra,
-                    m.comision_porcentaje,
+                    m.porcentaje_comision,
                     m.indicaciones,
                     m.contraindicaciones,
                     m.dosis,
@@ -249,7 +249,7 @@ class Medicamento {
             const {
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones = '', contraindicaciones = '', dosis = '', comision_porcentaje = 0,
+                indicaciones = '', contraindicaciones = '', dosis = '', porcentaje_comision = 0,
                 imagen_url = ''
             } = medicamentoData;
 
@@ -257,7 +257,7 @@ class Medicamento {
                 INSERT INTO medicamentos (
                     nombre, presentacion_id, laboratorio_id, existencias,
                     fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                    indicaciones, contraindicaciones, dosis, comision_porcentaje,
+                    indicaciones, contraindicaciones, dosis, porcentaje_comision,
                     imagen_url, activo, fecha_creacion, fecha_actualizacion
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             `;
@@ -265,7 +265,7 @@ class Medicamento {
             const [result] = await connection.execute(query, [
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones, contraindicaciones, dosis, comision_porcentaje,
+                indicaciones, contraindicaciones, dosis, porcentaje_comision,
                 imagen_url
             ]);
 
@@ -288,7 +288,7 @@ class Medicamento {
             const {
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones = '', contraindicaciones = '', dosis = '', comision_porcentaje = 0,
+                indicaciones = '', contraindicaciones = '', dosis = '', porcentaje_comision = 0,
                 imagen_url = ''
             } = medicamentoData;
 
@@ -297,7 +297,7 @@ class Medicamento {
                     nombre = ?, presentacion_id = ?, laboratorio_id = ?, existencias = ?,
                     fecha_vencimiento = ?, precio_tarjeta = ?, precio_efectivo = ?, 
                     costo_compra = ?, indicaciones = ?, contraindicaciones = ?, 
-                    dosis = ?, comision_porcentaje = ?, imagen_url = ?,
+                    dosis = ?, porcentaje_comision = ?, imagen_url = ?,
                     fecha_actualizacion = NOW()
                 WHERE id = ? AND activo = 1
             `;
@@ -305,7 +305,7 @@ class Medicamento {
             const [result] = await connection.execute(query, [
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones, contraindicaciones, dosis, comision_porcentaje,
+                indicaciones, contraindicaciones, dosis, porcentaje_comision,
                 imagen_url, id
             ]);
 

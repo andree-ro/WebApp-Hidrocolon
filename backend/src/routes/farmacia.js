@@ -258,7 +258,7 @@ router.post('/', simpleAuth, async (req, res) => {
     const medicamentoData = req.body;
 
     // Validación básica requerida
-    const camposRequeridos = ['nombre', 'presentacion_id', 'laboratorio_id', 'existencias', 'fecha_vencimiento', 'precio_tarjeta', 'precio_efectivo', 'costo_compra', 'comision_porcentaje'];
+    const camposRequeridos = ['nombre', 'presentacion_id', 'laboratorio_id', 'existencias', 'fecha_vencimiento', 'precio_tarjeta', 'precio_efectivo', 'costo_compra', 'porcentaje_comision'];
     
     for (const campo of camposRequeridos) {
       if (medicamentoData[campo] === undefined || medicamentoData[campo] === null || medicamentoData[campo] === '') {
@@ -363,6 +363,52 @@ router.get('/debug/auth', (req, res, next) => {
     hasAuth: !!authHeader,
     timestamp: new Date().toISOString()
   });
+});
+
+// DEBUG: Verificar estructura de tabla medicamentos
+router.get('/debug/table-structure', async (req, res) => {
+  console.log('🔍 Verificando estructura de tabla medicamentos');
+  
+  try {
+    const mysql = require('mysql2/promise');
+    
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port: process.env.DB_PORT || 3306
+    });
+    
+    // Obtener estructura de tabla medicamentos
+    const [columns] = await connection.execute('DESCRIBE medicamentos');
+    
+    // Contar registros
+    const [count] = await connection.execute('SELECT COUNT(*) as total FROM medicamentos');
+    
+    // Obtener un registro de ejemplo si existe
+    const [sample] = await connection.execute('SELECT * FROM medicamentos LIMIT 1');
+    
+    await connection.end();
+    
+    res.json({
+      success: true,
+      data: {
+        columns: columns,
+        total_records: count[0].total,
+        sample_record: sample[0] || null
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando estructura:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // =====================================
