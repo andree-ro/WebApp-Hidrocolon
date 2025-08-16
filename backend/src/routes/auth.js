@@ -59,7 +59,7 @@ const refreshRateLimit = rateLimit({
 // Rate limiting general para auth endpoints
 const authRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 50, // máximo 50 requests por IP
+    max: 10000, // máximo 50 requests por IP
     message: {
         success: false,
         message: 'Demasiadas requests de autenticación',
