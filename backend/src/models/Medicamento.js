@@ -28,25 +28,14 @@ class Medicamento {
         }
     }
 
-    // Obtener todos los medicamentos - VERSIÓN SIMPLIFICADA
+    // Obtener todos los medicamentos - VERSIÓN ULTRA SIMPLIFICADA
     async findAll(options = {}) {
         const connection = await this.getConnection();
         try {
-            const {
-                search = '',
-                presentacion_id = null,
-                laboratorio_id = null,
-                stock_bajo = false,
-                proximo_vencer = false,
-                limit = 50,
-                offset = 0,
-                activo = true
-            } = options;
-
             console.log('🔍 Opciones recibidas en findAll:', options);
 
-            // Query base simplificado
-            let query = `
+            // Query ULTRA SIMPLE sin filtros complejos
+            const query = `
                 SELECT 
                     m.id,
                     m.nombre,
@@ -58,80 +47,34 @@ class Medicamento {
                     m.precio_efectivo,
                     m.costo_compra,
                     m.porcentaje_comision,
-                    m.indicaciones,
-                    m.contraindicaciones,
-                    m.dosis,
-                    m.imagen_url,
                     m.activo,
-                    m.fecha_creacion,
                     p.nombre as presentacion_nombre,
                     l.nombre as laboratorio_nombre
                 FROM medicamentos m
                 LEFT JOIN presentaciones p ON m.presentacion_id = p.id
                 LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
-                WHERE m.activo = ?
+                WHERE m.activo = 1
+                ORDER BY m.nombre ASC
+                LIMIT 10
             `;
 
-            const queryParams = [activo ? 1 : 0];
+            console.log('🔍 Query simplificado:', query);
+            console.log('🔍 Sin parámetros - query fijo');
 
-            // Agregar filtros uno por uno
-            if (search && search.trim()) {
-                query += ` AND (m.nombre LIKE ? OR p.nombre LIKE ? OR l.nombre LIKE ?)`;
-                const searchTerm = `%${search.trim()}%`;
-                queryParams.push(searchTerm, searchTerm, searchTerm);
-            }
-
-            if (presentacion_id && !isNaN(parseInt(presentacion_id))) {
-                query += ` AND m.presentacion_id = ?`;
-                queryParams.push(parseInt(presentacion_id));
-            }
-
-            if (laboratorio_id && !isNaN(parseInt(laboratorio_id))) {
-                query += ` AND m.laboratorio_id = ?`;
-                queryParams.push(parseInt(laboratorio_id));
-            }
-
-            if (stock_bajo) {
-                query += ` AND m.existencias < 11`;
-            }
-
-            if (proximo_vencer) {
-                query += ` AND m.fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY)`;
-            }
-
-            // Ordenar y limitar
-            query += ` ORDER BY m.nombre ASC`;
-            
-            if (limit && !isNaN(parseInt(limit))) {
-                query += ` LIMIT ?`;
-                queryParams.push(parseInt(limit));
-                
-                if (offset && !isNaN(parseInt(offset))) {
-                    query += ` OFFSET ?`;
-                    queryParams.push(parseInt(offset));
-                }
-            }
-
-            console.log('🔍 Query final:', query);
-            console.log('🔍 Parámetros:', queryParams);
-
-            const [rows] = await connection.execute(query, queryParams);
+            const [rows] = await connection.execute(query);
 
             console.log(`🔍 Query ejecutado exitosamente, ${rows.length} resultados`);
 
-            // Agregar campos calculados
+            // Agregar campos calculados básicos
             const medicamentosConEstados = rows.map(medicamento => ({
                 ...medicamento,
-                estado_stock: medicamento.existencias < 11 ? 'bajo' : 
-                            medicamento.existencias < 50 ? 'medio' : 'normal',
-                estado_vencimiento: new Date(medicamento.fecha_vencimiento) <= new Date() ? 'vencido' :
-                                   new Date(medicamento.fecha_vencimiento) <= new Date(Date.now() + 30*24*60*60*1000) ? 'proximo_vencer' : 'vigente',
-                dias_vencimiento: Math.ceil((new Date(medicamento.fecha_vencimiento) - new Date()) / (1000 * 60 * 60 * 24))
+                estado_stock: medicamento.existencias < 11 ? 'bajo' : 'normal',
+                estado_vencimiento: new Date(medicamento.fecha_vencimiento) <= new Date() ? 'vencido' : 'vigente'
             }));
 
             return medicamentosConEstados;
         } catch (error) {
-            console.error('❌ Error en findAll:', error);
+            console.error('❌ Error en findAll simplificado:', error);
             throw new Error('Error obteniendo medicamentos de la base de datos');
         } finally {
             await connection.end();
