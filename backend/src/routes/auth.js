@@ -1,6 +1,5 @@
 // src/routes/auth.js
-// Rutas de autenticación para Sistema Hidrocolon
-// Conecta controladores, middleware y rate limiting
+// VERSIÓN TEMPORAL - Rate limiting muy permisivo para desarrollo
 
 const express = require('express');
 const router = express.Router();
@@ -13,16 +12,16 @@ const authMiddleware = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // ============================================================================
-// 🔒 CONFIGURACIÓN DE RATE LIMITING ESPECÍFICO PARA AUTH
+// 🔧 RATE LIMITING MUY PERMISIVO PARA DESARROLLO
 // ============================================================================
 
-// Rate limiting para login (más estricto)
+// Rate limiting para login (MUY PERMISIVO)
 const loginRateLimit = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // máximo 5 intentos por IP
+    windowMs: 1 * 60 * 1000, // 1 minuto en lugar de 15
+    max: 1000, // 1000 intentos en lugar de 5
     message: {
         success: false,
-        message: 'Demasiados intentos de login. Intente de nuevo en 15 minutos',
+        message: 'Demasiados intentos de login. Intente de nuevo en 1 minuto',
         code: 'RATE_LIMIT_LOGIN'
     },
     standardHeaders: true,
@@ -30,19 +29,19 @@ const loginRateLimit = rateLimit({
     handler: (req, res) => {
         res.status(429).json({
             success: false,
-            message: 'Demasiados intentos de login. Intente de nuevo en 15 minutos',
+            message: 'Demasiados intentos de login. Intente de nuevo en 1 minuto',
             code: 'RATE_LIMIT_LOGIN'
         });
     }
 });
 
-// Rate limiting para refresh token
+// Rate limiting para refresh token (MUY PERMISIVO)
 const refreshRateLimit = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 10, // máximo 10 refresh por IP
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 1000, // 1000 refresh por IP
     message: {
         success: false,
-        message: 'Demasiados intentos de refresh. Intente de nuevo en 15 minutos',
+        message: 'Demasiados intentos de refresh. Intente de nuevo en 1 minuto',
         code: 'RATE_LIMIT_REFRESH'
     },
     standardHeaders: true,
@@ -50,16 +49,16 @@ const refreshRateLimit = rateLimit({
     handler: (req, res) => {
         res.status(429).json({
             success: false,
-            message: 'Demasiados intentos de refresh. Intente de nuevo en 15 minutos',
+            message: 'Demasiados intentos de refresh. Intente de nuevo en 1 minuto',
             code: 'RATE_LIMIT_REFRESH'
         });
     }
 });
 
-// Rate limiting general para auth endpoints
+// Rate limiting general para auth endpoints (MUY PERMISIVO)
 const authRateLimit = rateLimit({
-    windowMs: 15, // 15 minutos
-    max: 10000, // máximo 50 requests por IP
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 10000, // 10,000 requests por IP
     message: {
         success: false,
         message: 'Demasiadas requests de autenticación',
@@ -104,7 +103,7 @@ const authLogger = (req, res, next) => {
  * @route   POST /api/auth/login
  * @desc    Iniciar sesión en el sistema
  * @access  Público
- * @rate    5 requests por 15 minutos
+ * @rate    1000 requests por 1 minuto (MUY PERMISIVO)
  */
 router.post('/login', 
     loginRateLimit,
@@ -116,7 +115,7 @@ router.post('/login',
  * @route   POST /api/auth/refresh
  * @desc    Renovar token de acceso usando refresh token
  * @access  Público (requiere refresh token válido)
- * @rate    10 requests por 15 minutos
+ * @rate    1000 requests por 1 minuto
  */
 router.post('/refresh',
     refreshRateLimit,
@@ -132,7 +131,7 @@ router.post('/refresh',
  * @route   POST /api/auth/logout
  * @desc    Cerrar sesión (invalidar token)
  * @access  Privado
- * @rate    50 requests por 15 minutos
+ * @rate    10000 requests por 1 minuto
  */
 router.post('/logout',
     authRateLimit,
@@ -145,7 +144,7 @@ router.post('/logout',
  * @route   GET /api/auth/verify
  * @desc    Verificar validez del token actual
  * @access  Privado
- * @rate    50 requests por 15 minutos
+ * @rate    10000 requests por 1 minuto
  */
 router.get('/verify',
     authRateLimit,
@@ -158,7 +157,7 @@ router.get('/verify',
  * @route   GET /api/auth/me
  * @desc    Obtener información del usuario actual
  * @access  Privado
- * @rate    50 requests por 15 minutos
+ * @rate    10000 requests por 1 minuto
  */
 router.get('/me',
     authRateLimit,
@@ -171,7 +170,7 @@ router.get('/me',
  * @route   POST /api/auth/change-password
  * @desc    Cambiar contraseña del usuario actual
  * @access  Privado
- * @rate    50 requests por 15 minutos
+ * @rate    10000 requests por 1 minuto
  */
 router.post('/change-password',
     authRateLimit,
@@ -188,7 +187,7 @@ router.post('/change-password',
  * @route   GET /api/auth/stats
  * @desc    Obtener estadísticas del sistema de autenticación
  * @access  Privado (Solo administradores)
- * @rate    50 requests por 15 minutos
+ * @rate    10000 requests por 1 minuto
  */
 router.get('/stats',
     authRateLimit,
@@ -251,6 +250,7 @@ if (process.env.NODE_ENV === 'development') {
                 timestamp: new Date().toISOString(),
                 authService: 'Loaded',
                 middleware: 'Loaded',
+                rateLimiting: 'VERY PERMISSIVE FOR DEVELOPMENT',
                 routes: [
                     'POST /login',
                     'POST /logout', 
@@ -284,10 +284,10 @@ router.use('*', (req, res) => {
 
 // Log de rutas registradas al inicializar
 console.log('🛣️ Rutas de autenticación registradas:');
-console.log('   POST /api/auth/login');
+console.log('   POST /api/auth/login (1000 req/min)');
 console.log('   POST /api/auth/logout');
 console.log('   GET  /api/auth/verify');
-console.log('   POST /api/auth/refresh');
+console.log('   POST /api/auth/refresh (1000 req/min)');
 console.log('   GET  /api/auth/me');
 console.log('   POST /api/auth/change-password');
 console.log('   GET  /api/auth/stats (admin only)');
@@ -298,6 +298,7 @@ if (process.env.NODE_ENV === 'development') {
     console.log('   GET  /api/auth/debug');
 }
 
+console.log('⚠️  RATE LIMITING MUY PERMISIVO PARA DESARROLLO');
 console.log('✅ Router de autenticación configurado');
 
 // ============================================================================
