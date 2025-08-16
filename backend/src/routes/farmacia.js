@@ -245,4 +245,23 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
+if (process.env.NODE_ENV === 'development' || true) { // Forzar para debugging
+  router.get('/debug/test', (req, res) => {
+    try {
+      console.log('🔍 Debug endpoint hit');
+      res.json({
+        success: true,
+        message: 'Debug endpoint funcionando',
+        timestamp: new Date().toISOString(),
+        user: req.user || 'no auth'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+}
+
 module.exports = router;
