@@ -1,11 +1,11 @@
 // src/models/Medicamento.js
-// Modelo PROFESIONAL usando exactamente el mismo patrón que User.js
+// VERSIÓN CORREGIDA - REEMPLAZAR ARCHIVO COMPLETO
 
 const mysql = require('mysql2/promise');
 
 class Medicamento {
     constructor() {
-        // EXACTAMENTE la misma configuración que User.js
+        // Configuración simplificada (sin opciones problemáticas)
         this.dbConfig = {
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
@@ -13,14 +13,11 @@ class Medicamento {
             database: process.env.DB_NAME,
             port: process.env.DB_PORT || 3306,
             charset: 'utf8mb4',
-            timezone: 'Z',
-            acquireTimeout: 60000,
-            timeout: 60000,
-            reconnect: true
+            timezone: 'Z'
         };
     }
 
-    // EXACTAMENTE el mismo método que User.js
+    // Método de conexión simplificado
     async getConnection() {
         try {
             const connection = await mysql.createConnection(this.dbConfig);
@@ -31,7 +28,7 @@ class Medicamento {
         }
     }
 
-    // Obtener todos los medicamentos con información completa
+    // Obtener todos los medicamentos - VERSIÓN SIMPLIFICADA
     async findAll(options = {}) {
         const connection = await this.getConnection();
         try {
@@ -46,114 +43,128 @@ class Medicamento {
                 activo = true
             } = options;
 
-            let whereConditions = ['m.activo = ?'];
-            let queryParams = [activo ? 1 : 0];
+            console.log('🔍 Opciones recibidas en findAll:', options);
 
-            // Búsqueda por nombre
-            if (search) {
-                whereConditions.push('(m.nombre LIKE ? OR p.nombre LIKE ? OR l.nombre LIKE ?)');
-                const searchTerm = `%${search}%`;
-                queryParams.push(searchTerm, searchTerm, searchTerm);
-            }
-
-            // Filtro por presentación
-            if (presentacion_id) {
-                whereConditions.push('m.presentacion_id = ?');
-                queryParams.push(presentacion_id);
-            }
-
-            // Filtro por laboratorio
-            if (laboratorio_id) {
-                whereConditions.push('m.laboratorio_id = ?');
-                queryParams.push(laboratorio_id);
-            }
-
-            // Filtro stock bajo
-            if (stock_bajo) {
-                whereConditions.push('m.existencias < 11');
-            }
-
-            // Filtro próximo a vencer (30 días)
-            if (proximo_vencer) {
-                whereConditions.push('m.fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY)');
-            }
-
-            const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-
-            const query = `
+            // Query base simplificado
+            let query = `
                 SELECT 
-                    m.*,
+                    m.id,
+                    m.nombre,
+                    m.presentacion_id,
+                    m.laboratorio_id,
+                    m.existencias,
+                    m.fecha_vencimiento,
+                    m.precio_tarjeta,
+                    m.precio_efectivo,
+                    m.costo_compra,
+                    m.comision_porcentaje,
+                    m.indicaciones,
+                    m.contraindicaciones,
+                    m.dosis,
+                    m.imagen_url,
+                    m.activo,
+                    m.fecha_creacion,
                     p.nombre as presentacion_nombre,
-                    l.nombre as laboratorio_nombre,
-                    CASE 
-                        WHEN m.existencias < 11 THEN 'bajo'
-                        WHEN m.existencias < 50 THEN 'medio'
-                        ELSE 'normal'
-                    END as estado_stock,
-                    CASE 
-                        WHEN m.fecha_vencimiento <= NOW() THEN 'vencido'
-                        WHEN m.fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 'proximo_vencer'
-                        ELSE 'vigente'
-                    END as estado_vencimiento,
-                    DATEDIFF(m.fecha_vencimiento, NOW()) as dias_vencimiento
+                    l.nombre as laboratorio_nombre
                 FROM medicamentos m
                 LEFT JOIN presentaciones p ON m.presentacion_id = p.id
                 LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
-                ${whereClause}
-                ORDER BY m.nombre ASC
-                LIMIT ? OFFSET ?
+                WHERE m.activo = ?
             `;
 
-            queryParams.push(limit, offset);
+            const queryParams = [activo ? 1 : 0];
+
+            // Agregar filtros uno por uno
+            if (search && search.trim()) {
+                query += ` AND (m.nombre LIKE ? OR p.nombre LIKE ? OR l.nombre LIKE ?)`;
+                const searchTerm = `%${search.trim()}%`;
+                queryParams.push(searchTerm, searchTerm, searchTerm);
+            }
+
+            if (presentacion_id && !isNaN(parseInt(presentacion_id))) {
+                query += ` AND m.presentacion_id = ?`;
+                queryParams.push(parseInt(presentacion_id));
+            }
+
+            if (laboratorio_id && !isNaN(parseInt(laboratorio_id))) {
+                query += ` AND m.laboratorio_id = ?`;
+                queryParams.push(parseInt(laboratorio_id));
+            }
+
+            if (stock_bajo) {
+                query += ` AND m.existencias < 11`;
+            }
+
+            if (proximo_vencer) {
+                query += ` AND m.fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY)`;
+            }
+
+            // Ordenar y limitar
+            query += ` ORDER BY m.nombre ASC`;
+            
+            if (limit && !isNaN(parseInt(limit))) {
+                query += ` LIMIT ?`;
+                queryParams.push(parseInt(limit));
+                
+                if (offset && !isNaN(parseInt(offset))) {
+                    query += ` OFFSET ?`;
+                    queryParams.push(parseInt(offset));
+                }
+            }
+
+            console.log('🔍 Query final:', query);
+            console.log('🔍 Parámetros:', queryParams);
 
             const [rows] = await connection.execute(query, queryParams);
-            return rows;
+
+            console.log(`🔍 Query ejecutado exitosamente, ${rows.length} resultados`);
+
+            // Agregar campos calculados
+            const medicamentosConEstados = rows.map(medicamento => ({
+                ...medicamento,
+                estado_stock: medicamento.existencias < 11 ? 'bajo' : 
+                            medicamento.existencias < 50 ? 'medio' : 'normal',
+                estado_vencimiento: new Date(medicamento.fecha_vencimiento) <= new Date() ? 'vencido' :
+                                   new Date(medicamento.fecha_vencimiento) <= new Date(Date.now() + 30*24*60*60*1000) ? 'proximo_vencer' : 'vigente',
+                dias_vencimiento: Math.ceil((new Date(medicamento.fecha_vencimiento) - new Date()) / (1000 * 60 * 60 * 24))
+            }));
+
+            return medicamentosConEstados;
         } catch (error) {
-            console.error('❌ Error obteniendo medicamentos:', error.message);
+            console.error('❌ Error en findAll:', error);
             throw new Error('Error obteniendo medicamentos de la base de datos');
         } finally {
             await connection.end();
         }
     }
 
-    // Obtener medicamento por ID con extras
+    // Obtener medicamento por ID
     async findById(id) {
         const connection = await this.getConnection();
         try {
-            const [rows] = await connection.execute(`
+            const query = `
                 SELECT 
                     m.*,
                     p.nombre as presentacion_nombre,
-                    l.nombre as laboratorio_nombre,
-                    CASE 
-                        WHEN m.existencias < 11 THEN 'bajo'
-                        WHEN m.existencias < 50 THEN 'medio'
-                        ELSE 'normal'
-                    END as estado_stock,
-                    CASE 
-                        WHEN m.fecha_vencimiento <= NOW() THEN 'vencido'
-                        WHEN m.fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 'proximo_vencer'
-                        ELSE 'vigente'
-                    END as estado_vencimiento
+                    l.nombre as laboratorio_nombre
                 FROM medicamentos m
                 LEFT JOIN presentaciones p ON m.presentacion_id = p.id
                 LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
                 WHERE m.id = ? AND m.activo = 1
-            `, [id]);
+            `;
+
+            const [rows] = await connection.execute(query, [id]);
 
             if (rows.length === 0) return null;
 
             const medicamento = rows[0];
 
-            // Obtener extras vinculados
-            const [extrasRows] = await connection.execute(`
-                SELECT e.*, me.fecha_creacion as fecha_vinculacion
-                FROM extras e
-                INNER JOIN medicamentos_extras me ON e.id = me.extra_id
-                WHERE me.medicamento_id = ? AND e.activo = 1
-            `, [id]);
+            // Agregar estados calculados
+            medicamento.estado_stock = medicamento.existencias < 11 ? 'bajo' : 
+                                     medicamento.existencias < 50 ? 'medio' : 'normal';
+            medicamento.estado_vencimiento = new Date(medicamento.fecha_vencimiento) <= new Date() ? 'vencido' :
+                                           new Date(medicamento.fecha_vencimiento) <= new Date(Date.now() + 30*24*60*60*1000) ? 'proximo_vencer' : 'vigente';
 
-            medicamento.extras = extrasRows;
             return medicamento;
         } catch (error) {
             console.error('❌ Error buscando medicamento:', error.message);
@@ -163,11 +174,11 @@ class Medicamento {
         }
     }
 
-    // Obtener estadísticas del módulo farmacia
+    // Obtener estadísticas
     async getStats() {
         const connection = await this.getConnection();
         try {
-            const [stats] = await connection.execute(`
+            const query = `
                 SELECT 
                     COUNT(*) as total_medicamentos,
                     SUM(CASE WHEN existencias < 11 THEN 1 ELSE 0 END) as stock_bajo,
@@ -177,8 +188,9 @@ class Medicamento {
                     AVG(precio_tarjeta) as precio_promedio
                 FROM medicamentos 
                 WHERE activo = 1
-            `);
+            `;
 
+            const [stats] = await connection.execute(query);
             return stats[0];
         } catch (error) {
             console.error('❌ Error obteniendo estadísticas:', error.message);
@@ -237,8 +249,8 @@ class Medicamento {
             const {
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones, contraindicaciones, dosis, comision_porcentaje,
-                imagen_url
+                indicaciones = '', contraindicaciones = '', dosis = '', comision_porcentaje = 0,
+                imagen_url = ''
             } = medicamentoData;
 
             const query = `
@@ -276,8 +288,8 @@ class Medicamento {
             const {
                 nombre, presentacion_id, laboratorio_id, existencias,
                 fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
-                indicaciones, contraindicaciones, dosis, comision_porcentaje,
-                imagen_url
+                indicaciones = '', contraindicaciones = '', dosis = '', comision_porcentaje = 0,
+                imagen_url = ''
             } = medicamentoData;
 
             const query = `
@@ -325,5 +337,5 @@ class Medicamento {
     }
 }
 
-// Exportar instancia única como User.js
+// Exportar instancia única
 module.exports = new Medicamento();
