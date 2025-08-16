@@ -1,10 +1,30 @@
 // src/routes/farmacia.js
-// VERSIÓN DEBUG SIMPLIFICADA - REEMPLAZAR ARCHIVO COMPLETO
+// VERSIÓN FUNCIONAL CON AUTH BÁSICO
 
 const express = require('express');
 const router = express.Router();
 
 console.log('🔍 Farmacia routes cargadas');
+
+// =====================================
+// MIDDLEWARE DE AUTH SIMPLE
+// =====================================
+
+const simpleAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token de autorización requerido',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+  
+  // Por ahora solo verificamos que tenga formato correcto
+  // TODO: Verificar JWT real cuando funcione
+  next();
+};
 
 // =====================================
 // ENDPOINT BÁSICO DE TEST (SIN MIDDLEWARES)
@@ -104,8 +124,8 @@ try {
   console.error('❌ Error cargando modelo Medicamento:', error.message);
 }
 
-// Presentaciones usando el modelo real
-router.get('/presentaciones', async (req, res) => {
+// Presentaciones CON AUTH
+router.get('/presentaciones', simpleAuth, async (req, res) => {
   console.log('🔍 Presentaciones endpoint hit');
   
   try {
@@ -135,8 +155,8 @@ router.get('/presentaciones', async (req, res) => {
   }
 });
 
-// Laboratorios usando el modelo real
-router.get('/laboratorios', async (req, res) => {
+// Laboratorios CON AUTH
+router.get('/laboratorios', simpleAuth, async (req, res) => {
   console.log('🔍 Laboratorios endpoint hit');
   
   try {
@@ -163,8 +183,8 @@ router.get('/laboratorios', async (req, res) => {
   }
 });
 
-// Stats usando el modelo real
-router.get('/stats', async (req, res) => {
+// Stats CON AUTH
+router.get('/stats', simpleAuth, async (req, res) => {
   console.log('🔍 Stats endpoint hit');
   
   try {
