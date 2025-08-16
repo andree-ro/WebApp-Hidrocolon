@@ -428,9 +428,8 @@ router.put('/:id/stock', simpleAuth, async (req, res) => {
 
     console.log(`🔍 Actualizando stock de "${medicamento.nombre}" de ${medicamento.existencias} a ${nuevaCantidad}`);
 
-    // Actualizar stock (simplificado - actualizar directamente el campo existencias)
-    const datosUpdate = { existencias: nuevaCantidad };
-    const actualizado = await Medicamento.update(medicamentoId, datosUpdate);
+    // Usar método específico para stock
+    const actualizado = await Medicamento.updateStock(medicamentoId, nuevaCantidad);
 
     if (!actualizado) {
       return res.status(500).json({
