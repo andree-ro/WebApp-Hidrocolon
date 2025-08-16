@@ -1,5 +1,5 @@
 // src/controllers/farmaciaController.js
-const Medicamento = require('../models/Medicamento');
+const medicamento = require('../models/Medicamento');
 const { validarMedicamento, validarBusqueda, validarActualizacionStock, validarCarrito } = require('../utils/validators');
 
 class FarmaciaController {
@@ -38,11 +38,11 @@ class FarmaciaController {
         offset
       };
 
-      const medicamentos = await Medicamento.findAll(options);
+      const medicamentos = await medicamento.findAll(options);
 
       // Obtener total para paginación (query sin limit)
       const totalOptions = { ...options, limit: 10000, offset: 0 };
-      const totalMedicamentos = await Medicamento.findAll(totalOptions);
+      const totalMedicamentos = await medicamento.findAll(totalOptions);
       const total = totalMedicamentos.length;
 
       res.json({
@@ -79,9 +79,9 @@ class FarmaciaController {
         });
       }
 
-      const medicamento = await Medicamento.findById(parseInt(id));
+      const med = await medicamento.findById(parseInt(id));
 
-      if (!medicamento) {
+      if (!med) {
         return res.status(404).json({
           success: false,
           message: 'Medicamento no encontrado'
@@ -90,7 +90,7 @@ class FarmaciaController {
 
       res.json({
         success: true,
-        data: medicamento
+        data: med
       });
     } catch (error) {
       console.error('Error en getMedicamento:', error);
@@ -118,7 +118,7 @@ class FarmaciaController {
       }
 
       // Verificar que no exista medicamento con mismo nombre y presentación
-      const medicamentosExistentes = await Medicamento.findAll({
+      const medicamentosExistentes = await medicamento.findAll({
         search: medicamentoData.nombre,
         limit: 10
       });
@@ -135,7 +135,7 @@ class FarmaciaController {
         });
       }
 
-      const nuevoMedicamento = await Medicamento.create(medicamentoData);
+      const nuevoMedicamento = await medicamento.create(medicamentoData);
 
       res.status(201).json({
         success: true,
@@ -176,7 +176,7 @@ class FarmaciaController {
       }
 
       // Verificar que el medicamento existe
-      const medicamentoExistente = await Medicamento.findById(parseInt(id));
+      const medicamentoExistente = await medicamento.findById(parseInt(id));
       if (!medicamentoExistente) {
         return res.status(404).json({
           success: false,
@@ -184,7 +184,7 @@ class FarmaciaController {
         });
       }
 
-      const medicamentoActualizado = await Medicamento.update(parseInt(id), medicamentoData);
+      const medicamentoActualizado = await medicamento.update(parseInt(id), medicamentoData);
 
       res.json({
         success: true,
@@ -214,15 +214,15 @@ class FarmaciaController {
       }
 
       // Verificar que el medicamento existe
-      const medicamento = await Medicamento.findById(parseInt(id));
-      if (!medicamento) {
+      const med = await medicamento.findById(parseInt(id));
+      if (!med) {
         return res.status(404).json({
           success: false,
           message: 'Medicamento no encontrado'
         });
       }
 
-      await Medicamento.delete(parseInt(id));
+      await medicamento.delete(parseInt(id));
 
       res.json({
         success: true,
@@ -262,7 +262,7 @@ class FarmaciaController {
         });
       }
 
-      const medicamentoActualizado = await Medicamento.updateStock(
+      const medicamentoActualizado = await medicamento.updateStock(
         parseInt(id), 
         parseInt(cantidad), 
         motivo, 
@@ -302,7 +302,7 @@ class FarmaciaController {
   // GET /api/farmacia/stats - Obtener estadísticas del módulo farmacia
   static async getEstadisticas(req, res) {
     try {
-      const stats = await Medicamento.getStats();
+      const stats = await medicamento.getStats();
 
       res.json({
         success: true,
@@ -321,7 +321,7 @@ class FarmaciaController {
   // GET /api/farmacia/presentaciones - Obtener todas las presentaciones
   static async getPresentaciones(req, res) {
     try {
-      const presentaciones = await Medicamento.getPresentaciones();
+      const presentaciones = await medicamento.getPresentaciones();
 
       res.json({
         success: true,
@@ -340,7 +340,7 @@ class FarmaciaController {
   // GET /api/farmacia/laboratorios - Obtener todos los laboratorios
   static async getLaboratorios(req, res) {
     try {
-      const laboratorios = await Medicamento.getLaboratorios();
+      const laboratorios = await medicamento.getLaboratorios();
 
       res.json({
         success: true,
@@ -359,7 +359,7 @@ class FarmaciaController {
   // GET /api/farmacia/extras - Obtener todos los extras
   static async getExtras(req, res) {
     try {
-      const extras = await Medicamento.getExtras();
+      const extras = await medicamento.getExtras();
 
       res.json({
         success: true,
@@ -380,7 +380,7 @@ class FarmaciaController {
     try {
       // Para futuras versiones - implementar exportación a Excel
       // Por ahora retornamos todos los medicamentos en formato JSON para exportar
-      const medicamentos = await Medicamento.findAll({ limit: 10000 });
+      const medicamentos = await medicamento.findAll({ limit: 10000 });
 
       const datosExport = medicamentos.map(med => ({
         ID: med.id,
@@ -440,40 +440,40 @@ class FarmaciaController {
       }
 
       // Verificar que el medicamento existe y tiene stock
-      const medicamento = await Medicamento.findById(parseInt(id));
-      if (!medicamento) {
+      const med = await medicamento.findById(parseInt(id));
+      if (!med) {
         return res.status(404).json({
           success: false,
           message: 'Medicamento no encontrado'
         });
       }
 
-      if (medicamento.existencias < parseInt(cantidad)) {
+      if (med.existencias < parseInt(cantidad)) {
         return res.status(400).json({
           success: false,
           message: 'Stock insuficiente',
           data: {
-            stock_disponible: medicamento.existencias,
+            stock_disponible: med.existencias,
             cantidad_solicitada: parseInt(cantidad)
           }
         });
       }
 
       // Preparar datos para el carrito
-      const precio = precio_tipo === 'efectivo' ? medicamento.precio_efectivo : medicamento.precio_tarjeta;
+      const precio = precio_tipo === 'efectivo' ? med.precio_efectivo : med.precio_tarjeta;
       const subtotal = precio * parseInt(cantidad);
 
       const itemCarrito = {
-        medicamento_id: medicamento.id,
-        nombre: medicamento.nombre,
-        presentacion: medicamento.presentacion_nombre,
-        laboratorio: medicamento.laboratorio_nombre,
+        medicamento_id: med.id,
+        nombre: med.nombre,
+        presentacion: med.presentacion_nombre,
+        laboratorio: med.laboratorio_nombre,
         cantidad: parseInt(cantidad),
         precio_unitario: precio,
         precio_tipo: precio_tipo,
         subtotal: subtotal,
-        comision_porcentaje: medicamento.comision_porcentaje,
-        extras: medicamento.extras || []
+        comision_porcentaje: med.comision_porcentaje,
+        extras: med.extras || []
       };
 
       res.json({
