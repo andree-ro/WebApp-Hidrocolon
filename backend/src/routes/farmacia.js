@@ -365,44 +365,124 @@ router.get('/debug/auth', (req, res, next) => {
   });
 });
 
-// DEBUG: Verificar estructura de tabla medicamentos
-router.get('/debug/table-structure', async (req, res) => {
-  console.log('🔍 Verificando estructura de tabla medicamentos');
+// DEBUG: Insertar datos de prueba
+router.post('/debug/insert-sample-data', async (req, res) => {
+  console.log('🔍 Insertando datos de prueba');
   
   try {
-    const mysql = require('mysql2/promise');
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    // Datos de medicamentos de prueba
+    const medicamentosPrueba = [
+      {
+        nombre: 'Paracetamol 500mg',
+        presentacion_id: 1, // Unidad
+        laboratorio_id: 1, // Farmex
+        existencias: 100,
+        fecha_vencimiento: '2025-12-31',
+        precio_tarjeta: 5.00,
+        precio_efectivo: 4.50,
+        costo_compra: 3.00,
+        porcentaje_comision: 10.0,
+        indicaciones: 'Analgésico y antipirético',
+        contraindicaciones: 'Hipersensibilidad al paracetamol',
+        dosis: '1 tableta cada 8 horas'
+      },
+      {
+        nombre: 'Ibuprofeno 400mg',
+        presentacion_id: 1, // Unidad
+        laboratorio_id: 2, // Bonin
+        existencias: 50,
+        fecha_vencimiento: '2025-10-15',
+        precio_tarjeta: 8.00,
+        precio_efectivo: 7.50,
+        costo_compra: 5.00,
+        porcentaje_comision: 12.0,
+        indicaciones: 'Antiinflamatorio no esteroideo',
+        contraindicaciones: 'Úlcera péptica activa',
+        dosis: '1 tableta cada 12 horas'
+      },
+      {
+        nombre: 'Amoxicilina 500mg',
+        presentacion_id: 4, // Frasco Pastillas
+        laboratorio_id: 3, // Dipronat
+        existencias: 25,
+        fecha_vencimiento: '2025-08-30',
+        precio_tarjeta: 15.00,
+        precio_efectivo: 14.00,
+        costo_compra: 10.00,
+        porcentaje_comision: 15.0,
+        indicaciones: 'Antibiótico betalactámico',
+        contraindicaciones: 'Alergia a penicilinas',
+        dosis: '1 cápsula cada 8 horas por 7 días'
+      },
+      {
+        nombre: 'Vitamina C 1000mg',
+        presentacion_id: 1, // Unidad
+        laboratorio_id: 4, // Reckeweg
+        existencias: 200,
+        fecha_vencimiento: '2026-03-15',
+        precio_tarjeta: 3.00,
+        precio_efectivo: 2.75,
+        costo_compra: 1.50,
+        porcentaje_comision: 8.0,
+        indicaciones: 'Suplemento vitamínico',
+        contraindicaciones: 'Cálculos renales de oxalato',
+        dosis: '1 tableta diaria'
+      },
+      {
+        nombre: 'Jarabe para la Tos',
+        presentacion_id: 7, // Frasco Jarabe
+        laboratorio_id: 5, // Praxis
+        existencias: 8, // Stock bajo
+        fecha_vencimiento: '2025-09-20',
+        precio_tarjeta: 12.00,
+        precio_efectivo: 11.00,
+        costo_compra: 7.00,
+        porcentaje_comision: 10.0,
+        indicaciones: 'Antitusivo y expectorante',
+        contraindicaciones: 'Menores de 2 años',
+        dosis: '5ml cada 6 horas'
+      }
+    ];
+
+    const resultados = [];
     
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT || 3306
-    });
-    
-    // Obtener estructura de tabla medicamentos
-    const [columns] = await connection.execute('DESCRIBE medicamentos');
-    
-    // Contar registros
-    const [count] = await connection.execute('SELECT COUNT(*) as total FROM medicamentos');
-    
-    // Obtener un registro de ejemplo si existe
-    const [sample] = await connection.execute('SELECT * FROM medicamentos LIMIT 1');
-    
-    await connection.end();
+    for (const medicamento of medicamentosPrueba) {
+      try {
+        const nuevoId = await Medicamento.create(medicamento);
+        resultados.push({
+          nombre: medicamento.nombre,
+          id: nuevoId,
+          status: 'creado'
+        });
+        console.log(`✅ Creado: ${medicamento.nombre} (ID: ${nuevoId})`);
+      } catch (error) {
+        resultados.push({
+          nombre: medicamento.nombre,
+          error: error.message,
+          status: 'error'
+        });
+        console.log(`❌ Error creando ${medicamento.nombre}: ${error.message}`);
+      }
+    }
     
     res.json({
       success: true,
+      message: 'Datos de prueba insertados',
       data: {
-        columns: columns,
-        total_records: count[0].total,
-        sample_record: sample[0] || null
+        total_intentos: medicamentosPrueba.length,
+        exitosos: resultados.filter(r => r.status === 'creado').length,
+        errores: resultados.filter(r => r.status === 'error').length,
+        resultados: resultados
       },
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
-    console.error('❌ Error verificando estructura:', error);
+    console.error('❌ Error insertando datos de prueba:', error);
     res.status(500).json({
       success: false,
       error: error.message,
