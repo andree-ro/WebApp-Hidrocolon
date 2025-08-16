@@ -3,7 +3,7 @@
 // Maneja todos los endpoints de login, logout, verify y refresh
 
 const authService = require('../services/authService');
-const validators = require('../utils/validators');
+const { validarEmail, validarPassword, Validators } = require('../utils/validators');
 
 class AuthController {
     constructor() {
@@ -21,35 +21,46 @@ class AuthController {
     async login(req, res) {
         try {
             // 1. Validar datos de entrada
-            const validation = validators.validateLoginData(req.body);
-            if (!validation.isValid) {
+            const { usuario, password } = req.body;
+
+            // Validar usuario
+            const usuarioValidation = validarEmail(usuario);
+            if (!usuarioValidation.esValido) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Datos de entrada inválidos',
-                    errors: validation.errors
+                    message: 'Usuario inválido',
+                    errors: [usuarioValidation.error]
                 });
             }
 
-            // 2. Extraer datos validados
-            const { usuario, password } = validation.data;
+            // Validar password básico (solo que no esté vacío)
+            if (!password) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Contraseña requerida',
+                    errors: ['La contraseña es requerida']
+                });
+            }
 
-            // 3. Intentar login con el servicio
-            const loginResult = await authService.login(usuario, password);
+            // 2. Intentar login con el servicio
+            const loginResult = await authService.login(usuarioValidation.value, password);
 
-            // 4. Respuesta exitosa
+            // 3. Respuesta exitosa
             res.status(200).json({
                 success: true,
                 message: 'Login exitoso',
                 data: {
                     user: loginResult.user,
-                    accessToken: loginResult.accessToken,
-                    refreshToken: loginResult.refreshToken,
-                    expiresIn: loginResult.expiresIn,
-                    tokenType: loginResult.tokenType
+                    tokens: {
+                        accessToken: loginResult.accessToken,
+                        refreshToken: loginResult.refreshToken,
+                        expiresIn: loginResult.expiresIn,
+                        tokenType: loginResult.tokenType
+                    }
                 }
             });
 
-            // 5. Log de auditoría
+            // 4. Log de auditoría
             console.log(`✅ Login exitoso: ${usuario} - IP: ${req.ip}`);
 
         } catch (error) {
@@ -92,7 +103,7 @@ class AuthController {
     async logout(req, res) {
         try {
             // 1. Validar headers de autorización
-            const authValidation = validators.validateAuthHeaders(req.headers);
+            const authValidation = Validators.validateAuthHeaders(req.headers);
             if (!authValidation.isValid) {
                 return res.status(401).json({
                     success: false,
@@ -127,7 +138,7 @@ class AuthController {
     async verify(req, res) {
         try {
             // 1. Validar headers de autorización
-            const authValidation = validators.validateAuthHeaders(req.headers);
+            const authValidation = Validators.validateAuthHeaders(req.headers);
             if (!authValidation.isValid) {
                 return res.status(401).json({
                     success: false,
@@ -203,7 +214,7 @@ class AuthController {
             }
 
             // 2. Validar formato del refresh token
-            const tokenValidation = validators.validateJWTToken(refreshToken);
+            const tokenValidation = Validators.validateJWTToken(refreshToken);
             if (!tokenValidation.isValid) {
                 return res.status(400).json({
                     success: false,
@@ -318,12 +329,12 @@ class AuthController {
             }
 
             // Validar formato de nueva contraseña
-            const passwordValidation = validators.validatePassword(newPassword);
-            if (!passwordValidation.isValid) {
+            const passwordValidation = validarPassword(newPassword);
+            if (!passwordValidation.esValido) {
                 return res.status(400).json({
                     success: false,
                     message: 'Nueva contraseña no cumple los requisitos',
-                    errors: passwordValidation.errors
+                    errors: passwordValidation.errores || [passwordValidation.error]
                 });
             }
 
