@@ -123,6 +123,14 @@ router.get('/export/excel', FarmaciaController.exportarExcel);
 // GET /api/farmacia/:id - Obtener medicamento específico
 router.get('/:id', FarmaciaController.getMedicamento);
 
+router.get('/test/ping', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Farmacia funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // =====================================
 // RUTAS DE VENTA (vendedor y admin)
 // =====================================
