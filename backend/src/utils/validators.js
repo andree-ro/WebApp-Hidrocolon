@@ -13,7 +13,7 @@ class Validators {
             password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
             
             // Solo letras y espacios para nombres
-            name: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/,
+            name: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ'\s]{2,50}$/,
             
             // Teléfono guatemalteco: +502 XXXXXXXX o XXXXXXXX
             phone: /^(\+502\s?)?[2-9]\d{7}$/,
@@ -146,9 +146,6 @@ class Validators {
             validation.strength = Math.min(validation.strength, 30);
         }
 
-        // Verificar que no contenga el usuario
-        // (Se validará en el controlador cuando tengamos ambos datos)
-
         validation.isValid = validation.errors.length === 0;
         return validation;
     }
@@ -181,6 +178,312 @@ class Validators {
         validation.isValid = validation.errors.length === 0;
         return validation;
     }
+
+    // =====================================
+    // VALIDACIONES ESPECÍFICAS DE FARMACIA
+    // =====================================
+
+    // Validar datos completos de medicamento
+    validateMedicamento(data, esUpdate = false) {
+        const validation = {
+            isValid: false,
+            data: {},
+            errors: []
+        };
+
+        // Validar nombre
+        if (!data.nombre || typeof data.nombre !== 'string') {
+            validation.errors.push('Nombre del medicamento es requerido');
+        } else {
+            const nombre = this.sanitizeString(data.nombre);
+            if (nombre.length < 2) {
+                validation.errors.push('Nombre del medicamento debe tener al menos 2 caracteres');
+            } else if (nombre.length > 255) {
+                validation.errors.push('Nombre del medicamento no puede exceder 255 caracteres');
+            } else {
+                validation.data.nombre = nombre;
+            }
+        }
+
+        // Validar presentación
+        if (!data.presentacion_id) {
+            validation.errors.push('Presentación es requerida');
+        } else {
+            const presentacionId = parseInt(data.presentacion_id);
+            if (isNaN(presentacionId) || presentacionId < 1) {
+                validation.errors.push('ID de presentación inválido');
+            } else {
+                validation.data.presentacion_id = presentacionId;
+            }
+        }
+
+        // Validar laboratorio
+        if (!data.laboratorio_id) {
+            validation.errors.push('Laboratorio es requerido');
+        } else {
+            const laboratorioId = parseInt(data.laboratorio_id);
+            if (isNaN(laboratorioId) || laboratorioId < 1) {
+                validation.errors.push('ID de laboratorio inválido');
+            } else {
+                validation.data.laboratorio_id = laboratorioId;
+            }
+        }
+
+        // Validar existencias
+        if (data.existencias === undefined || data.existencias === null) {
+            validation.errors.push('Existencias son requeridas');
+        } else {
+            const existencias = parseInt(data.existencias);
+            if (isNaN(existencias) || existencias < 0) {
+                validation.errors.push('Existencias deben ser un número positivo o cero');
+            } else if (existencias > 99999) {
+                validation.errors.push('Existencias no pueden exceder 99,999 unidades');
+            } else {
+                validation.data.existencias = existencias;
+            }
+        }
+
+        // Validar fecha de vencimiento
+        if (!data.fecha_vencimiento) {
+            validation.errors.push('Fecha de vencimiento es requerida');
+        } else {
+            const fecha = new Date(data.fecha_vencimiento);
+            if (isNaN(fecha.getTime())) {
+                validation.errors.push('Fecha de vencimiento inválida');
+            } else if (fecha < new Date()) {
+                validation.errors.push('Fecha de vencimiento no puede ser anterior a hoy');
+            } else {
+                validation.data.fecha_vencimiento = data.fecha_vencimiento;
+            }
+        }
+
+        // Validar precio tarjeta
+        if (data.precio_tarjeta === undefined || data.precio_tarjeta === null) {
+            validation.errors.push('Precio de tarjeta es requerido');
+        } else {
+            const precio = parseFloat(data.precio_tarjeta);
+            if (isNaN(precio) || precio <= 0) {
+                validation.errors.push('Precio de tarjeta debe ser mayor a 0');
+            } else if (precio > 99999.99) {
+                validation.errors.push('Precio de tarjeta no puede exceder Q99,999.99');
+            } else {
+                validation.data.precio_tarjeta = precio;
+            }
+        }
+
+        // Validar precio efectivo
+        if (data.precio_efectivo === undefined || data.precio_efectivo === null) {
+            validation.errors.push('Precio de efectivo es requerido');
+        } else {
+            const precio = parseFloat(data.precio_efectivo);
+            if (isNaN(precio) || precio <= 0) {
+                validation.errors.push('Precio de efectivo debe ser mayor a 0');
+            } else if (precio > 99999.99) {
+                validation.errors.push('Precio de efectivo no puede exceder Q99,999.99');
+            } else {
+                validation.data.precio_efectivo = precio;
+            }
+        }
+
+        // Validar relación entre precios
+        if (validation.data.precio_efectivo && validation.data.precio_tarjeta) {
+            if (validation.data.precio_efectivo > validation.data.precio_tarjeta) {
+                validation.errors.push('Precio de efectivo no puede ser mayor al precio de tarjeta');
+            }
+        }
+
+        // Validar costo de compra
+        if (data.costo_compra === undefined || data.costo_compra === null) {
+            validation.errors.push('Costo de compra es requerido');
+        } else {
+            const costo = parseFloat(data.costo_compra);
+            if (isNaN(costo) || costo < 0) {
+                validation.errors.push('Costo de compra debe ser positivo o cero');
+            } else if (costo > 99999.99) {
+                validation.errors.push('Costo de compra no puede exceder Q99,999.99');
+            } else {
+                validation.data.costo_compra = costo;
+            }
+        }
+
+        // Validar comisión
+        if (data.comision_porcentaje === undefined || data.comision_porcentaje === null) {
+            validation.errors.push('Porcentaje de comisión es requerido');
+        } else {
+            const comision = parseFloat(data.comision_porcentaje);
+            if (isNaN(comision) || comision < 0) {
+                validation.errors.push('Comisión debe ser positiva o cero');
+            } else if (comision > 100) {
+                validation.errors.push('Comisión no puede exceder 100%');
+            } else {
+                validation.data.comision_porcentaje = comision;
+            }
+        }
+
+        // Validar campos opcionales
+        if (data.indicaciones) {
+            const indicaciones = this.sanitizeString(data.indicaciones);
+            if (indicaciones.length > 1000) {
+                validation.errors.push('Indicaciones no pueden exceder 1000 caracteres');
+            } else {
+                validation.data.indicaciones = indicaciones;
+            }
+        }
+
+        if (data.contraindicaciones) {
+            const contraindicaciones = this.sanitizeString(data.contraindicaciones);
+            if (contraindicaciones.length > 1000) {
+                validation.errors.push('Contraindicaciones no pueden exceder 1000 caracteres');
+            } else {
+                validation.data.contraindicaciones = contraindicaciones;
+            }
+        }
+
+        if (data.dosis) {
+            const dosis = this.sanitizeString(data.dosis);
+            if (dosis.length > 500) {
+                validation.errors.push('Dosis no puede exceder 500 caracteres');
+            } else {
+                validation.data.dosis = dosis;
+            }
+        }
+
+        if (data.imagen_url) {
+            const imagen = this.sanitizeString(data.imagen_url);
+            if (imagen.length > 500) {
+                validation.errors.push('URL de imagen muy larga');
+            } else if (imagen && !/^https?:\/\/.+/.test(imagen)) {
+                validation.errors.push('URL de imagen inválida');
+            } else {
+                validation.data.imagen_url = imagen;
+            }
+        }
+
+        // Validar extras (array opcional)
+        if (data.extras_ids !== undefined) {
+            if (!Array.isArray(data.extras_ids)) {
+                validation.errors.push('extras_ids debe ser un array');
+            } else {
+                const extrasValidos = data.extras_ids.every(id => {
+                    const numId = parseInt(id);
+                    return !isNaN(numId) && numId > 0;
+                });
+                if (!extrasValidos) {
+                    validation.errors.push('Todos los IDs de extras deben ser números positivos');
+                } else {
+                    validation.data.extras_ids = data.extras_ids.map(id => parseInt(id));
+                }
+            }
+        }
+
+        validation.isValid = validation.errors.length === 0;
+        return validation;
+    }
+
+    // Validar parámetros de búsqueda
+    validateBusqueda(params) {
+        const validation = {
+            isValid: true,
+            errors: []
+        };
+
+        // Validar término de búsqueda
+        if (params.search !== undefined) {
+            if (typeof params.search !== 'string') {
+                validation.errors.push('Término de búsqueda debe ser texto');
+                validation.isValid = false;
+            } else if (params.search.length > 100) {
+                validation.errors.push('Término de búsqueda muy largo');
+                validation.isValid = false;
+            }
+        }
+
+        // Validar página
+        if (params.page !== undefined) {
+            const page = parseInt(params.page);
+            if (isNaN(page) || page < 1) {
+                validation.errors.push('Número de página inválido');
+                validation.isValid = false;
+            } else if (page > 1000) {
+                validation.errors.push('Número de página muy alto');
+                validation.isValid = false;
+            }
+        }
+
+        // Validar límite
+        if (params.limit !== undefined) {
+            const limit = parseInt(params.limit);
+            if (isNaN(limit) || limit < 1) {
+                validation.errors.push('Límite inválido');
+                validation.isValid = false;
+            } else if (limit > 500) {
+                validation.errors.push('Límite muy alto (máximo 500)');
+                validation.isValid = false;
+            }
+        }
+
+        return validation;
+    }
+
+    // Validar actualización de stock
+    validateActualizacionStock(data) {
+        const validation = {
+            isValid: false,
+            errors: []
+        };
+
+        // Validar cantidad
+        if (data.cantidad === undefined || data.cantidad === null) {
+            validation.errors.push('Cantidad es requerida');
+        } else {
+            const cantidad = parseInt(data.cantidad);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                validation.errors.push('Cantidad debe ser un número positivo');
+            } else if (cantidad > 9999) {
+                validation.errors.push('Cantidad máxima es 9,999 por operación');
+            }
+        }
+
+        // Validar motivo (opcional)
+        if (data.motivo && typeof data.motivo === 'string' && data.motivo.length > 255) {
+            validation.errors.push('Motivo muy largo (máximo 255 caracteres)');
+        }
+
+        validation.isValid = validation.errors.length === 0;
+        return validation;
+    }
+
+    // Validar datos para carrito
+    validateCarrito(data) {
+        const validation = {
+            isValid: false,
+            errors: []
+        };
+
+        // Validar cantidad
+        if (data.cantidad === undefined || data.cantidad === null) {
+            validation.errors.push('Cantidad es requerida');
+        } else {
+            const cantidad = parseInt(data.cantidad);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                validation.errors.push('Cantidad debe ser un número positivo');
+            } else if (cantidad > 999) {
+                validation.errors.push('Cantidad máxima es 999 por producto');
+            }
+        }
+
+        // Validar tipo de precio
+        if (data.precio_tipo && !['efectivo', 'tarjeta'].includes(data.precio_tipo)) {
+            validation.errors.push('Tipo de precio debe ser "efectivo" o "tarjeta"');
+        }
+
+        validation.isValid = validation.errors.length === 0;
+        return validation;
+    }
+
+    // =====================================
+    // VALIDACIONES GENERALES EXISTENTES
+    // =====================================
 
     // Validar nombres
     validateName(name, fieldName = 'nombre') {
@@ -432,5 +735,28 @@ class Validators {
     }
 }
 
-// Exportar instancia única
-module.exports = new Validators();
+// Exportar funciones individuales para compatibilidad
+const validatorInstance = new Validators();
+
+module.exports = {
+    // Métodos de autenticación existentes
+    validarEmail: (email) => validatorInstance.validateUserEmail(email),
+    validarPassword: (password) => validatorInstance.validatePassword(password),
+    
+    // Nuevos métodos de farmacia
+    validarMedicamento: (data, esUpdate) => validatorInstance.validateMedicamento(data, esUpdate),
+    validarBusqueda: (params) => validatorInstance.validateBusqueda(params),
+    validarActualizacionStock: (data) => validatorInstance.validateActualizacionStock(data),
+    validarCarrito: (data) => validatorInstance.validateCarrito(data),
+    
+    // Utilidades
+    sanitizarTexto: (texto) => validatorInstance.sanitizeString(texto),
+    validarFecha: (fecha) => !isNaN(new Date(fecha).getTime()),
+    validarDecimal: (valor, decimales = 2, maximo = 99999.99) => {
+        const numero = parseFloat(valor);
+        return !isNaN(numero) && numero >= 0 && numero <= maximo;
+    },
+    
+    // Exportar instancia completa
+    Validators: validatorInstance
+};
