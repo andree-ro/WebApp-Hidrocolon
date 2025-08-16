@@ -245,88 +245,312 @@ router.get('/:id', simpleAuth, async (req, res) => {
   }
 });
 
-// POST /api/farmacia - Crear nuevo medicamento
-router.post('/', simpleAuth, async (req, res) => {
-  console.log('🔍 POST crear medicamento endpoint hit');
-  console.log('🔍 Body recibido:', req.body);
+// PUT /api/farmacia/:id - Actualizar medicamento
+router.put('/:id', simpleAuth, async (req, res) => {
+  console.log('🔍 PUT actualizar medicamento endpoint hit');
+  console.log('🔍 ID:', req.params.id);
+  console.log('🔍 Body:', req.body);
   
   try {
     if (!Medicamento) {
       throw new Error('Modelo Medicamento no disponible');
     }
 
-    const medicamentoData = req.body;
+    const { id } = req.params;
+    const medicamentoId = parseInt(id);
 
-    // Validación básica requerida
-    const camposRequeridos = ['nombre', 'presentacion_id', 'laboratorio_id', 'existencias', 'fecha_vencimiento', 'precio_tarjeta', 'precio_efectivo', 'costo_compra', 'porcentaje_comision'];
-    
-    for (const campo of camposRequeridos) {
-      if (medicamentoData[campo] === undefined || medicamentoData[campo] === null || medicamentoData[campo] === '') {
-        return res.status(400).json({
-          success: false,
-          message: `Campo requerido faltante: ${campo}`
-        });
-      }
+    if (isNaN(medicamentoId) || medicamentoId < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de medicamento inválido'
+      });
     }
 
-    // Validaciones de tipos
-    if (isNaN(parseInt(medicamentoData.presentacion_id))) {
+    // Verificar que el medicamento existe
+    const medicamentoExistente = await Medicamento.findById(medicamentoId);
+    if (!medicamentoExistente) {
+      return res.status(404).json({
+        success: false,
+        message: 'Medicamento no encontrado'
+      });
+    }
+
+    const medicamentoData = req.body;
+
+    // Validaciones básicas (menos estrictas para update)
+    if (medicamentoData.presentacion_id && isNaN(parseInt(medicamentoData.presentacion_id))) {
       return res.status(400).json({
         success: false,
         message: 'presentacion_id debe ser un número válido'
       });
     }
 
-    if (isNaN(parseInt(medicamentoData.laboratorio_id))) {
+    if (medicamentoData.laboratorio_id && isNaN(parseInt(medicamentoData.laboratorio_id))) {
       return res.status(400).json({
         success: false,
         message: 'laboratorio_id debe ser un número válido'
       });
     }
 
-    if (isNaN(parseInt(medicamentoData.existencias))) {
-      return res.status(400).json({
+    console.log('🔍 Actualizando medicamento ID:', medicamentoId);
+
+    const actualizado = await Medicamento.update(medicamentoId, medicamentoData);
+
+    if (!actualizado) {
+      return res.status(500).json({
         success: false,
-        message: 'existencias debe ser un número válido'
+        message: 'Error actualizando medicamento'
       });
     }
 
-    if (isNaN(parseFloat(medicamentoData.precio_tarjeta))) {
-      return res.status(400).json({
-        success: false,
-        message: 'precio_tarjeta debe ser un número válido'
-      });
-    }
+    // Obtener medicamento actualizado
+    const medicamentoActualizado = await Medicamento.findById(medicamentoId);
 
-    console.log('🔍 Validaciones básicas pasadas, creando medicamento...');
+    console.log('🔍 Medicamento actualizado exitosamente');
 
-    const nuevoId = await Medicamento.create(medicamentoData);
-
-    console.log('🔍 Medicamento creado con ID:', nuevoId);
-
-    // Obtener el medicamento creado para devolver datos completos
-    const medicamentoCreado = await Medicamento.findById(nuevoId);
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Medicamento creado exitosamente',
-      data: medicamentoCreado,
+      message: 'Medicamento actualizado exitosamente',
+      data: medicamentoActualizado,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('❌ Error creando medicamento:', error);
-    
-    if (error.message.includes('Ya existe')) {
-      return res.status(409).json({
+    console.error('❌ Error actualizando medicamento:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error actualizando medicamento',
+      error: error.message
+    });
+  }
+});
+
+// DELETE /api/farmacia/:id - Eliminar medicamento (soft delete)
+router.delete('/:id', simpleAuth, async (req, res) => {
+  console.log('🔍 DELETE medicamento endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    const { id } = req.params;
+    const medicamentoId = parseInt(id);
+
+    if (isNaN(medicamentoId) || medicamentoId < 1) {
+      return res.status(400).json({
         success: false,
-        message: 'Ya existe un medicamento con ese nombre y presentación'
+        message: 'ID de medicamento inválido'
       });
     }
 
+    // Verificar que el medicamento existe
+    const medicamento = await Medicamento.findById(medicamentoId);
+    if (!medicamento) {
+      return res.status(404).json({
+        success: false,
+        message: 'Medicamento no encontrado'
+      });
+    }
+
+    console.log('🔍 Eliminando medicamento:', medicamento.nombre);
+
+    const eliminado = await Medicamento.delete(medicamentoId);
+
+    if (!eliminado) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error eliminando medicamento'
+      });
+    }
+
+    console.log('🔍 Medicamento eliminado exitosamente');
+
+    res.json({
+      success: true,
+      message: `Medicamento "${medicamento.nombre}" eliminado exitosamente`,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error eliminando medicamento:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creando medicamento',
+      message: 'Error eliminando medicamento',
+      error: error.message
+    });
+  }
+});
+
+// PUT /api/farmacia/:id/stock - Actualizar stock específico
+router.put('/:id/stock', simpleAuth, async (req, res) => {
+  console.log('🔍 PUT stock endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    const { id } = req.params;
+    const medicamentoId = parseInt(id);
+    const { cantidad, motivo = 'Ajuste manual' } = req.body;
+
+    if (isNaN(medicamentoId) || medicamentoId < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de medicamento inválido'
+      });
+    }
+
+    if (!cantidad || isNaN(parseInt(cantidad))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cantidad debe ser un número válido'
+      });
+    }
+
+    const nuevaCantidad = parseInt(cantidad);
+    if (nuevaCantidad < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'La cantidad no puede ser negativa'
+      });
+    }
+
+    // Verificar que el medicamento existe
+    const medicamento = await Medicamento.findById(medicamentoId);
+    if (!medicamento) {
+      return res.status(404).json({
+        success: false,
+        message: 'Medicamento no encontrado'
+      });
+    }
+
+    console.log(`🔍 Actualizando stock de "${medicamento.nombre}" de ${medicamento.existencias} a ${nuevaCantidad}`);
+
+    // Actualizar stock (simplificado - actualizar directamente el campo existencias)
+    const datosUpdate = { existencias: nuevaCantidad };
+    const actualizado = await Medicamento.update(medicamentoId, datosUpdate);
+
+    if (!actualizado) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error actualizando stock'
+      });
+    }
+
+    // Obtener medicamento actualizado
+    const medicamentoActualizado = await Medicamento.findById(medicamentoId);
+
+    console.log('🔍 Stock actualizado exitosamente');
+
+    res.json({
+      success: true,
+      message: 'Stock actualizado exitosamente',
+      data: {
+        medicamento: medicamentoActualizado,
+        cambio: {
+          stock_anterior: medicamento.existencias,
+          stock_nuevo: nuevaCantidad,
+          diferencia: nuevaCantidad - medicamento.existencias,
+          motivo: motivo
+        }
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error actualizando stock:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error actualizando stock',
+      error: error.message
+    });
+  }
+});
+
+// GET /api/farmacia/extras - Obtener extras
+router.get('/extras', simpleAuth, async (req, res) => {
+  console.log('🔍 GET extras endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    const extras = await Medicamento.getExtras();
+
+    res.json({
+      success: true,
+      data: extras,
+      count: extras.length,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo extras:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error obteniendo extras',
+      error: error.message
+    });
+  }
+});
+
+// GET /api/farmacia/export/excel - Exportar medicamentos
+router.get('/export/excel', simpleAuth, async (req, res) => {
+  console.log('🔍 GET export excel endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    // Obtener todos los medicamentos para export
+    const medicamentos = await Medicamento.findAll({ limit: 1000 });
+
+    // Formatear datos para export
+    const datosExport = medicamentos.map(med => ({
+      ID: med.id,
+      Nombre: med.nombre,
+      Presentación: med.presentacion_nombre,
+      Laboratorio: med.laboratorio_nombre,
+      Existencias: med.existencias,
+      'Stock Mínimo': med.stock_minimo || 11,
+      'Fecha Vencimiento': med.fecha_vencimiento,
+      'Precio Tarjeta': med.precio_tarjeta,
+      'Precio Efectivo': med.precio_efectivo,
+      'Costo Compra': med.costo_compra,
+      'Comisión %': med.porcentaje_comision,
+      'Estado Stock': med.estado_stock,
+      'Estado Vencimiento': med.estado_vencimiento,
+      Indicaciones: med.indicaciones,
+      Contraindicaciones: med.contraindicaciones,
+      Dosis: med.dosis,
+      Activo: med.activo ? 'Sí' : 'No',
+      'Fecha Creación': med.fecha_creacion
+    }));
+
+    console.log(`🔍 Preparando export de ${datosExport.length} medicamentos`);
+
+    res.json({
+      success: true,
+      message: 'Datos preparados para exportación',
+      data: datosExport,
+      metadata: {
+        total_registros: datosExport.length,
+        fecha_export: new Date().toISOString(),
+        columnas: Object.keys(datosExport[0] || {}),
+        formato: 'JSON (convertir a Excel en frontend)'
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error en export:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error preparando exportación',
       error: error.message
     });
   }
