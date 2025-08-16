@@ -18,86 +18,84 @@ class AuthController {
     }
 
     // POST /api/auth/login - Iniciar sesión
-    async login(req, res) {
-        try {
-            // 1. Validar datos de entrada
-            const { usuario, password } = req.body;
+    // POST /api/auth/login - Iniciar sesión
+async login(req, res) {
+    try {
+        // 1. Validar datos de entrada - BYPASS TEMPORAL
+        const { usuario, password } = req.body;
 
-            // Validar usuario
-            const usuarioValidation = validarEmail(usuario);
-            if (!usuarioValidation.esValido) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Usuario inválido',
-                    errors: [usuarioValidation.error]
-                });
-            }
-
-            // Validar password básico (solo que no esté vacío)
-            if (!password) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Contraseña requerida',
-                    errors: ['La contraseña es requerida']
-                });
-            }
-
-            // 2. Intentar login con el servicio
-            const loginResult = await authService.login(usuarioValidation.value, password);
-
-            // 3. Respuesta exitosa
-            res.status(200).json({
-                success: true,
-                message: 'Login exitoso',
-                data: {
-                    user: loginResult.user,
-                    tokens: {
-                        accessToken: loginResult.accessToken,
-                        refreshToken: loginResult.refreshToken,
-                        expiresIn: loginResult.expiresIn,
-                        tokenType: loginResult.tokenType
-                    }
-                }
-            });
-
-            // 4. Log de auditoría
-            console.log(`✅ Login exitoso: ${usuario} - IP: ${req.ip}`);
-
-        } catch (error) {
-            // Log del error (sin mostrar detalles sensibles)
-            console.error(`❌ Error en login: ${error.message} - IP: ${req.ip}`);
-
-            // Determinar tipo de error
-            if (error.message.includes('Usuario no encontrado') || 
-                error.message.includes('Contraseña incorrecta')) {
-                
-                return res.status(401).json({
-                    success: false,
-                    message: 'Credenciales incorrectas'
-                });
-            }
-
-            if (error.message.includes('desactivado')) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Usuario desactivado. Contacte al administrador'
-                });
-            }
-
-            if (error.message.includes('Formato')) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Formato de usuario inválido'
-                });
-            }
-
-            // Error genérico del servidor
-            res.status(500).json({
+        // Validación simple temporal
+        if (!usuario || !password) {
+            return res.status(400).json({
                 success: false,
-                message: 'Error interno del servidor'
+                message: 'Usuario y contraseña son requeridos'
             });
         }
+
+        // Validación básica de formato email
+        if (!usuario.includes('@hidrocolon.com')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Usuario debe terminar en @hidrocolon.com'
+            });
+        }
+
+        // 2. Intentar login con el servicio directamente
+        const loginResult = await authService.login(usuario.toLowerCase().trim(), password);
+
+        // 3. Respuesta exitosa
+        res.status(200).json({
+            success: true,
+            message: 'Login exitoso',
+            data: {
+                user: loginResult.user,
+                tokens: {
+                    accessToken: loginResult.accessToken,
+                    refreshToken: loginResult.refreshToken,
+                    expiresIn: loginResult.expiresIn,
+                    tokenType: loginResult.tokenType
+                }
+            }
+        });
+
+        // 4. Log de auditoría
+        console.log(`✅ Login exitoso: ${usuario} - IP: ${req.ip}`);
+
+    } catch (error) {
+        // Log del error (sin mostrar detalles sensibles)
+        console.error(`❌ Error en login: ${error.message} - IP: ${req.ip}`);
+
+        // Determinar tipo de error
+        if (error.message.includes('Usuario no encontrado') || 
+            error.message.includes('Contraseña incorrecta')) {
+            
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales incorrectas'
+            });
+        }
+
+        if (error.message.includes('desactivado')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Usuario desactivado. Contacte al administrador'
+            });
+        }
+
+        if (error.message.includes('Formato')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de usuario inválido'
+            });
+        }
+
+        // Error genérico del servidor
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
     }
+}
 
     // POST /api/auth/logout - Cerrar sesión
     async logout(req, res) {
