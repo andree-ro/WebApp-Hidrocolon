@@ -261,6 +261,27 @@ class Medicamento {
         }
     }
 
+    // Actualizar solo el stock de un medicamento
+    async updateStock(id, nuevaCantidad) {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                UPDATE medicamentos 
+                SET existencias = ?, fecha_actualizacion = NOW()
+                WHERE id = ? AND activo = 1
+            `;
+
+            const [result] = await connection.execute(query, [nuevaCantidad, id]);
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error actualizando stock:', error.message);
+            throw new Error('Error actualizando stock');
+        } finally {
+            await connection.end();
+        }
+    }
+
     // Eliminar medicamento (soft delete)
     async delete(id) {
         const connection = await this.getConnection();
