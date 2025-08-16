@@ -92,34 +92,35 @@ router.get('/debug/db', async (req, res) => {
 });
 
 // =====================================
-// ENDPOINT PRESENTACIONES SIMPLIFICADO
+// ENDPOINTS REALES CON MODELO
 // =====================================
 
+// Importar el modelo (CUIDADOSAMENTE)
+let Medicamento;
+try {
+  Medicamento = require('../models/Medicamento');
+  console.log('✅ Modelo Medicamento cargado exitosamente');
+} catch (error) {
+  console.error('❌ Error cargando modelo Medicamento:', error.message);
+}
+
+// Presentaciones usando el modelo real
 router.get('/presentaciones', async (req, res) => {
   console.log('🔍 Presentaciones endpoint hit');
   
   try {
-    const mysql = require('mysql2/promise');
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
     
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT || 3306,
-      timeout: 10000
-    });
+    console.log('🔍 Llamando Medicamento.getPresentaciones()...');
+    const presentaciones = await Medicamento.getPresentaciones();
     
-    console.log('🔍 Ejecutando query presentaciones...');
-    const [rows] = await connection.execute('SELECT * FROM presentaciones WHERE activo = 1 ORDER BY nombre');
-    
-    await connection.end();
-    console.log('🔍 Query presentaciones exitosa');
+    console.log('🔍 Presentaciones obtenidas:', presentaciones.length);
     
     res.json({
       success: true,
-      data: rows,
-      count: rows.length,
+      data: presentaciones,
       timestamp: new Date().toISOString()
     });
     
@@ -128,6 +129,62 @@ router.get('/presentaciones', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error obteniendo presentaciones',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Laboratorios usando el modelo real
+router.get('/laboratorios', async (req, res) => {
+  console.log('🔍 Laboratorios endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+    
+    const laboratorios = await Medicamento.getLaboratorios();
+    
+    res.json({
+      success: true,
+      data: laboratorios,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en laboratorios:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error obteniendo laboratorios',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Stats usando el modelo real
+router.get('/stats', async (req, res) => {
+  console.log('🔍 Stats endpoint hit');
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+    
+    const stats = await Medicamento.getStats();
+    
+    res.json({
+      success: true,
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error obteniendo estadísticas',
       error: error.message,
       timestamp: new Date().toISOString()
     });
