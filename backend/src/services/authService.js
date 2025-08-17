@@ -1,327 +1,235 @@
 // src/services/authService.js
-// Servicio de autenticación JWT para Sistema Hidrocolon
-// Maneja login, logout, generación de tokens y validaciones
+// VERSIÓN CON LOGS BRUTALES PARA DEBUGGEAR
 
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import axios from 'axios'
 
-class AuthService {
-    constructor() {
-        // Configuración JWT desde variables de entorno
-        this.jwtSecret = process.env.JWT_SECRET || 'hidrocolon_jwt_secret_super_seguro_2025';
-        this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
-        this.jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-        
-        // Lista negra de tokens (en memoria - en producción usar Redis)
-        this.tokenBlacklist = new Set();
-        
-        console.log('🔐 AuthService inicializado');
+const api = axios.create({
+  baseURL: import.meta.env.PROD 
+    ? 'https://webapp-hidrocolon-production.up.railway.app/api'
+    : '/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
+    console.log('🚀 REQUEST:', config.method.toUpperCase(), config.url)
+    return config
+  },
+  (error) => {
+    console.error('❌ REQUEST ERROR:', error)
+    return Promise.reject(error)
+  }
+)
 
-    // Generar token JWT con información del usuario
-    generateToken(user) {
-        try {
-            const payload = {
-                id: user.id,
-                usuario: user.usuario,
-                rol_id: user.rol_id,
-                rol_nombre: user.rol_nombre,
-                nombres: user.nombres,
-                apellidos: user.apellidos,
-                permisos: user.rol_permisos || {},
-                iat: Math.floor(Date.now() / 1000) // Issued at timestamp
-            };
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ RESPONSE:', response.status, response.config.url)
+    return response
+  },
+  (error) => {
+    console.error('❌ RESPONSE ERROR:', error.response?.status, error.response?.data)
+    
+    if (error.response?.status === 401) {
+      console.log('🔥 TOKEN EXPIRADO - LIMPIANDO DATOS')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user_data')
+      
+      if (window.location.pathname !== '/login') {
+        console.log('🔄 REDIRIGIENDO AL LOGIN')
+        window.location.href = '/login'
+      }
+    }
+    
+    return Promise.reject(error)
+  }
+)
 
-            const token = jwt.sign(payload, this.jwtSecret, {
-                expiresIn: this.jwtExpiresIn,
-                issuer: 'hidrocolon-system',
-                audience: 'hidrocolon-users'
-            });
-
-            return {
-                token,
-                expiresIn: this.jwtExpiresIn,
-                tokenType: 'Bearer'
-            };
-        } catch (error) {
-            console.error('❌ Error generando token JWT:', error.message);
-            throw new Error('Error generando token de autenticación');
+export const authService = {
+  async login(usuario, password) {
+    try {
+      console.log('🔐 ===== INICIANDO LOGIN =====')
+      console.log('👤 Usuario:', usuario)
+      
+      const response = await api.post('/auth/login', { usuario, password })
+      const { data } = response
+      
+      console.log('📦 ===== RESPUESTA COMPLETA =====')
+      console.log(JSON.stringify(data, null, 2))
+      
+      // Extraer datos
+      let userData = null
+      let accessToken = null
+      let refreshToken = null
+      
+      if (data.success && data.data) {
+        userData = data.data.user
+        if (data.data.tokens) {
+          accessToken = data.data.tokens.accessToken
+          refreshToken = data.data.tokens.refreshToken
+        } else {
+          accessToken = data.data.accessToken
+          refreshToken = data.data.refreshToken
         }
+      } else if (data.user) {
+        userData = data.user
+        accessToken = data.accessToken
+        refreshToken = data.refreshToken
+      }
+      
+      console.log('🔍 ===== DATOS EXTRAÍDOS =====')
+      console.log('userData:', userData)
+      console.log('accessToken length:', accessToken?.length)
+      console.log('refreshToken length:', refreshToken?.length)
+      
+      if (!accessToken) {
+        throw new Error('No se recibió token de acceso')
+      }
+      if (!userData) {
+        throw new Error('No se recibieron datos del usuario')
+      }
+      
+      // Guardar en localStorage
+      console.log('💾 ===== GUARDANDO EN LOCALSTORAGE =====')
+      localStorage.setItem('access_token', accessToken)
+      localStorage.setItem('user_data', JSON.stringify(userData))
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken)
+      }
+      
+      // VERIFICACIÓN INMEDIATA BRUTAL
+      console.log('🔥 ===== VERIFICACIÓN INMEDIATA =====')
+      const tokenGuardado = localStorage.getItem('access_token')
+      const userDataGuardado = localStorage.getItem('user_data')
+      
+      console.log('Token guardado:', !!tokenGuardado, tokenGuardado?.length)
+      console.log('UserData guardado:', !!userDataGuardado)
+      console.log('isAuthenticated() resultado:', this.isAuthenticated())
+      
+      if (!this.isAuthenticated()) {
+        console.error('🚨 FALLO CRÍTICO: isAuthenticated() = false después del login')
+        console.log('localStorage.access_token:', localStorage.getItem('access_token'))
+        console.log('localStorage.user_data:', localStorage.getItem('user_data'))
+      } else {
+        console.log('✅ ÉXITO: isAuthenticated() = true')
+      }
+      
+      return {
+        user: userData,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        success: true
+      }
+      
+    } catch (error) {
+      console.error('❌ ===== ERROR EN LOGIN =====')
+      console.error(error)
+      
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user_data')
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message ||
+                          'Error de conexión'
+      throw new Error(errorMessage)
     }
+  },
 
-    // Generar refresh token
-    generateRefreshToken(user) {
-        try {
-            const payload = {
-                id: user.id,
-                usuario: user.usuario,
-                type: 'refresh',
-                iat: Math.floor(Date.now() / 1000)
-            };
-
-            const refreshToken = jwt.sign(payload, this.jwtSecret, {
-                expiresIn: this.jwtRefreshExpiresIn,
-                issuer: 'hidrocolon-system',
-                audience: 'hidrocolon-refresh'
-            });
-
-            return refreshToken;
-        } catch (error) {
-            console.error('❌ Error generando refresh token:', error.message);
-            throw new Error('Error generando refresh token');
-        }
+  async logout() {
+    try {
+      console.log('🚪 ===== LOGOUT =====')
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        await api.post('/auth/logout')
+      }
+    } catch (error) {
+      console.error('❌ Error en logout:', error)
+    } finally {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user_data')
+      console.log('🧹 Datos locales limpiados')
     }
+  },
 
-    // Verificar y decodificar token JWT
-    verifyToken(token) {
-        try {
-            // Verificar si el token está en la lista negra
-            if (this.tokenBlacklist.has(token)) {
-                throw new Error('Token invalidado');
-            }
-
-            const decoded = jwt.verify(token, this.jwtSecret, {
-                issuer: 'hidrocolon-system',
-                audience: 'hidrocolon-users'
-            });
-
-            return decoded;
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                throw new Error('Token expirado');
-            } else if (error.name === 'JsonWebTokenError') {
-                throw new Error('Token inválido');
-            } else if (error.name === 'NotBeforeError') {
-                throw new Error('Token no válido aún');
-            } else {
-                console.error('❌ Error verificando token:', error.message);
-                throw new Error('Error verificando token');
-            }
-        }
+  isAuthenticated() {
+    const token = localStorage.getItem('access_token')
+    const userData = localStorage.getItem('user_data')
+    
+    const hasToken = !!token
+    const hasUserData = !!userData
+    const isAuthenticated = hasToken && hasUserData
+    
+    console.log('🔍 ===== isAuthenticated() CHECK =====')
+    console.log('hasToken:', hasToken, 'length:', token?.length)
+    console.log('hasUserData:', hasUserData)
+    console.log('resultado final:', isAuthenticated)
+    
+    // LOG ADICIONAL si está fallando
+    if (!isAuthenticated) {
+      console.log('❌ FALLÓ isAuthenticated():')
+      console.log('  - access_token en localStorage:', localStorage.getItem('access_token'))
+      console.log('  - user_data en localStorage:', localStorage.getItem('user_data'))
     }
+    
+    return isAuthenticated
+  },
 
-    // Verificar refresh token
-    verifyRefreshToken(refreshToken) {
-        try {
-            const decoded = jwt.verify(refreshToken, this.jwtSecret, {
-                issuer: 'hidrocolon-system',
-                audience: 'hidrocolon-refresh'
-            });
-
-            if (decoded.type !== 'refresh') {
-                throw new Error('Token de refresh inválido');
-            }
-
-            return decoded;
-        } catch (error) {
-            console.error('❌ Error verificando refresh token:', error.message);
-            throw new Error('Refresh token inválido o expirado');
-        }
+  getUser() {
+    try {
+      const userData = localStorage.getItem('user_data')
+      if (!userData) {
+        console.log('❌ No hay user_data en localStorage')
+        return null
+      }
+      
+      const user = JSON.parse(userData)
+      console.log('👤 Usuario obtenido:', user.nombres || user.usuario)
+      return user
+    } catch (error) {
+      console.error('❌ Error parseando user_data:', error)
+      localStorage.removeItem('user_data')
+      return null
     }
+  },
 
-    // Proceso completo de login
-    async login(usuario, password) {
-        try {
-            // 1. Validar formato de usuario
-            if (!User.validateUserFormat(usuario)) {
-                throw new Error('Formato de usuario inválido. Use: [rol][iniciales]@hidrocolon.com');
-            }
-
-            // 2. Buscar usuario en la base de datos
-            const user = await User.findByEmail(usuario);
-            if (!user) {
-                throw new Error('Usuario no encontrado');
-            }
-
-            // 3. Verificar que el usuario esté activo
-            if (!user.activo) {
-                throw new Error('Usuario desactivado. Contacte al administrador');
-            }
-
-            // 4. Validar contraseña
-            const isPasswordValid = await User.validatePassword(password, user.password_hash);
-            if (!isPasswordValid) {
-                throw new Error('Contraseña incorrecta');
-            }
-
-            // 5. Actualizar último login
-            await User.updateLastLogin(user.id);
-
-            // 6. Generar tokens
-            const tokenData = this.generateToken(user);
-            const refreshToken = this.generateRefreshToken(user);
-
-            // 7. Preparar datos de respuesta (sin contraseña)
-            const userData = {
-                id: user.id,
-                usuario: user.usuario,
-                nombres: user.nombres,
-                apellidos: user.apellidos,
-                rol: {
-                    id: user.rol_id,
-                    nombre: user.rol_nombre,
-                    descripcion: user.rol_descripcion,
-                    permisos: user.rol_permisos
-                },
-                ultimo_login: new Date().toISOString()
-            };
-
-            console.log(`✅ Login exitoso para usuario: ${usuario}`);
-
-            return {
-                user: userData,
-                accessToken: tokenData.token,
-                refreshToken: refreshToken,
-                expiresIn: tokenData.expiresIn,
-                tokenType: tokenData.tokenType
-            };
-
-        } catch (error) {
-            console.error(`❌ Error en login para usuario ${usuario}:`, error.message);
-            throw error;
-        }
+  async verifyToken() {
+    try {
+      const response = await api.get('/auth/verify')
+      console.log('✅ Token verificado con servidor')
+      return response.data
+    } catch (error) {
+      console.error('❌ Token inválido:', error.response?.data)
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user_data')
+      return null
     }
+  },
 
-    // Proceso de logout
-    async logout(token) {
-        try {
-            // Agregar token a la lista negra
-            this.tokenBlacklist.add(token);
-            
-            console.log('✅ Logout exitoso - Token invalidado');
-            return { message: 'Logout exitoso' };
-        } catch (error) {
-            console.error('❌ Error en logout:', error.message);
-            throw new Error('Error cerrando sesión');
-        }
+  async getCurrentUser() {
+    try {
+      const response = await api.get('/auth/me')
+      const userData = response.data.data?.user || response.data.user || response.data
+      if (userData) {
+        localStorage.setItem('user_data', JSON.stringify(userData))
+        console.log('🔄 Datos de usuario actualizados')
+      }
+      return userData
+    } catch (error) {
+      console.error('❌ Error obteniendo usuario actual:', error)
+      throw error
     }
-
-    // Refrescar token de acceso
-    async refreshAccessToken(refreshToken) {
-        try {
-            // 1. Verificar refresh token
-            const decoded = this.verifyRefreshToken(refreshToken);
-
-            // 2. Buscar usuario actualizado
-            const user = await User.findById(decoded.id);
-            if (!user) {
-                throw new Error('Usuario no encontrado');
-            }
-
-            if (!user.activo) {
-                throw new Error('Usuario desactivado');
-            }
-
-            // 3. Generar nuevo access token
-            const tokenData = this.generateToken(user);
-
-            console.log(`✅ Token refrescado para usuario ID: ${user.id}`);
-
-            return {
-                accessToken: tokenData.token,
-                expiresIn: tokenData.expiresIn,
-                tokenType: tokenData.tokenType
-            };
-
-        } catch (error) {
-            console.error('❌ Error refrescando token:', error.message);
-            throw error;
-        }
-    }
-
-    // Validar permisos específicos
-    hasPermission(userPermissions, requiredPermission) {
-        if (!userPermissions || typeof userPermissions !== 'object') {
-            return false;
-        }
-
-        // Si es administrador, tiene todos los permisos
-        if (userPermissions.admin === true) {
-            return true;
-        }
-
-        // Verificar permiso específico
-        return userPermissions[requiredPermission] === true;
-    }
-
-    // Validar múltiples permisos (AND)
-    hasAllPermissions(userPermissions, requiredPermissions) {
-        if (!Array.isArray(requiredPermissions)) {
-            return this.hasPermission(userPermissions, requiredPermissions);
-        }
-
-        return requiredPermissions.every(permission => 
-            this.hasPermission(userPermissions, permission)
-        );
-    }
-
-    // Validar al menos uno de los permisos (OR)
-    hasAnyPermission(userPermissions, requiredPermissions) {
-        if (!Array.isArray(requiredPermissions)) {
-            return this.hasPermission(userPermissions, requiredPermissions);
-        }
-
-        return requiredPermissions.some(permission => 
-            this.hasPermission(userPermissions, permission)
-        );
-    }
-
-    // Validar si el usuario tiene un rol específico
-    hasRole(userRoleName, requiredRole) {
-        return userRoleName === requiredRole;
-    }
-
-    // Obtener información del token sin verificar expiración (para debugging)
-    decodeToken(token) {
-        try {
-            return jwt.decode(token, { complete: true });
-        } catch (error) {
-            console.error('❌ Error decodificando token:', error.message);
-            return null;
-        }
-    }
-
-    // Limpiar tokens expirados de la lista negra (ejecutar periódicamente)
-    cleanExpiredTokens() {
-        const now = Math.floor(Date.now() / 1000);
-        const tokensToRemove = [];
-
-        for (const token of this.tokenBlacklist) {
-            try {
-                const decoded = jwt.decode(token);
-                if (decoded && decoded.exp && decoded.exp < now) {
-                    tokensToRemove.push(token);
-                }
-            } catch (error) {
-                // Token malformado, remover
-                tokensToRemove.push(token);
-            }
-        }
-
-        tokensToRemove.forEach(token => this.tokenBlacklist.delete(token));
-        
-        if (tokensToRemove.length > 0) {
-            console.log(`🧹 Limpieza: ${tokensToRemove.length} tokens expirados removidos`);
-        }
-    }
-
-    // Obtener estadísticas del servicio de autenticación
-    getStats() {
-        return {
-            blacklistedTokens: this.tokenBlacklist.size,
-            jwtExpiresIn: this.jwtExpiresIn,
-            refreshExpiresIn: this.jwtRefreshExpiresIn,
-            uptime: process.uptime()
-        };
-    }
+  }
 }
 
-// Crear instancia única del servicio (Singleton)
-const authService = new AuthService();
-
-// Limpiar tokens expirados cada 6 horas
-setInterval(() => {
-    authService.cleanExpiredTokens();
-}, 6 * 60 * 60 * 1000);
-
-module.exports = authService;
+export { api }

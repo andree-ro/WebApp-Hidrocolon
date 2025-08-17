@@ -1,9 +1,15 @@
 // src/routes/farmacia.js
-// VERSIÓN CORREGIDA CON TODOS LOS ENDPOINTS FUNCIONANDO
+// VERSIÓN CORREGIDA CON IMPORT CORRECTO
 
 const express = require('express');
 const router = express.Router();
-const { simpleAuth } = require('../middleware/auth');
+
+// IMPORT CORRECTO DEL MIDDLEWARE
+const authMiddleware = require('../middleware/authMiddleware');
+// Usar el método authenticate() del middleware existente
+const simpleAuth = authMiddleware.authenticate();
+
+console.log('💊 Farmacia routes cargadas');
 
 // Obtener modelo
 let Medicamento;
@@ -543,134 +549,9 @@ router.get('/debug/auth', simpleAuth, async (req, res) => {
     success: true,
     message: 'Auth funcionando',
     hasAuthHeader: !!authHeader,
+    user: req.user || 'No user data',
     timestamp: new Date().toISOString()
   });
-});
-
-// DEBUG: Insertar datos de prueba
-router.post('/debug/insert-sample-data', async (req, res) => {
-  console.log('🧪 Insertando datos de prueba');
-  
-  try {
-    if (!Medicamento) {
-      throw new Error('Modelo Medicamento no disponible');
-    }
-
-    // Datos de medicamentos de prueba
-    const medicamentosPrueba = [
-      {
-        nombre: 'Paracetamol 500mg',
-        presentacion_id: 1, // Unidad
-        laboratorio_id: 1, // Farmex
-        existencias: 100,
-        fecha_vencimiento: '2025-12-31',
-        precio_tarjeta: 5.00,
-        precio_efectivo: 4.50,
-        costo_compra: 3.00,
-        porcentaje_comision: 10.0,
-        indicaciones: 'Analgésico y antipirético',
-        contraindicaciones: 'Hipersensibilidad al paracetamol',
-        dosis: '1 tableta cada 8 horas'
-      },
-      {
-        nombre: 'Ibuprofeno 400mg',
-        presentacion_id: 1, // Unidad
-        laboratorio_id: 2, // Bonin
-        existencias: 50,
-        fecha_vencimiento: '2025-10-15',
-        precio_tarjeta: 8.00,
-        precio_efectivo: 7.50,
-        costo_compra: 5.00,
-        porcentaje_comision: 12.0,
-        indicaciones: 'Antiinflamatorio no esteroideo',
-        contraindicaciones: 'Úlcera péptica activa',
-        dosis: '1 tableta cada 12 horas'
-      },
-      {
-        nombre: 'Amoxicilina 500mg',
-        presentacion_id: 4, // Frasco Pastillas
-        laboratorio_id: 3, // Dipronat
-        existencias: 25,
-        fecha_vencimiento: '2025-08-20',
-        precio_tarjeta: 15.00,
-        precio_efectivo: 14.00,
-        costo_compra: 10.00,
-        porcentaje_comision: 8.0,
-        indicaciones: 'Antibiótico de amplio espectro',
-        contraindicaciones: 'Alergia a penicilinas',
-        dosis: '1 cápsula cada 8 horas'
-      },
-      {
-        nombre: 'Vitamina C 1000mg',
-        presentacion_id: 1, // Unidad
-        laboratorio_id: 4, // Reckeweg
-        existencias: 200,
-        fecha_vencimiento: '2026-03-15',
-        precio_tarjeta: 3.00,
-        precio_efectivo: 2.50,
-        costo_compra: 1.50,
-        porcentaje_comision: 15.0,
-        indicaciones: 'Suplemento vitamínico',
-        contraindicaciones: 'Hipersensibilidad al ácido ascórbico',
-        dosis: '1 tableta al día'
-      },
-      {
-        nombre: 'Jarabe para la Tos',
-        presentacion_id: 7, // Frasco Jarabe
-        laboratorio_id: 5, // Praxis
-        existencias: 8,
-        fecha_vencimiento: '2025-06-30',
-        precio_tarjeta: 12.00,
-        precio_efectivo: 11.00,
-        costo_compra: 7.00,
-        porcentaje_comision: 20.0,
-        indicaciones: 'Antitusivo y expectorante',
-        contraindicaciones: 'Menores de 2 años',
-        dosis: '5ml cada 6 horas'
-      }
-    ];
-
-    const resultados = [];
-    
-    for (const medicamento of medicamentosPrueba) {
-      try {
-        const nuevoMedicamento = await Medicamento.create(medicamento);
-        resultados.push({
-          nombre: medicamento.nombre,
-          id: nuevoMedicamento.id,
-          status: 'creado'
-        });
-        console.log(`✅ Creado: ${medicamento.nombre} (ID: ${nuevoMedicamento.id})`);
-      } catch (error) {
-        resultados.push({
-          nombre: medicamento.nombre,
-          error: error.message,
-          status: 'error'
-        });
-        console.log(`❌ Error creando ${medicamento.nombre}: ${error.message}`);
-      }
-    }
-    
-    res.json({
-      success: true,
-      message: 'Datos de prueba insertados',
-      data: {
-        total_intentos: medicamentosPrueba.length,
-        exitosos: resultados.filter(r => r.status === 'creado').length,
-        errores: resultados.filter(r => r.status === 'error').length,
-        resultados: resultados
-      },
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('❌ Error insertando datos de prueba:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
 });
 
 // =====================================
