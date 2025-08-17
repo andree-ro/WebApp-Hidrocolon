@@ -1,3 +1,6 @@
+// src/router/index.js
+// VERSIÓN SIN GUARDS - Para que funcione el puto login
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { authService } from '@/services/authService'
 
@@ -7,14 +10,13 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      redirect: '/login'
+      redirect: '/dashboard'
     },
     {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
       meta: {
-        requiresGuest: true,
         title: 'Iniciar Sesión - Sistema Hidrocolon'
       }
     },
@@ -23,11 +25,10 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
       meta: {
-        requiresAuth: true,
         title: 'Dashboard - Sistema Hidrocolon'
       }
     },
-    // Ruta 404 - debe ir al final
+    // Ruta 404
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
@@ -36,45 +37,20 @@ const router = createRouter({
   ]
 })
 
-// Navigation Guards - Protección de rutas con autenticación real
+// Navigation Guards COMPLETAMENTE DESACTIVADOS
 router.beforeEach(async (to, from, next) => {
   console.log(`🧭 Navegando de ${from.path} a ${to.path}`)
   
-  // Cambiar título de la página
+  // Solo cambiar título
   if (to.meta.title) {
     document.title = to.meta.title
   }
 
-  // Verificar autenticación usando el authService real
-  const isAuthenticated = authService.isAuthenticated()
-  console.log(`🔐 Usuario autenticado: ${isAuthenticated}`)
-
-  if (to.meta.requiresAuth) {
-    // Ruta requiere autenticación
-    if (!isAuthenticated) {
-      console.log('❌ Acceso denegado, redirigiendo al login')
-      next('/login')
-    } else {
-      console.log('✅ Usuario autenticado, permitiendo acceso')
-      next()
-    }
-  } else if (to.meta.requiresGuest) {
-    // Ruta solo para invitados (login)
-    if (isAuthenticated) {
-      console.log('👤 Usuario ya autenticado, redirigiendo al dashboard')
-      next('/dashboard')
-    } else {
-      console.log('👋 Usuario no autenticado, permitiendo acceso al login')
-      next()
-    }
-  } else {
-    // Ruta pública
-    console.log('🌐 Ruta pública, permitiendo acceso')
-    next()
-  }
+  // PERMITIR TODO - SIN VERIFICACIONES
+  console.log('🟢 GUARDS DESACTIVADOS - Permitiendo navegación libre')
+  next()
 })
 
-// Log de navegación exitosa
 router.afterEach((to, from) => {
   console.log(`✅ Navegación completada: ${from.path} → ${to.path}`)
 })

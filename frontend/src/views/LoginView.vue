@@ -56,7 +56,12 @@
 
           <!-- Success Message -->
           <div v-if="success" class="alert-success">
-            {{ success }}
+            <div class="flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              {{ success }}
+            </div>
           </div>
 
           <!-- Submit Button -->
@@ -90,8 +95,8 @@
             </div>
           </div>
 
-          <!-- Debug button -->
-          <div class="text-center">
+          <!-- Debug button - Solo en desarrollo -->
+          <div v-if="isDevelopment" class="text-center">
             <button
               type="button"
               @click="goToDashboard"
@@ -136,8 +141,8 @@ export default {
   data() {
     return {
       form: {
-        usuario: 'admin@hidrocolon.com', // Pre-llenado para testing
-        password: ''
+        usuario: 'admin@hidrocolon.com',
+        password: 'admin123'
       },
       loading: false,
       error: null,
@@ -149,16 +154,19 @@ export default {
       }
     }
   },
+  computed: {
+    isDevelopment() {
+      return import.meta.env.DEV
+    }
+  },
   async mounted() {
-    console.log('🔄 LoginView montado, verificando estado...')
-    
-    // Verificar conexión con API al cargar
+    console.log('🔄 LoginView montado')
     await this.checkApiConnection()
     
-    // Si ya está autenticado, redirigir al dashboard
+    // Si ya está autenticado, redirigir
     if (authService.isAuthenticated()) {
       console.log('👤 Usuario ya autenticado, redirigiendo...')
-      await this.redirectToDashboard()
+      this.$router.replace('/dashboard')
     }
   },
   methods: {
@@ -166,15 +174,11 @@ export default {
       try {
         console.log('🔍 Verificando conexión con Railway...')
         
-        // Hacer una petición simple - usar endpoint que sabemos que existe
         const response = await fetch('/api/auth/verify', { 
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Content-Type': 'application/json' }
         })
         
-        // Incluso si da 401 (no autorizado), significa que el server responde
         if (response.status === 401 || response.status === 200) {
           this.apiStatus = {
             connected: true,
@@ -190,32 +194,7 @@ export default {
           message: 'Conectando...'
         }
         console.warn('⚠️ Error conectando con Railway:', error)
-        // No es crítico, aún se puede intentar login
       }
-    },
-
-    async redirectToDashboard() {
-      try {
-        console.log('🚀 Intentando redirección al dashboard...')
-        
-        // Método 1: Router push
-        await this.$router.push('/dashboard')
-        console.log('✅ Redirección con router exitosa')
-        
-      } catch (error) {
-        console.warn('⚠️ Router push falló, intentando redirección forzada:', error)
-        
-        // Método 2: Redirección forzada
-        window.location.href = '/dashboard'
-      }
-    },
-
-    // Método de debug para ir directamente al dashboard
-    goToDashboard() {
-      console.log('🔧 Redirección manual al dashboard...')
-      this.$router.push('/dashboard').catch(() => {
-        window.location.href = '/dashboard'
-      })
     },
 
     async handleLogin() {
@@ -224,30 +203,46 @@ export default {
       this.success = null
 
       try {
-        console.log('🔐 Iniciando login con API real...')
+        console.log('🔐 Iniciando login...')
         
-        // Usar el servicio de autenticación
         const response = await authService.login(this.form.usuario, this.form.password)
         
         this.success = `¡Bienvenido ${response.user?.nombres || 'Usuario'}!`
+        console.log('✅ Login exitoso!')
         
-        console.log('✅ Login exitoso, redirigiendo al dashboard...')
-        console.log('🔍 Response completo:', response)
+        // CRÍTICO: Marcar login reciente para bypass de guards
+        if (window.markRecentLogin) {
+          window.markRecentLogin()
+        }
         
-        // Esperar un poco para mostrar mensaje de éxito
-        setTimeout(async () => {
-          await this.redirectToDashboard()
-        }, 800)
+        // Verificar que isAuthenticated funcione
+        const isAuth = authService.isAuthenticated()
+        console.log('🔍 Verificación post-login:', isAuth)
+        
+        // Esperar un momento y redirigir
+        setTimeout(() => {
+          console.log('🚀 Redirigiendo al dashboard...')
+          this.$router.push('/dashboard')
+        }, 1000)
         
       } catch (error) {
         console.error('❌ Error en login:', error.message)
         this.error = error.message
-        
-        // Limpiar campos en caso de error
         this.form.password = ''
       } finally {
         this.loading = false
       }
+    },
+
+    // Método de debug para ir directamente al dashboard
+    goToDashboard() {
+      console.log('🔧 Redirección manual al dashboard...')
+      if (window.markRecentLogin) {
+        window.markRecentLogin()
+      }
+      this.$router.replace('/dashboard').catch(() => {
+        window.location.replace('/dashboard')
+      })
     },
 
     showForgotPassword() {
@@ -256,3 +251,21 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* Animación para el mensaje de éxito */
+.alert-success {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

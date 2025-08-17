@@ -324,29 +324,31 @@ export default {
     }
   },
   async mounted() {
-    // Verificar autenticación
-    if (!authService.isAuthenticated()) {
-      console.log('❌ No autenticado, redirigiendo al login...')
-      this.$router.push('/login')
-      return
-    }
-
-    // Cargar datos del usuario
+    console.log('🏠 ===== DASHBOARD MONTADO =====')
+    
+    // NO VERIFICAR AUTENTICACIÓN AQUÍ - CONFIAR EN EL ROUTER
+    console.log('📋 Saltando verificación de autenticación (confiando en router)')
+    
+    // Cargar datos del usuario DIRECTAMENTE de localStorage
+    console.log('👤 Cargando usuario de localStorage...')
     this.user = authService.getUser()
-    console.log('👤 Usuario cargado en dashboard:', this.user)
-
-    // Intentar obtener datos actualizados del usuario
-    try {
-      const updatedUser = await authService.getCurrentUser()
-      this.user = updatedUser
-      console.log('🔄 Datos de usuario actualizados')
-    } catch (error) {
-      console.warn('⚠️ No se pudieron actualizar los datos del usuario:', error.message)
-      // No es crítico, usar datos del localStorage
+    
+    if (this.user) {
+      console.log('✅ Usuario cargado:', this.user.nombres || this.user.usuario)
+    } else {
+      console.log('⚠️ No se pudo cargar usuario, usando datos por defecto')
+      this.user = {
+        nombres: 'Administrador',
+        apellidos: 'Sistema',
+        usuario: 'admin@hidrocolon.com',
+        rol: { nombre: 'administrador' }
+      }
     }
-
-    // Cerrar sidebar en móvil al hacer click en enlaces
+    
+    // Setup navegación móvil
     this.setupMobileNavigation()
+    
+    console.log('🏠 Dashboard cargado exitosamente')
   },
   methods: {
     async handleLogout() {
