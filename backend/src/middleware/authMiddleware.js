@@ -1,10 +1,7 @@
 // src/middleware/authMiddleware.js
-// Middleware de autenticación para Sistema Hidrocolon
-// Protege rutas con JWT y valida permisos/roles
+// VERSIÓN ULTRA SIMPLE - Sin dependencia de validators complejos
 
-// CAMBIO: Remover import de authService y usar dependencias directas
 const jwt = require('jsonwebtoken');
-const validators = require('../utils/validators');
 const User = require('../models/User');
 
 class AuthMiddleware {
@@ -12,28 +9,48 @@ class AuthMiddleware {
         console.log('🛡️ AuthMiddleware inicializado');
     }
 
-    // Middleware principal - Verificar token JWT
+    // Middleware principal - Verificar token JWT (VERSIÓN SIMPLE)
     authenticate() {
         return async (req, res, next) => {
             try {
-                // 1. Validar headers de autorización
-                const authValidation = validators.validateAuthHeaders(req.headers);
-                if (!authValidation.isValid) {
+                // 1. Obtener header de autorización
+                const authHeader = req.headers.authorization;
+                
+                if (!authHeader) {
                     return res.status(401).json({
                         success: false,
                         message: 'Token de autorización requerido',
-                        code: 'AUTH_REQUIRED',
-                        errors: authValidation.errors
+                        code: 'AUTH_REQUIRED'
                     });
                 }
 
-                // 2. Verificar token directamente con JWT
+                // 2. Verificar formato "Bearer token"
+                if (!authHeader.startsWith('Bearer ')) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Formato de autorización inválido. Use: Bearer <token>',
+                        code: 'INVALID_FORMAT'
+                    });
+                }
+
+                // 3. Extraer token
+                const token = authHeader.substring(7);
+                
+                if (!token) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Token no proporcionado',
+                        code: 'NO_TOKEN'
+                    });
+                }
+
+                // 4. Verificar token con JWT
                 const decoded = jwt.verify(
-                    authValidation.token,
+                    token,
                     process.env.JWT_SECRET || 'hidrocolon-secret-key'
                 );
 
-                // 3. Verificar que el usuario aún existe y está activo
+                // 5. Verificar que el usuario aún existe y está activo
                 const user = await User.findById(decoded.id);
                 if (!user) {
                     return res.status(401).json({
@@ -51,7 +68,7 @@ class AuthMiddleware {
                     });
                 }
 
-                // 4. Agregar información del usuario al request
+                // 6. Agregar información del usuario al request
                 req.user = {
                     id: user.id,
                     usuario: user.usuario,
@@ -60,10 +77,10 @@ class AuthMiddleware {
                     rol_id: user.rol_id,
                     rol_nombre: user.rol_nombre,
                     permisos: user.rol_permisos || {},
-                    token: authValidation.token
+                    token: token
                 };
 
-                // 5. Log de acceso exitoso
+                // 7. Log de acceso exitoso
                 console.log(`✅ Auth exitoso: ${user.usuario} (${user.rol_nombre}) - ${req.method} ${req.path}`);
 
                 next();
@@ -140,13 +157,11 @@ class AuthMiddleware {
         };
     }
 
-    // Middleware para validar roles específicos
+    // Middleware para validar roles específicos (SIMPLE)
     requireRole(requiredRoles) {
-        // Aceptar string único o array de roles
         const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
 
         return (req, res, next) => {
-            // Verificar que el usuario esté autenticado
             if (!req.user) {
                 return res.status(401).json({
                     success: false,
@@ -155,9 +170,8 @@ class AuthMiddleware {
                 });
             }
 
-            // Verificar si el usuario tiene alguno de los roles requeridos
             const hasRole = roles.some(role => 
-                this.hasRole(req.user.rol_nombre, role)
+                req.user.rol_nombre.toLowerCase() === role.toLowerCase()
             );
 
             if (!hasRole) {
@@ -168,65 +182,7 @@ class AuthMiddleware {
                 });
             }
 
-            console.log(`✅ Acceso autorizado: ${req.user.usuario} (${req.user.rol_nombre}) - Ruta: ${req.path}`);
-            next();
-        };
-    }
-
-    // Middleware para validar permisos específicos
-    requirePermission(requiredPermissions) {
-        // Aceptar string único o array de permisos
-        const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-
-        return (req, res, next) => {
-            // Verificar que el usuario esté autenticado
-            if (!req.user) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Autenticación requerida',
-                    code: 'AUTH_REQUIRED'
-                });
-            }
-
-            // Verificar si el usuario tiene todos los permisos requeridos
-            const hasPermissions = this.hasAllPermissions(req.user.permisos, permissions);
-
-            if (!hasPermissions) {
-                return res.status(403).json({
-                    success: false,
-                    message: `Permisos insuficientes. Requeridos: ${permissions.join(', ')}`,
-                    code: 'INSUFFICIENT_PERMISSIONS'
-                });
-            }
-
-            console.log(`✅ Permisos validados: ${req.user.usuario} - Permisos: ${permissions.join(', ')}`);
-            next();
-        };
-    }
-
-    // Middleware para validar cualquier permiso (OR)
-    requireAnyPermission(requiredPermissions) {
-        const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-
-        return (req, res, next) => {
-            if (!req.user) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Autenticación requerida',
-                    code: 'AUTH_REQUIRED'
-                });
-            }
-
-            const hasAnyPermission = this.hasAnyPermission(req.user.permisos, permissions);
-
-            if (!hasAnyPermission) {
-                return res.status(403).json({
-                    success: false,
-                    message: `Acceso denegado. Requiere al menos uno de: ${permissions.join(', ')}`,
-                    code: 'INSUFFICIENT_PERMISSIONS'
-                });
-            }
-
+            console.log(`✅ Acceso autorizado: ${req.user.usuario} (${req.user.rol_nombre})`);
             next();
         };
     }
@@ -236,44 +192,9 @@ class AuthMiddleware {
         return this.requireRole('administrador');
     }
 
-    // Middleware solo para vendedores
-    requireVendedor() {
-        return this.requireRole('vendedor');
-    }
-
     // Middleware para administrador O vendedor
     requireAdminOrVendedor() {
         return this.requireRole(['administrador', 'vendedor']);
-    }
-
-    // Middleware para validar que el usuario puede acceder a sus propios datos
-    requireOwnershipOrAdmin(userIdParam = 'id') {
-        return (req, res, next) => {
-            if (!req.user) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Autenticación requerida',
-                    code: 'AUTH_REQUIRED'
-                });
-            }
-
-            // Si es administrador, permitir acceso
-            if (this.hasRole(req.user.rol_nombre, 'administrador')) {
-                return next();
-            }
-
-            // Verificar que el usuario accede a sus propios datos
-            const requestedUserId = parseInt(req.params[userIdParam]);
-            if (req.user.id !== requestedUserId) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Acceso denegado. Solo puede acceder a sus propios datos',
-                    code: 'OWNERSHIP_REQUIRED'
-                });
-            }
-
-            next();
-        };
     }
 
     // Middleware para logging de actividad
@@ -286,95 +207,30 @@ class AuthMiddleware {
         };
     }
 
-    // Middleware para validar que el token no esté en blacklist
-    checkTokenBlacklist() {
-        return (req, res, next) => {
-            if (req.user && req.user.token) {
-                // TODO: Implementar blacklist si es necesario
-                console.log(`🔍 Token verificado: ${req.user.usuario}`);
-            }
-            next();
-        };
-    }
-
     // Combinador de middlewares para uso común
-    // Ejemplo: authMiddleware.protect(['administrador'], ['farmacia_write'])
-    protect(roles = null, permissions = null) {
+    protect(roles = null) {
         const middlewares = [this.authenticate()];
 
         if (roles) {
             middlewares.push(this.requireRole(roles));
         }
 
-        if (permissions) {
-            middlewares.push(this.requirePermission(permissions));
-        }
-
         return middlewares;
-    }
-
-    // Middleware para endpoints públicos pero con logging opcional
-    public() {
-        return [
-            this.optionalAuth(),
-            this.logActivity()
-        ];
     }
 
     // Middleware para rutas que requieren solo autenticación
     authenticated() {
-        return [
-            this.authenticate(),
-            this.logActivity()
-        ];
+        return [this.authenticate(), this.logActivity()];
     }
 
     // Middleware para rutas de administrador
     admin() {
-        return [
-            this.authenticate(),
-            this.requireAdmin(),
-            this.logActivity()
-        ];
+        return [this.authenticate(), this.requireAdmin(), this.logActivity()];
     }
 
     // Middleware para rutas de vendedor o admin
     seller() {
-        return [
-            this.authenticate(),
-            this.requireAdminOrVendedor(),
-            this.logActivity()
-        ];
-    }
-
-    // =====================================
-    // UTILIDADES INTERNAS
-    // =====================================
-
-    // Verificar si el usuario tiene un rol específico
-    hasRole(userRole, requiredRole) {
-        if (!userRole || !requiredRole) return false;
-        return userRole.toLowerCase() === requiredRole.toLowerCase();
-    }
-
-    // Verificar si el usuario tiene todos los permisos requeridos
-    hasAllPermissions(userPermissions, requiredPermissions) {
-        if (!userPermissions || !requiredPermissions) return false;
-        if (!Array.isArray(requiredPermissions)) requiredPermissions = [requiredPermissions];
-        
-        return requiredPermissions.every(permission => 
-            userPermissions[permission] === true
-        );
-    }
-
-    // Verificar si el usuario tiene alguno de los permisos requeridos
-    hasAnyPermission(userPermissions, requiredPermissions) {
-        if (!userPermissions || !requiredPermissions) return false;
-        if (!Array.isArray(requiredPermissions)) requiredPermissions = [requiredPermissions];
-        
-        return requiredPermissions.some(permission => 
-            userPermissions[permission] === true
-        );
+        return [this.authenticate(), this.requireAdminOrVendedor(), this.logActivity()];
     }
 }
 
