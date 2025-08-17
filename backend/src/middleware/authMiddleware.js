@@ -2,7 +2,8 @@
 // Middleware de autenticación para Sistema Hidrocolon
 // Protege rutas con JWT y valida permisos/roles
 
-const authService = require('../services/authService');
+// CAMBIO: Remover import de authService y usar dependencias directas
+const jwt = require('jsonwebtoken');
 const validators = require('../utils/validators');
 const User = require('../models/User');
 
@@ -26,8 +27,11 @@ class AuthMiddleware {
                     });
                 }
 
-                // 2. Verificar token con el servicio
-                const decoded = authService.verifyToken(authValidation.token);
+                // 2. Verificar token directamente con JWT
+                const decoded = jwt.verify(
+                    authValidation.token,
+                    process.env.JWT_SECRET || 'hidrocolon-secret-key'
+                );
 
                 // 3. Verificar que el usuario aún existe y está activo
                 const user = await User.findById(decoded.id);
@@ -60,15 +64,22 @@ class AuthMiddleware {
                 };
 
                 // 5. Log de acceso exitoso
-                console.log(`✅ Auth exitoso: ${user.usuario} - IP: ${req.ip} - Ruta: ${req.path}`);
+                console.log(`✅ Auth exitoso: ${user.usuario} (${user.rol_nombre}) - ${req.method} ${req.path}`);
 
                 next();
 
             } catch (error) {
-                console.error(`❌ Error en autenticación: ${error.message} - IP: ${req.ip}`);
+                console.error('❌ Error en autenticación:', error.message);
 
-                // Manejo específico de errores JWT
-                if (error.message.includes('expirado')) {
+                if (error.name === 'JsonWebTokenError') {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Token inválido',
+                        code: 'INVALID_TOKEN'
+                    });
+                }
+
+                if (error.name === 'TokenExpiredError') {
                     return res.status(401).json({
                         success: false,
                         message: 'Token expirado',
@@ -76,45 +87,32 @@ class AuthMiddleware {
                     });
                 }
 
-                if (error.message.includes('inválido') || error.message.includes('invalidado')) {
-                    return res.status(401).json({
-                        success: false,
-                        message: 'Token inválido',
-                        code: 'TOKEN_INVALID'
-                    });
-                }
-
-                return res.status(401).json({
+                return res.status(500).json({
                     success: false,
-                    message: 'Error de autenticación',
+                    message: 'Error interno de autenticación',
                     code: 'AUTH_ERROR'
                 });
             }
         };
     }
 
-    // Middleware opcional - Si hay token, lo valida, si no, continúa
+    // Middleware opcional - No requiere autenticación pero agrega info si está disponible
     optionalAuth() {
         return async (req, res, next) => {
             try {
-                // Verificar si hay header de autorización
-                const authHeader = req.headers.authorization || req.headers.Authorization;
+                const authHeader = req.headers.authorization;
                 
-                if (!authHeader) {
-                    // No hay token, continuar sin autenticación
+                if (!authHeader || !authHeader.startsWith('Bearer ')) {
                     req.user = null;
                     return next();
                 }
 
-                // Si hay token, validarlo
-                const authValidation = validators.validateAuthHeaders(req.headers);
-                if (!authValidation.isValid) {
-                    req.user = null;
-                    return next();
-                }
+                const token = authHeader.substring(7);
+                const decoded = jwt.verify(
+                    token,
+                    process.env.JWT_SECRET || 'hidrocolon-secret-key'
+                );
 
-                // Verificar token
-                const decoded = authService.verifyToken(authValidation.token);
                 const user = await User.findById(decoded.id);
 
                 if (user && user.activo) {
@@ -126,7 +124,7 @@ class AuthMiddleware {
                         rol_id: user.rol_id,
                         rol_nombre: user.rol_nombre,
                         permisos: user.rol_permisos || {},
-                        token: authValidation.token
+                        token: token
                     };
                 } else {
                     req.user = null;
@@ -159,7 +157,7 @@ class AuthMiddleware {
 
             // Verificar si el usuario tiene alguno de los roles requeridos
             const hasRole = roles.some(role => 
-                authService.hasRole(req.user.rol_nombre, role)
+                this.hasRole(req.user.rol_nombre, role)
             );
 
             if (!hasRole) {
@@ -191,7 +189,7 @@ class AuthMiddleware {
             }
 
             // Verificar si el usuario tiene todos los permisos requeridos
-            const hasPermissions = authService.hasAllPermissions(req.user.permisos, permissions);
+            const hasPermissions = this.hasAllPermissions(req.user.permisos, permissions);
 
             if (!hasPermissions) {
                 return res.status(403).json({
@@ -219,7 +217,7 @@ class AuthMiddleware {
                 });
             }
 
-            const hasAnyPermission = authService.hasAnyPermission(req.user.permisos, permissions);
+            const hasAnyPermission = this.hasAnyPermission(req.user.permisos, permissions);
 
             if (!hasAnyPermission) {
                 return res.status(403).json({
@@ -260,7 +258,7 @@ class AuthMiddleware {
             }
 
             // Si es administrador, permitir acceso
-            if (authService.hasRole(req.user.rol_nombre, 'administrador')) {
+            if (this.hasRole(req.user.rol_nombre, 'administrador')) {
                 return next();
             }
 
@@ -292,8 +290,7 @@ class AuthMiddleware {
     checkTokenBlacklist() {
         return (req, res, next) => {
             if (req.user && req.user.token) {
-                // El authService.verifyToken ya verifica la blacklist
-                // Este middleware es redundante pero útil para logging
+                // TODO: Implementar blacklist si es necesario
                 console.log(`🔍 Token verificado: ${req.user.usuario}`);
             }
             next();
@@ -348,6 +345,36 @@ class AuthMiddleware {
             this.requireAdminOrVendedor(),
             this.logActivity()
         ];
+    }
+
+    // =====================================
+    // UTILIDADES INTERNAS
+    // =====================================
+
+    // Verificar si el usuario tiene un rol específico
+    hasRole(userRole, requiredRole) {
+        if (!userRole || !requiredRole) return false;
+        return userRole.toLowerCase() === requiredRole.toLowerCase();
+    }
+
+    // Verificar si el usuario tiene todos los permisos requeridos
+    hasAllPermissions(userPermissions, requiredPermissions) {
+        if (!userPermissions || !requiredPermissions) return false;
+        if (!Array.isArray(requiredPermissions)) requiredPermissions = [requiredPermissions];
+        
+        return requiredPermissions.every(permission => 
+            userPermissions[permission] === true
+        );
+    }
+
+    // Verificar si el usuario tiene alguno de los permisos requeridos
+    hasAnyPermission(userPermissions, requiredPermissions) {
+        if (!userPermissions || !requiredPermissions) return false;
+        if (!Array.isArray(requiredPermissions)) requiredPermissions = [requiredPermissions];
+        
+        return requiredPermissions.some(permission => 
+            userPermissions[permission] === true
+        );
     }
 }
 
