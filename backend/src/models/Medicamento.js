@@ -101,21 +101,19 @@ class Medicamento {
             }
 
             // Ordenamiento
-            query += ` ORDER BY m.nombre ASC`;
+            query += " ORDER BY m.nombre ASC";
 
-            // Paginación
+            // Paginación sin problemas de encoding
             if (options.limit && options.limit > 0) {
                 const limitValue = parseInt(options.limit);
                 const offsetValue = parseInt(options.offset) || 0;
                 
                 if (offsetValue > 0) {
-                    // Con offset: usar sintaxis LIMIT offset, count
-                    query += ` LIMIT ?, ?`;
-                    params.push(offsetValue, limitValue);
+                    // Con offset
+                    query += " LIMIT " + offsetValue + ", " + limitValue;
                 } else {
-                    // Sin offset: usar sintaxis simple LIMIT count
-                    query += ` LIMIT ?`;
-                    params.push(limitValue);
+                    // Sin offset - CONCATENACIÓN DIRECTA
+                    query += " LIMIT " + limitValue;
                 }
             }
 
