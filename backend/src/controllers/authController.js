@@ -2,7 +2,10 @@
 // Controladores de autenticación para Sistema Hidrocolon
 // Maneja todos los endpoints de login, logout, verify y refresh
 
-const authService = require('../services/authService');
+// CAMBIO: En lugar de importar authService inexistente, usar los modelos/utils directamente
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { validarEmail, validarPassword, Validators } = require('../utils/validators');
 
 class AuthController {
@@ -18,109 +21,133 @@ class AuthController {
     }
 
     // POST /api/auth/login - Iniciar sesión
-    // POST /api/auth/login - Iniciar sesión
-async login(req, res) {
-    try {
-        // 1. Validar datos de entrada - BYPASS TEMPORAL
-        const { usuario, password } = req.body;
+    async login(req, res) {
+        try {
+            // 1. Validar datos de entrada
+            const { usuario, password } = req.body;
 
-        // Validación simple temporal
-        if (!usuario || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Usuario y contraseña son requeridos'
-            });
-        }
-
-        // Validación básica de formato email
-        if (!usuario.includes('@hidrocolon.com')) {
-            return res.status(400).json({
-                success: false,
-                message: 'Usuario debe terminar en @hidrocolon.com'
-            });
-        }
-
-        // 2. Intentar login con el servicio directamente
-        const loginResult = await authService.login(usuario.toLowerCase().trim(), password);
-
-        // 3. Respuesta exitosa
-        res.status(200).json({
-            success: true,
-            message: 'Login exitoso',
-            data: {
-                user: loginResult.user,
-                tokens: {
-                    accessToken: loginResult.accessToken,
-                    refreshToken: loginResult.refreshToken,
-                    expiresIn: loginResult.expiresIn,
-                    tokenType: loginResult.tokenType
-                }
+            // Validación simple temporal
+            if (!usuario || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Usuario y contraseña son requeridos'
+                });
             }
-        });
 
-        // 4. Log de auditoría
-        console.log(`✅ Login exitoso: ${usuario} - IP: ${req.ip}`);
+            // Validación básica de formato email
+            if (!usuario.includes('@hidrocolon.com')) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Usuario debe terminar en @hidrocolon.com'
+                });
+            }
 
-    } catch (error) {
-        // Log del error (sin mostrar detalles sensibles)
-        console.error(`❌ Error en login: ${error.message} - IP: ${req.ip}`);
-
-        // Determinar tipo de error
-        if (error.message.includes('Usuario no encontrado') || 
-            error.message.includes('Contraseña incorrecta')) {
+            // 2. Buscar usuario en la base de datos
+            const user = await User.findByUsuario(usuario.toLowerCase().trim());
             
-            return res.status(401).json({
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Credenciales incorrectas'
+                });
+            }
+
+            // 3. Verificar contraseña
+            const isValidPassword = await bcrypt.compare(password, user.password);
+            
+            if (!isValidPassword) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Credenciales incorrectas'
+                });
+            }
+
+            // 4. Verificar que el usuario esté activo
+            if (!user.activo) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Usuario desactivado. Contacte al administrador'
+                });
+            }
+
+            // 5. Generar tokens JWT
+            const payload = {
+                id: user.id,
+                usuario: user.usuario,
+                rol_id: user.rol_id,
+                rol_nombre: user.rol_nombre,
+                nombres: user.nombres,
+                apellidos: user.apellidos,
+                permisos: user.rol_permisos || {}
+            };
+
+            const accessToken = jwt.sign(
+                payload,
+                process.env.JWT_SECRET || 'hidrocolon-secret-key',
+                { 
+                    expiresIn: '24h',
+                    audience: 'hidrocolon-users',
+                    issuer: 'hidrocolon-system'
+                }
+            );
+
+            const refreshToken = jwt.sign(
+                { id: user.id, usuario: user.usuario },
+                process.env.JWT_REFRESH_SECRET || 'hidrocolon-refresh-secret',
+                { expiresIn: '7d' }
+            );
+
+            // 6. Actualizar último login
+            await User.updateLastLogin(user.id);
+
+            // 7. Respuesta exitosa
+            res.status(200).json({
+                success: true,
+                message: 'Login exitoso',
+                data: {
+                    user: {
+                        id: user.id,
+                        usuario: user.usuario,
+                        nombres: user.nombres,
+                        apellidos: user.apellidos,
+                        rol_id: user.rol_id,
+                        rol_nombre: user.rol_nombre,
+                        activo: user.activo
+                    },
+                    tokens: {
+                        accessToken: accessToken,
+                        refreshToken: refreshToken,
+                        expiresIn: '24h',
+                        tokenType: 'Bearer'
+                    }
+                }
+            });
+
+            // 8. Log de auditoría
+            console.log(`✅ Login exitoso: ${usuario} - IP: ${req.ip}`);
+
+        } catch (error) {
+            // Log del error (sin mostrar detalles sensibles)
+            console.error(`❌ Error en login: ${error.message} - IP: ${req.ip}`);
+
+            return res.status(500).json({
                 success: false,
-                message: 'Credenciales incorrectas'
+                message: 'Error interno del servidor'
             });
         }
-
-        if (error.message.includes('desactivado')) {
-            return res.status(403).json({
-                success: false,
-                message: 'Usuario desactivado. Contacte al administrador'
-            });
-        }
-
-        if (error.message.includes('Formato')) {
-            return res.status(400).json({
-                success: false,
-                message: 'Formato de usuario inválido'
-            });
-        }
-
-        // Error genérico del servidor
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
     }
-}
 
     // POST /api/auth/logout - Cerrar sesión
     async logout(req, res) {
         try {
-            // 1. Validar headers de autorización
-            const authValidation = Validators.validateAuthHeaders(req.headers);
-            if (!authValidation.isValid) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Token de autorización requerido',
-                    errors: authValidation.errors
-                });
-            }
-
-            // 2. Ejecutar logout (agregar token a blacklist)
-            await authService.logout(authValidation.token);
-
-            // 3. Respuesta exitosa
+            // TODO: Implementar blacklist de tokens si es necesario
+            
             res.status(200).json({
                 success: true,
                 message: 'Logout exitoso'
             });
 
-            // 4. Log de auditoría
-            console.log(`✅ Logout exitoso - Token invalidado - IP: ${req.ip}`);
+            console.log(`✅ Logout exitoso - IP: ${req.ip}`);
 
         } catch (error) {
             console.error(`❌ Error en logout: ${error.message} - IP: ${req.ip}`);
@@ -135,75 +162,75 @@ async login(req, res) {
     // GET /api/auth/verify - Verificar token
     async verify(req, res) {
         try {
-            // 1. Validar headers de autorización
-            const authValidation = Validators.validateAuthHeaders(req.headers);
-            if (!authValidation.isValid) {
+            const authHeader = req.headers.authorization;
+            
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Token de autorización requerido',
-                    errors: authValidation.errors
+                    message: 'Token no proporcionado'
                 });
             }
 
-            // 2. Verificar token con el servicio
-            const decoded = authService.verifyToken(authValidation.token);
+            const token = authHeader.substring(7);
+            
+            const decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET || 'hidrocolon-secret-key'
+            );
 
-            // 3. Respuesta exitosa con datos del token
+            // Verificar que el usuario aún existe y está activo
+            const user = await User.findById(decoded.id);
+            
+            if (!user || !user.activo) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token inválido'
+                });
+            }
+
             res.status(200).json({
                 success: true,
                 message: 'Token válido',
                 data: {
                     user: {
-                        id: decoded.id,
-                        usuario: decoded.usuario,
-                        nombres: decoded.nombres,
-                        apellidos: decoded.apellidos,
-                        rol: {
-                            id: decoded.rol_id,
-                            nombre: decoded.rol_nombre,
-                            permisos: decoded.permisos
-                        }
-                    },
-                    tokenInfo: {
-                        issuedAt: new Date(decoded.iat * 1000),
-                        expiresAt: new Date(decoded.exp * 1000)
+                        id: user.id,
+                        usuario: user.usuario,
+                        nombres: user.nombres,
+                        apellidos: user.apellidos,
+                        rol_nombre: user.rol_nombre
                     }
                 }
             });
 
         } catch (error) {
             console.error(`❌ Error verificando token: ${error.message} - IP: ${req.ip}`);
-
-            // Errores específicos de JWT
-            if (error.message.includes('expirado')) {
+            
+            if (error.name === 'JsonWebTokenError') {
                 return res.status(401).json({
                     success: false,
-                    message: 'Token expirado',
-                    code: 'TOKEN_EXPIRED'
+                    message: 'Token inválido'
+                });
+            }
+            
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token expirado'
                 });
             }
 
-            if (error.message.includes('inválido') || error.message.includes('invalidado')) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Token inválido',
-                    code: 'TOKEN_INVALID'
-                });
-            }
-
-            res.status(401).json({
+            res.status(500).json({
                 success: false,
                 message: 'Error verificando token'
             });
         }
     }
 
-    // POST /api/auth/refresh - Renovar token de acceso
+    // POST /api/auth/refresh - Refrescar token
     async refresh(req, res) {
         try {
-            // 1. Validar que se envíe refresh token
             const { refreshToken } = req.body;
-            
+
             if (!refreshToken) {
                 return res.status(400).json({
                     success: false,
@@ -211,54 +238,56 @@ async login(req, res) {
                 });
             }
 
-            // 2. Validar formato del refresh token
-            const tokenValidation = Validators.validateJWTToken(refreshToken);
-            if (!tokenValidation.isValid) {
-                return res.status(400).json({
+            const decoded = jwt.verify(
+                refreshToken,
+                process.env.JWT_REFRESH_SECRET || 'hidrocolon-refresh-secret'
+            );
+
+            const user = await User.findById(decoded.id);
+            
+            if (!user || !user.activo) {
+                return res.status(401).json({
                     success: false,
-                    message: 'Formato de refresh token inválido',
-                    errors: tokenValidation.errors
+                    message: 'Refresh token inválido'
                 });
             }
 
-            // 3. Renovar token con el servicio
-            const newTokenData = await authService.refreshAccessToken(refreshToken);
+            // Generar nuevo access token
+            const payload = {
+                id: user.id,
+                usuario: user.usuario,
+                rol_id: user.rol_id,
+                rol_nombre: user.rol_nombre,
+                nombres: user.nombres,
+                apellidos: user.apellidos
+            };
 
-            // 4. Respuesta exitosa
+            const newAccessToken = jwt.sign(
+                payload,
+                process.env.JWT_SECRET || 'hidrocolon-secret-key',
+                { 
+                    expiresIn: '24h',
+                    audience: 'hidrocolon-users',
+                    issuer: 'hidrocolon-system'
+                }
+            );
+
             res.status(200).json({
                 success: true,
-                message: 'Token renovado exitosamente',
+                message: 'Token refrescado',
                 data: {
-                    accessToken: newTokenData.accessToken,
-                    expiresIn: newTokenData.expiresIn,
-                    tokenType: newTokenData.tokenType
+                    accessToken: newAccessToken,
+                    tokenType: 'Bearer',
+                    expiresIn: '24h'
                 }
             });
 
-            console.log(`✅ Token renovado exitosamente - IP: ${req.ip}`);
-
         } catch (error) {
-            console.error(`❌ Error renovando token: ${error.message} - IP: ${req.ip}`);
-
-            if (error.message.includes('expirado') || error.message.includes('inválido')) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Refresh token inválido o expirado',
-                    code: 'REFRESH_TOKEN_INVALID'
-                });
-            }
-
-            if (error.message.includes('Usuario no encontrado') || 
-                error.message.includes('desactivado')) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Usuario no autorizado'
-                });
-            }
-
-            res.status(500).json({
+            console.error(`❌ Error refrescando token: ${error.message} - IP: ${req.ip}`);
+            
+            res.status(401).json({
                 success: false,
-                message: 'Error renovando token'
+                message: 'Error refrescando token'
             });
         }
     }
@@ -266,32 +295,19 @@ async login(req, res) {
     // GET /api/auth/me - Obtener información del usuario actual
     async me(req, res) {
         try {
-            // Este endpoint requiere middleware de autenticación
-            // El middleware ya habrá validado el token y agregado req.user
-            
+            // El middleware de autenticación ya validó el token y agregó req.user
             if (!req.user) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Usuario no autenticado'
+                    message: 'No autenticado'
                 });
             }
 
-            // Responder con información del usuario (sin datos sensibles)
             res.status(200).json({
                 success: true,
                 message: 'Información del usuario',
                 data: {
-                    user: {
-                        id: req.user.id,
-                        usuario: req.user.usuario,
-                        nombres: req.user.nombres,
-                        apellidos: req.user.apellidos,
-                        rol: {
-                            id: req.user.rol_id,
-                            nombre: req.user.rol_nombre,
-                            permisos: req.user.permisos
-                        }
-                    }
+                    user: req.user
                 }
             });
 
@@ -305,19 +321,17 @@ async login(req, res) {
         }
     }
 
-    // POST /api/auth/change-password - Cambiar contraseña (protegido)
+    // POST /api/auth/change-password - Cambiar contraseña
     async changePassword(req, res) {
         try {
-            // Validar que el usuario esté autenticado
+            const { currentPassword, newPassword } = req.body;
+
             if (!req.user) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Usuario no autenticado'
+                    message: 'No autenticado'
                 });
             }
-
-            // Validar datos de entrada
-            const { currentPassword, newPassword } = req.body;
 
             if (!currentPassword || !newPassword) {
                 return res.status(400).json({
@@ -337,7 +351,7 @@ async login(req, res) {
             }
 
             // TODO: Implementar lógica para cambiar contraseña
-            // Esto requerirá agregar método al User model
+            // Esto requeriría agregar método al User model
             
             res.status(501).json({
                 success: false,
@@ -366,15 +380,20 @@ async login(req, res) {
             }
 
             // Verificar que sea administrador
-            if (!authService.hasRole(req.user.rol_nombre, 'administrador')) {
+            if (req.user.rol_nombre !== 'administrador') {
                 return res.status(403).json({
                     success: false,
                     message: 'Acceso denegado. Solo administradores'
                 });
             }
 
-            // Obtener estadísticas del servicio
-            const stats = authService.getStats();
+            // TODO: Implementar estadísticas reales
+            const stats = {
+                total_usuarios: 0,
+                usuarios_activos: 0,
+                logins_hoy: 0,
+                ultimo_login: new Date().toISOString()
+            };
 
             res.status(200).json({
                 success: true,
