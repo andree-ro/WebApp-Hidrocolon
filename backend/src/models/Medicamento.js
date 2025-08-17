@@ -108,14 +108,16 @@ class Medicamento {
                 const limitValue = parseInt(options.limit);
                 const offsetValue = parseInt(options.offset) || 0;
                 
-                // MySQL requiere LIMIT y OFFSET en esta sintaxis específica
-                query += ` LIMIT ?, ?`;
-                params.push(offsetValue, limitValue);  // offset primero, luego limit
-            } else if (options.limit) {
-                // Solo LIMIT sin OFFSET
-                query += ` LIMIT ?`;
-                params.push(parseInt(options.limit));
-}
+                if (offsetValue > 0) {
+                    // Con offset: usar sintaxis LIMIT offset, count
+                    query += ` LIMIT ?, ?`;
+                    params.push(offsetValue, limitValue);
+                } else {
+                    // Sin offset: usar sintaxis simple LIMIT count
+                    query += ` LIMIT ?`;
+                    params.push(limitValue);
+                }
+            }
 
             console.log('🔍 Query final construido:', query);
             console.log('🔍 Parámetros:', params);
