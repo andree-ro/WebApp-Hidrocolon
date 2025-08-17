@@ -104,15 +104,18 @@ class Medicamento {
             query += ` ORDER BY m.nombre ASC`;
 
             // Paginación
-            if (options.limit) {
-                query += ` LIMIT ?`;
-                params.push(options.limit);
+            if (options.limit && options.limit > 0) {
+                const limitValue = parseInt(options.limit);
+                const offsetValue = parseInt(options.offset) || 0;
                 
-                if (options.offset) {
-                    query += ` OFFSET ?`;
-                    params.push(options.offset);
-                }
-            }
+                // MySQL requiere LIMIT y OFFSET en esta sintaxis específica
+                query += ` LIMIT ?, ?`;
+                params.push(offsetValue, limitValue);  // offset primero, luego limit
+            } else if (options.limit) {
+                // Solo LIMIT sin OFFSET
+                query += ` LIMIT ?`;
+                params.push(parseInt(options.limit));
+}
 
             console.log('🔍 Query final construido:', query);
             console.log('🔍 Parámetros:', params);
