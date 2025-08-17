@@ -43,7 +43,7 @@ api.interceptors.response.use(
     
     // Si el token expiró, limpiar localStorage
     if (error.response?.status === 401) {
-      console.log('🔐 Token expirado, limpiando datos...')
+      console.log('🔓 Token expirado, limpiando datos...')
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user_data')
@@ -64,7 +64,7 @@ export const authService = {
   // Login - VERSIÓN CORREGIDA
   async login(usuario, password) {
     try {
-      console.log('🔐 Intentando login con:', usuario)
+      console.log('🔑 Intentando login con:', usuario)
       
       const response = await api.post('/auth/login', {
         usuario,
@@ -208,64 +208,52 @@ export const authService = {
     return isAuthenticated
   },
 
-  // Obtener datos del usuario
+  // Obtener datos del usuario desde localStorage
   getUser() {
     try {
       const userData = localStorage.getItem('user_data')
-      if (!userData) {
-        console.log('❌ No hay datos de usuario en localStorage')
-        return null
-      }
+      if (!userData) return null
       
       const user = JSON.parse(userData)
-      console.log('👤 Usuario obtenido:', user.nombres || user.usuario || 'Sin nombre')
+      console.log('👤 Usuario obtenido desde localStorage:', user.nombres || user.usuario)
       return user
     } catch (error) {
       console.error('❌ Error parseando datos de usuario:', error)
+      // Si hay error, limpiar datos corruptos
       localStorage.removeItem('user_data')
       return null
     }
   },
 
-  // Verificar token actual con el servidor
-  async verifyToken() {
-    try {
-      const response = await api.get('/auth/verify')
-      console.log('✅ Token verificado con servidor')
-      return response.data
-    } catch (error) {
-      console.error('❌ Token inválido en servidor:', error.response?.data)
-      
-      // Si el token es inválido, limpiar datos locales
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('user_data')
-      
-      return null
-    }
+  // Obtener token de acceso
+  getToken() {
+    const token = localStorage.getItem('access_token')
+    console.log('🎫 Token obtenido:', token ? `${token.substring(0, 20)}...` : 'No token')
+    return token
   },
 
-  // Obtener información actualizada del usuario
-  async getCurrentUser() {
-    try {
-      const response = await api.get('/auth/me')
-      
-      // Actualizar datos locales con la respuesta del servidor
-      const userData = response.data.data?.user || response.data.user || response.data
-      if (userData) {
-        localStorage.setItem('user_data', JSON.stringify(userData))
-        console.log('🔄 Datos de usuario actualizados desde servidor')
-      }
-      
-      return userData
-    } catch (error) {
-      console.error('❌ Error obteniendo usuario actual:', error)
-      throw error
-    }
+  // Verificar si el usuario tiene un rol específico
+  hasRole(requiredRole) {
+    const user = this.getUser()
+    if (!user || !user.rol_nombre) return false
+    
+    const hasRole = user.rol_nombre.toLowerCase() === requiredRole.toLowerCase()
+    console.log(`🔒 Verificando rol "${requiredRole}": ${hasRole}`)
+    return hasRole
+  },
+
+  // Verificar si es administrador
+  isAdmin() {
+    return this.hasRole('administrador')
+  },
+
+  // Verificar si es vendedor
+  isVendedor() {
+    return this.hasRole('vendedor')
   },
 
   // Refrescar token de acceso
-  async refreshAccessToken() {
+  async refreshToken() {
     try {
       const refreshToken = localStorage.getItem('refresh_token')
       if (!refreshToken) {
@@ -296,6 +284,35 @@ export const authService = {
       localStorage.removeItem('user_data')
       
       throw error
+    }
+  },
+
+  // Verificar token en el servidor
+  async verifyToken() {
+    try {
+      console.log('🔍 Verificando token en servidor...')
+      
+      const response = await api.get('/auth/verify')
+      
+      if (response.data.success) {
+        console.log('✅ Token válido en servidor')
+        return true
+      } else {
+        console.log('❌ Token inválido en servidor')
+        return false
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando token:', error)
+      
+      // Si el token no es válido, limpiar datos
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('user_data')
+      }
+      
+      return false
     }
   }
 }
