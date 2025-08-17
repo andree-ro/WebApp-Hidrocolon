@@ -1,50 +1,26 @@
 // src/routes/farmacia.js
-// VERSIÓN COMPLETA FUNCIONAL
+// VERSIÓN CORREGIDA CON TODOS LOS ENDPOINTS FUNCIONANDO
 
 const express = require('express');
 const router = express.Router();
+const { simpleAuth } = require('../middleware/auth');
 
-console.log('🔍 Farmacia routes cargadas');
-
-// =====================================
-// MIDDLEWARE DE AUTH SIMPLE
-// =====================================
-
-const simpleAuth = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Token de autorización requerido',
-      code: 'AUTH_REQUIRED'
-    });
-  }
-  
-  // Por ahora solo verificamos que tenga formato correcto
-  // TODO: Verificar JWT real cuando funcione
-  next();
-};
-
-// =====================================
-// IMPORTAR MODELO
-// =====================================
-
+// Obtener modelo
 let Medicamento;
 try {
   Medicamento = require('../models/Medicamento');
   console.log('✅ Modelo Medicamento cargado exitosamente');
 } catch (error) {
-  console.error('❌ Error cargando modelo Medicamento:', error.message);
+  console.error('❌ Error cargando modelo Medicamento:', error);
 }
 
 // =====================================
-// ENDPOINTS BÁSICOS (YA FUNCIONANDO)
+// ENDPOINTS DE DATOS AUXILIARES
 // =====================================
 
-// Presentaciones CON AUTH
+// GET /api/farmacia/presentaciones - Obtener presentaciones
 router.get('/presentaciones', simpleAuth, async (req, res) => {
-  console.log('🔍 Presentaciones endpoint hit');
+  console.log('📋 GET presentaciones endpoint hit');
   
   try {
     if (!Medicamento) {
@@ -60,7 +36,7 @@ router.get('/presentaciones', simpleAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Error en presentaciones:', error);
+    console.error('❌ Error obteniendo presentaciones:', error);
     res.status(500).json({
       success: false,
       message: 'Error obteniendo presentaciones',
@@ -69,9 +45,9 @@ router.get('/presentaciones', simpleAuth, async (req, res) => {
   }
 });
 
-// Laboratorios CON AUTH
+// GET /api/farmacia/laboratorios - Obtener laboratorios
 router.get('/laboratorios', simpleAuth, async (req, res) => {
-  console.log('🔍 Laboratorios endpoint hit');
+  console.log('🏭 GET laboratorios endpoint hit');
   
   try {
     if (!Medicamento) {
@@ -87,7 +63,7 @@ router.get('/laboratorios', simpleAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Error en laboratorios:', error);
+    console.error('❌ Error obteniendo laboratorios:', error);
     res.status(500).json({
       success: false,
       message: 'Error obteniendo laboratorios',
@@ -96,9 +72,9 @@ router.get('/laboratorios', simpleAuth, async (req, res) => {
   }
 });
 
-// Stats CON AUTH
+// GET /api/farmacia/stats - Obtener estadísticas
 router.get('/stats', simpleAuth, async (req, res) => {
-  console.log('🔍 Stats endpoint hit');
+  console.log('📊 GET stats endpoint hit');
   
   try {
     if (!Medicamento) {
@@ -159,21 +135,19 @@ router.get('/', simpleAuth, async (req, res) => {
       stock_bajo: stock_bajo === 'true',
       proximo_vencer: proximo_vencer === 'true',
       limit: limitNum,
-      offset
+      offset: offset
     };
 
-    console.log('🔍 Opciones de búsqueda:', options);
+    console.log('🔍 Opciones procesadas:', options);
 
     const medicamentos = await Medicamento.findAll(options);
-    
-    // Obtener total para paginación (simplificado)
-    const totalOptions = { ...options, limit: 1000, offset: 0 };
+
+    // Obtener total para paginación (query sin limit)
+    const totalOptions = { ...options, limit: null, offset: null };
     const totalMedicamentos = await Medicamento.findAll(totalOptions);
     const total = totalMedicamentos.length;
 
-    console.log(`🔍 Encontrados ${medicamentos.length} medicamentos de ${total} total`);
-
-    res.json({
+    const response = {
       success: true,
       data: {
         medicamentos,
@@ -185,7 +159,10 @@ router.get('/', simpleAuth, async (req, res) => {
         }
       },
       timestamp: new Date().toISOString()
-    });
+    };
+
+    console.log(`✅ ${medicamentos.length} medicamentos encontrados de ${total} totales`);
+    res.json(response);
 
   } catch (error) {
     console.error('❌ Error obteniendo medicamentos:', error);
@@ -199,7 +176,8 @@ router.get('/', simpleAuth, async (req, res) => {
 
 // GET /api/farmacia/:id - Obtener medicamento específico
 router.get('/:id', simpleAuth, async (req, res) => {
-  console.log('🔍 GET medicamento por ID endpoint hit');
+  console.log('👁️ GET medicamento específico endpoint hit');
+  console.log('👁️ ID:', req.params.id);
   
   try {
     if (!Medicamento) {
@@ -216,8 +194,6 @@ router.get('/:id', simpleAuth, async (req, res) => {
       });
     }
 
-    console.log('🔍 Buscando medicamento ID:', medicamentoId);
-
     const medicamento = await Medicamento.findById(medicamentoId);
 
     if (!medicamento) {
@@ -226,8 +202,6 @@ router.get('/:id', simpleAuth, async (req, res) => {
         message: 'Medicamento no encontrado'
       });
     }
-
-    console.log('🔍 Medicamento encontrado:', medicamento.nombre);
 
     res.json({
       success: true,
@@ -245,11 +219,84 @@ router.get('/:id', simpleAuth, async (req, res) => {
   }
 });
 
+// POST /api/farmacia - Crear nuevo medicamento
+router.post('/', simpleAuth, async (req, res) => {
+  console.log('➕ POST crear medicamento endpoint hit');
+  console.log('➕ Body:', req.body);
+  
+  try {
+    if (!Medicamento) {
+      throw new Error('Modelo Medicamento no disponible');
+    }
+
+    const medicamentoData = req.body;
+
+    // Validaciones básicas
+    if (!medicamentoData.nombre || !medicamentoData.nombre.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre del medicamento es obligatorio'
+      });
+    }
+
+    if (!medicamentoData.presentacion_id || isNaN(parseInt(medicamentoData.presentacion_id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe seleccionar una presentación válida'
+      });
+    }
+
+    if (!medicamentoData.laboratorio_id || isNaN(parseInt(medicamentoData.laboratorio_id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe seleccionar un laboratorio válido'
+      });
+    }
+
+    if (!medicamentoData.fecha_vencimiento) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha de vencimiento es obligatoria'
+      });
+    }
+
+    console.log('➕ Creando medicamento:', medicamentoData.nombre);
+
+    const nuevoMedicamento = await Medicamento.create(medicamentoData);
+
+    console.log('✅ Medicamento creado exitosamente:', nuevoMedicamento.id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Medicamento creado exitosamente',
+      data: nuevoMedicamento,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error creando medicamento:', error);
+    
+    // Manejar errores específicos
+    if (error.message.includes('Duplicate entry')) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya existe un medicamento con el mismo nombre y presentación'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error creando medicamento',
+      error: error.message
+    });
+  }
+});
+
 // PUT /api/farmacia/:id - Actualizar medicamento
 router.put('/:id', simpleAuth, async (req, res) => {
-  console.log('🔍 PUT actualizar medicamento endpoint hit');
-  console.log('🔍 ID:', req.params.id);
-  console.log('🔍 Body:', req.body);
+  console.log('✏️ PUT actualizar medicamento endpoint hit');
+  console.log('✏️ ID:', req.params.id);
+  console.log('✏️ Body:', req.body);
   
   try {
     if (!Medicamento) {
@@ -292,21 +339,18 @@ router.put('/:id', simpleAuth, async (req, res) => {
       });
     }
 
-    console.log('🔍 Actualizando medicamento ID:', medicamentoId);
+    console.log('✏️ Actualizando medicamento ID:', medicamentoId);
 
-    const actualizado = await Medicamento.update(medicamentoId, medicamentoData);
+    const medicamentoActualizado = await Medicamento.update(medicamentoId, medicamentoData);
 
-    if (!actualizado) {
+    if (!medicamentoActualizado) {
       return res.status(500).json({
         success: false,
         message: 'Error actualizando medicamento'
       });
     }
 
-    // Obtener medicamento actualizado
-    const medicamentoActualizado = await Medicamento.findById(medicamentoId);
-
-    console.log('🔍 Medicamento actualizado exitosamente');
+    console.log('✅ Medicamento actualizado exitosamente');
 
     res.json({
       success: true,
@@ -325,9 +369,10 @@ router.put('/:id', simpleAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/farmacia/:id - Eliminar medicamento (soft delete)
+// DELETE /api/farmacia/:id - Eliminar medicamento
 router.delete('/:id', simpleAuth, async (req, res) => {
-  console.log('🔍 DELETE medicamento endpoint hit');
+  console.log('🗑️ DELETE medicamento endpoint hit');
+  console.log('🗑️ ID:', req.params.id);
   
   try {
     if (!Medicamento) {
@@ -345,30 +390,23 @@ router.delete('/:id', simpleAuth, async (req, res) => {
     }
 
     // Verificar que el medicamento existe
-    const medicamento = await Medicamento.findById(medicamentoId);
-    if (!medicamento) {
+    const medicamentoExistente = await Medicamento.findById(medicamentoId);
+    if (!medicamentoExistente) {
       return res.status(404).json({
         success: false,
         message: 'Medicamento no encontrado'
       });
     }
 
-    console.log('🔍 Eliminando medicamento:', medicamento.nombre);
+    console.log('🗑️ Eliminando medicamento:', medicamentoExistente.nombre);
 
-    const eliminado = await Medicamento.delete(medicamentoId);
+    await Medicamento.delete(medicamentoId);
 
-    if (!eliminado) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error eliminando medicamento'
-      });
-    }
-
-    console.log('🔍 Medicamento eliminado exitosamente');
+    console.log('✅ Medicamento eliminado exitosamente');
 
     res.json({
       success: true,
-      message: `Medicamento "${medicamento.nombre}" eliminado exitosamente`,
+      message: 'Medicamento eliminado exitosamente',
       timestamp: new Date().toISOString()
     });
 
@@ -382,9 +420,15 @@ router.delete('/:id', simpleAuth, async (req, res) => {
   }
 });
 
+// =====================================
+// ENDPOINTS ESPECIALIZADOS
+// =====================================
+
 // PUT /api/farmacia/:id/stock - Actualizar stock específico
 router.put('/:id/stock', simpleAuth, async (req, res) => {
-  console.log('🔍 PUT stock endpoint hit');
+  console.log('📦 PUT actualizar stock endpoint hit');
+  console.log('📦 ID:', req.params.id);
+  console.log('📦 Body:', req.body);
   
   try {
     if (!Medicamento) {
@@ -392,8 +436,8 @@ router.put('/:id/stock', simpleAuth, async (req, res) => {
     }
 
     const { id } = req.params;
-    const medicamentoId = parseInt(id);
     const { cantidad, motivo = 'Ajuste manual' } = req.body;
+    const medicamentoId = parseInt(id);
 
     if (isNaN(medicamentoId) || medicamentoId < 1) {
       return res.status(400).json({
@@ -402,64 +446,41 @@ router.put('/:id/stock', simpleAuth, async (req, res) => {
       });
     }
 
-    if (!cantidad || isNaN(parseInt(cantidad))) {
+    if (cantidad === undefined || isNaN(parseInt(cantidad)) || parseInt(cantidad) < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Cantidad debe ser un número válido'
+        message: 'La cantidad debe ser un número válido mayor o igual a 0'
       });
     }
 
-    const nuevaCantidad = parseInt(cantidad);
-    if (nuevaCantidad < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'La cantidad no puede ser negativa'
-      });
-    }
+    console.log('📦 Actualizando stock ID:', medicamentoId, 'Nueva cantidad:', cantidad);
 
-    // Verificar que el medicamento existe
-    const medicamento = await Medicamento.findById(medicamentoId);
-    if (!medicamento) {
-      return res.status(404).json({
-        success: false,
-        message: 'Medicamento no encontrado'
-      });
-    }
+    const medicamentoActualizado = await Medicamento.updateStock(
+      medicamentoId, 
+      parseInt(cantidad), 
+      motivo, 
+      req.user?.id || 1
+    );
 
-    console.log(`🔍 Actualizando stock de "${medicamento.nombre}" de ${medicamento.existencias} a ${nuevaCantidad}`);
-
-    // Usar método específico para stock
-    const actualizado = await Medicamento.updateStock(medicamentoId, nuevaCantidad);
-
-    if (!actualizado) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error actualizando stock'
-      });
-    }
-
-    // Obtener medicamento actualizado
-    const medicamentoActualizado = await Medicamento.findById(medicamentoId);
-
-    console.log('🔍 Stock actualizado exitosamente');
+    console.log('✅ Stock actualizado exitosamente');
 
     res.json({
       success: true,
       message: 'Stock actualizado exitosamente',
-      data: {
-        medicamento: medicamentoActualizado,
-        cambio: {
-          stock_anterior: medicamento.existencias,
-          stock_nuevo: nuevaCantidad,
-          diferencia: nuevaCantidad - medicamento.existencias,
-          motivo: motivo
-        }
-      },
+      data: medicamentoActualizado,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('❌ Error actualizando stock:', error);
+    
+    if (error.message === 'Medicamento no encontrado') {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Error actualizando stock',
@@ -468,129 +489,67 @@ router.put('/:id/stock', simpleAuth, async (req, res) => {
   }
 });
 
-// GET /api/farmacia/extras - Obtener extras
-router.get('/extras', simpleAuth, async (req, res) => {
-  console.log('🔍 GET extras endpoint hit');
-  
-  try {
-    if (!Medicamento) {
-      throw new Error('Modelo Medicamento no disponible');
-    }
-
-    const extras = await Medicamento.getExtras();
-
-    res.json({
-      success: true,
-      data: extras,
-      count: extras.length,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('❌ Error obteniendo extras:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error obteniendo extras',
-      error: error.message
-    });
-  }
-});
-
 // GET /api/farmacia/export/excel - Exportar medicamentos
 router.get('/export/excel', simpleAuth, async (req, res) => {
-  console.log('🔍 GET export excel endpoint hit');
+  console.log('📤 GET export excel endpoint hit');
   
   try {
     if (!Medicamento) {
       throw new Error('Modelo Medicamento no disponible');
     }
-
-    // Obtener todos los medicamentos para export
-    const medicamentos = await Medicamento.findAll({ limit: 1000 });
-
-    // Formatear datos para export
-    const datosExport = medicamentos.map(med => ({
-      ID: med.id,
-      Nombre: med.nombre,
-      Presentación: med.presentacion_nombre,
-      Laboratorio: med.laboratorio_nombre,
-      Existencias: med.existencias,
-      'Stock Mínimo': med.stock_minimo || 11,
-      'Fecha Vencimiento': med.fecha_vencimiento,
-      'Precio Tarjeta': med.precio_tarjeta,
-      'Precio Efectivo': med.precio_efectivo,
-      'Costo Compra': med.costo_compra,
-      'Comisión %': med.porcentaje_comision,
-      'Estado Stock': med.estado_stock,
-      'Estado Vencimiento': med.estado_vencimiento,
-      Indicaciones: med.indicaciones,
-      Contraindicaciones: med.contraindicaciones,
-      Dosis: med.dosis,
-      Activo: med.activo ? 'Sí' : 'No',
-      'Fecha Creación': med.fecha_creacion
-    }));
-
-    console.log(`🔍 Preparando export de ${datosExport.length} medicamentos`);
-
+    
+    // Obtener todos los medicamentos sin paginación
+    const medicamentos = await Medicamento.findAll({ limit: null });
+    
+    console.log(`📤 Exportando ${medicamentos.length} medicamentos`);
+    
     res.json({
       success: true,
-      message: 'Datos preparados para exportación',
-      data: datosExport,
-      metadata: {
-        total_registros: datosExport.length,
-        fecha_export: new Date().toISOString(),
-        columnas: Object.keys(datosExport[0] || {}),
-        formato: 'JSON (convertir a Excel en frontend)'
-      },
+      message: `${medicamentos.length} medicamentos exportados`,
+      data: medicamentos,
       timestamp: new Date().toISOString()
     });
-
+    
   } catch (error) {
-    console.error('❌ Error en export:', error);
+    console.error('❌ Error exportando medicamentos:', error);
     res.status(500).json({
       success: false,
-      message: 'Error preparando exportación',
+      message: 'Error exportando medicamentos',
       error: error.message
     });
   }
 });
 
 // =====================================
-// ENDPOINTS DE DEBUG (MANTENER)
+// ENDPOINTS DE DEBUGGING (DESARROLLO)
 // =====================================
 
-router.get('/debug/basic', (req, res) => {
-  console.log('🔍 Debug basic endpoint hit');
+// DEBUG: Test básico
+router.get('/debug/basic', async (req, res) => {
+  console.log('🧪 Debug basic endpoint hit');
   res.json({
     success: true,
-    message: 'Endpoint básico funcionando',
-    timestamp: new Date().toISOString()
+    message: 'Farmacia routes funcionando',
+    timestamp: new Date().toISOString(),
+    modeloDisponible: !!Medicamento
   });
 });
 
-router.get('/debug/auth', (req, res, next) => {
-  console.log('🔍 Debug auth endpoint hit');
-  
+// DEBUG: Test auth
+router.get('/debug/auth', simpleAuth, async (req, res) => {
+  console.log('🧪 Debug auth endpoint hit');
   const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authorization header requerido'
-    });
-  }
-  
   res.json({
     success: true,
-    message: 'Auth básico funcionando',
-    hasAuth: !!authHeader,
+    message: 'Auth funcionando',
+    hasAuthHeader: !!authHeader,
     timestamp: new Date().toISOString()
   });
 });
 
 // DEBUG: Insertar datos de prueba
 router.post('/debug/insert-sample-data', async (req, res) => {
-  console.log('🔍 Insertando datos de prueba');
+  console.log('🧪 Insertando datos de prueba');
   
   try {
     if (!Medicamento) {
@@ -632,14 +591,14 @@ router.post('/debug/insert-sample-data', async (req, res) => {
         presentacion_id: 4, // Frasco Pastillas
         laboratorio_id: 3, // Dipronat
         existencias: 25,
-        fecha_vencimiento: '2025-08-30',
+        fecha_vencimiento: '2025-08-20',
         precio_tarjeta: 15.00,
         precio_efectivo: 14.00,
         costo_compra: 10.00,
-        porcentaje_comision: 15.0,
-        indicaciones: 'Antibiótico betalactámico',
+        porcentaje_comision: 8.0,
+        indicaciones: 'Antibiótico de amplio espectro',
         contraindicaciones: 'Alergia a penicilinas',
-        dosis: '1 cápsula cada 8 horas por 7 días'
+        dosis: '1 cápsula cada 8 horas'
       },
       {
         nombre: 'Vitamina C 1000mg',
@@ -648,23 +607,23 @@ router.post('/debug/insert-sample-data', async (req, res) => {
         existencias: 200,
         fecha_vencimiento: '2026-03-15',
         precio_tarjeta: 3.00,
-        precio_efectivo: 2.75,
+        precio_efectivo: 2.50,
         costo_compra: 1.50,
-        porcentaje_comision: 8.0,
+        porcentaje_comision: 15.0,
         indicaciones: 'Suplemento vitamínico',
-        contraindicaciones: 'Cálculos renales de oxalato',
-        dosis: '1 tableta diaria'
+        contraindicaciones: 'Hipersensibilidad al ácido ascórbico',
+        dosis: '1 tableta al día'
       },
       {
         nombre: 'Jarabe para la Tos',
         presentacion_id: 7, // Frasco Jarabe
         laboratorio_id: 5, // Praxis
-        existencias: 8, // Stock bajo
-        fecha_vencimiento: '2025-09-20',
+        existencias: 8,
+        fecha_vencimiento: '2025-06-30',
         precio_tarjeta: 12.00,
         precio_efectivo: 11.00,
         costo_compra: 7.00,
-        porcentaje_comision: 10.0,
+        porcentaje_comision: 20.0,
         indicaciones: 'Antitusivo y expectorante',
         contraindicaciones: 'Menores de 2 años',
         dosis: '5ml cada 6 horas'
@@ -675,13 +634,13 @@ router.post('/debug/insert-sample-data', async (req, res) => {
     
     for (const medicamento of medicamentosPrueba) {
       try {
-        const nuevoId = await Medicamento.create(medicamento);
+        const nuevoMedicamento = await Medicamento.create(medicamento);
         resultados.push({
           nombre: medicamento.nombre,
-          id: nuevoId,
+          id: nuevoMedicamento.id,
           status: 'creado'
         });
-        console.log(`✅ Creado: ${medicamento.nombre} (ID: ${nuevoId})`);
+        console.log(`✅ Creado: ${medicamento.nombre} (ID: ${nuevoMedicamento.id})`);
       } catch (error) {
         resultados.push({
           nombre: medicamento.nombre,
