@@ -43,7 +43,7 @@ class AuthController {
             }
 
             // 2. Buscar usuario en la base de datos
-            const user = await User.findByUsuario(usuario.toLowerCase().trim());
+            const user = await User.findByEmail(usuario.toLowerCase().trim());
             
             if (!user) {
                 return res.status(401).json({
