@@ -529,6 +529,85 @@ if (NODE_ENV === 'development') {
 // 🚫 MANEJO DE ERRORES Y 404
 // ============================================================================
 
+// Endpoint para insertar datos de extras (disponible en producción)
+app.post('/api/extras/initialize-data', async (req, res) => {
+    try {
+        console.log('🧰 Inicializando datos de extras...');
+        
+        const mysql = require('mysql2/promise');
+        
+        // Crear conexión
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306
+        });
+
+        // Verificar si ya existen extras
+        const [existingExtras] = await connection.execute('SELECT COUNT(*) as count FROM extras WHERE activo = 1');
+        
+        if (existingExtras[0].count > 0) {
+            await connection.end();
+            return res.json({
+                success: true,
+                message: `Ya existen ${existingExtras[0].count} extras en la base de datos`,
+                data: { extras_existentes: existingExtras[0].count }
+            });
+        }
+
+        // Insertar extras de prueba
+        const extrasData = [
+            ['Alcohol Etílico 70%', 'Antiséptico para desinfección de piel antes de inyecciones', 50, 20, 2.50],
+            ['Algodón', 'Algodón estéril para limpieza y aplicación de medicamentos', 100, 30, 1.00],
+            ['Jeringas 5ml', 'Jeringas desechables de 5ml para aplicación de medicamentos', 200, 50, 1.50],
+            ['Jeringas 10ml', 'Jeringas desechables de 10ml para sueros y medicamentos', 150, 40, 2.00],
+            ['Agujas 21G', 'Agujas desechables calibre 21G para inyecciones intramusculares', 300, 100, 0.75],
+            ['Agujas 23G', 'Agujas desechables calibre 23G para inyecciones subcutáneas', 250, 80, 0.70],
+            ['Equipo de Venoclisis', 'Equipo para administración de sueros y medicamentos IV', 25, 15, 8.00],
+            ['Gasas Estériles', 'Gasas estériles para curaciones y limpieza', 80, 25, 3.00],
+            ['Cinta Micropore', 'Cinta adhesiva hipoalergénica para fijación', 35, 20, 4.50],
+            ['Catéter IV 22G', 'Catéter intravenoso calibre 22G para acceso vascular', 40, 20, 12.00]
+        ];
+
+        const insertQuery = `
+            INSERT INTO extras (nombre, descripcion, existencias, stock_minimo, precio_unitario, activo) 
+            VALUES (?, ?, ?, ?, ?, 1)
+        `;
+
+        let insertedCount = 0;
+        for (const extraData of extrasData) {
+            try {
+                await connection.execute(insertQuery, extraData);
+                insertedCount++;
+                console.log(`✅ Extra insertado: ${extraData[0]}`);
+            } catch (error) {
+                console.log(`⚠️ Error insertando ${extraData[0]}:`, error.message);
+            }
+        }
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            message: 'Datos de extras insertados exitosamente',
+            data: {
+                extras_insertados: insertedCount,
+                total_extras: extrasData.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error insertando datos de extras:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error insertando datos de extras',
+            error: error.message
+        });
+    }
+});
+
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
     res.status(404).json({
