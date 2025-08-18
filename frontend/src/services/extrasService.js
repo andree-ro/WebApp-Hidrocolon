@@ -185,7 +185,7 @@ const extrasService = {
       descripcion: datos.descripcion?.trim() || '',
       existencias: parseInt(datos.existencias) || 0,
       stock_minimo: parseInt(datos.stock_minimo) || 20,
-      precio_unitario: parseFloat(datos.precio_unitario) || 0, // En frontend usamos precio_unitario
+      costo_unitario: parseFloat(datos.precio_unitario) || 0, // En frontend usamos precio_unitario
       activo: datos.activo !== undefined ? datos.activo : true
     }
   },

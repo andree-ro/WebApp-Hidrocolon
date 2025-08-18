@@ -240,6 +240,10 @@
                 <span class="text-2xl mb-2 block">💊</span>
                 <span class="text-xs sm:text-sm font-medium text-gray-700">Gestionar Farmacia</span>
               </button>
+              <button @click="$router.push('/extras')" class="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-primary-500 hover:bg-primary-50 transition-colors">
+                <span class="text-2xl mb-2 block">🧰</span>
+                <span class="text-xs sm:text-sm font-medium text-gray-700">Gestionar Extras</span>
+              </button>
               <button class="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-primary-500 hover:bg-primary-50 transition-colors">
                 <span class="text-2xl mb-2 block">🛒</span>
                 <span class="text-xs sm:text-sm font-medium text-gray-700">Nueva Venta</span>
