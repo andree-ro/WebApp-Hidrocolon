@@ -254,6 +254,29 @@ app.use('/api/extras', extrasRoutes);
 console.log('✅ Rutas de extras configuradas en /api/extras');
 
 // ============================================================================
+// 🔗 RUTAS DE RELACIÓN MEDICAMENTOS-EXTRAS
+// ============================================================================
+
+// Importar funciones específicas del controlador de extras
+const ExtrasController = require('./src/controllers/extrasController');
+const authMiddleware = require('./src/middleware/authMiddleware');
+const simpleAuth = authMiddleware.authenticate();
+
+// GET /api/medicamentos/:id/extras - Obtener extras de un medicamento
+app.get('/api/medicamentos/:id/extras', simpleAuth, ExtrasController.getExtrasDeMedicamento);
+
+// POST /api/medicamentos/:id/extras - Vincular extra con medicamento
+app.post('/api/medicamentos/:id/extras', simpleAuth, ExtrasController.vincularExtraConMedicamento);
+
+// DELETE /api/medicamentos/:id/extras/:extraId - Desvincular extra de medicamento
+app.delete('/api/medicamentos/:id/extras/:extraId', simpleAuth, ExtrasController.desvincularExtraDeMedicamento);
+
+console.log('✅ Rutas de medicamentos-extras configuradas:');
+console.log('   GET    /api/medicamentos/:id/extras');
+console.log('   POST   /api/medicamentos/:id/extras');
+console.log('   DELETE /api/medicamentos/:id/extras/:extraId');
+
+// ============================================================================
 // 📋 RUTAS DE MÓDULOS FUTUROS
 // ============================================================================
 

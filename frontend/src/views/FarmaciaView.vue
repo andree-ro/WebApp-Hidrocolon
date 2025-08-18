@@ -1,6 +1,6 @@
 <template>
   <div class="farmacia-module">
-    <!-- Header con tÃ­tulo y botÃ³n agregar -->
+    <!-- Header con título y botón agregar -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">💊 Módulo Farmacia</h1>
@@ -190,6 +190,9 @@
                 Precios
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Extras
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -235,6 +238,28 @@
                 <div class="text-sm">
                   <div>💳 {{ formatearPrecio(medicamento.precio_tarjeta) }}</div>
                   <div>💵 {{ formatearPrecio(medicamento.precio_efectivo) }}</div>
+                </div>
+              </td>
+
+              <!-- ✅ NUEVA COLUMNA: Extras -->
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <!-- Indicador si requiere extras -->
+                  <div v-if="medicamento.requiere_extras" class="flex items-center space-x-1">
+                    <span class="text-lg">🧰</span>
+                    <span class="text-xs text-gray-600">{{ contarExtras(medicamento.id) }} extra(s)</span>
+                  </div>
+                  <div v-else class="text-xs text-gray-400">Sin extras</div>
+                  
+                  <!-- Botón gestionar extras -->
+                  <button
+                    v-if="medicamento.requiere_extras"
+                    @click="abrirModalExtras(medicamento)"
+                    class="btn-icon btn-orange"
+                    title="Gestionar extras"
+                  >
+                    🔧
+                  </button>
                 </div>
               </td>
 
@@ -473,8 +498,8 @@
               </div>
             </div>
 
-            <!-- Comisión -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- ✅ SECCIÓN MEJORADA: Comisión y Extras -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Porcentaje Comisión (%)</label>
                 <input
@@ -488,16 +513,40 @@
                 />
               </div>
 
-              <div class="flex items-center pt-6">
-                <input
-                  v-model="modalFormulario.datos.requiere_extras"
-                  type="checkbox"
-                  id="requiere_extras"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label for="requiere_extras" class="ml-2 text-sm text-gray-700">
-                  Requiere extras (alcohol, algodón, etc.)
-                </label>
+              <div class="space-y-3">
+                <!-- Checkbox requiere extras -->
+                <div class="flex items-center pt-6">
+                  <input
+                    v-model="modalFormulario.datos.requiere_extras"
+                    type="checkbox"
+                    id="requiere_extras"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label for="requiere_extras" class="ml-2 text-sm text-gray-700">
+                    Requiere extras (alcohol, algodón, etc.)
+                  </label>
+                </div>
+
+                <!-- ✅ NUEVO: Botón gestionar extras -->
+                <div v-if="modalFormulario.datos.requiere_extras && modalFormulario.editando">
+                  <button
+                    type="button"
+                    @click="abrirModalExtrasDesdeFormulario"
+                    class="btn-secondary text-sm flex items-center space-x-2"
+                  >
+                    <span>🧰</span>
+                    <span>Gestionar Extras</span>
+                  </button>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Configura qué extras necesita este medicamento
+                  </p>
+                </div>
+
+                <div v-else-if="modalFormulario.datos.requiere_extras && !modalFormulario.editando">
+                  <p class="text-xs text-gray-500">
+                    💡 Podrás gestionar los extras después de crear el medicamento
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -645,6 +694,38 @@
               </div>
             </div>
 
+            <!-- ✅ NUEVA SECCIÓN: Extras -->
+            <div v-if="modalDetalle.medicamento.requiere_extras">
+              <h4 class="font-medium text-gray-900 mb-2">Extras Requeridos</h4>
+              <div v-if="modalDetalle.extras && modalDetalle.extras.length" class="space-y-2">
+                <div v-for="extra in modalDetalle.extras" :key="extra.id" 
+                     class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div class="flex items-center">
+                    <span class="text-xl mr-2">🧰</span>
+                    <div>
+                      <p class="text-sm font-medium">{{ extra.nombre }}</p>
+                      <p class="text-xs text-gray-500">Cantidad: {{ extra.cantidad_requerida }}</p>
+                    </div>
+                  </div>
+                  <button 
+                    @click="abrirModalExtras(modalDetalle.medicamento)"
+                    class="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    🔧 Gestionar
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500">
+                No hay extras configurados. 
+                <button 
+                  @click="abrirModalExtras(modalDetalle.medicamento)"
+                  class="text-blue-600 hover:underline"
+                >
+                  Agregar extras
+                </button>
+              </div>
+            </div>
+
             <!-- Información médica -->
             <div v-if="modalDetalle.medicamento.indicaciones || modalDetalle.medicamento.contraindicaciones || modalDetalle.medicamento.dosis">
               <h4 class="font-medium text-gray-900 mb-2">Información Médica</h4>
@@ -669,6 +750,13 @@
               <button @click="cerrarModalDetalle" class="btn-secondary">
                 Cerrar
               </button>
+              <button 
+                v-if="modalDetalle.medicamento.requiere_extras"
+                @click="abrirModalExtrasDesdeDetalle" 
+                class="btn-secondary"
+              >
+                🧰 Gestionar Extras
+              </button>
               <button @click="abrirModalEditarDesdeDetalle" class="btn-primary">
                 ✏️ Editar Medicamento
               </button>
@@ -677,18 +765,34 @@
         </div>
       </div>
     </div>
+
+    <!-- ✅ NUEVO: Modal Extras -->
+    <ExtrasModal 
+      :visible="modalExtras.visible"
+      :medicamento="modalExtras.medicamento"
+      @close="cerrarModalExtras"
+      @saved="recargarDatosExtras"
+    />
   </div>
 </template>
 
 <script>
 import farmaciaService from '@/services/farmaciaService'
+import extrasService from '@/services/extrasService'
+import ExtrasModal from '@/components/ExtrasModal.vue'
 
 export default {
   name: 'FarmaciaView',
   
+  components: {
+    ExtrasModal
+  },
+  
   data() {
     return {
       // Estados principales
+      farmaciaService: farmaciaService,
+      extrasService: extrasService,
       cargando: false,
       error: null,
       
@@ -698,6 +802,9 @@ export default {
       laboratorios: [],
       stats: {},
       pagination: {},
+      
+      // ✅ NUEVO: Cache de extras por medicamento
+      extrasCache: {}, // { medicamentoId: [extras] }
       
       // Filtros
       filtros: {
@@ -724,6 +831,13 @@ export default {
       
       // Modal Detalle
       modalDetalle: {
+        visible: false,
+        medicamento: null,
+        extras: [] // ✅ NUEVO: Extras del medicamento
+      },
+      
+      // ✅ NUEVO: Modal Extras
+      modalExtras: {
         visible: false,
         medicamento: null
       },
@@ -827,6 +941,9 @@ export default {
         console.log('✅ Medicamentos cargados:', this.medicamentos.length)
         console.log('📄 Paginación:', this.pagination)
         
+        // ✅ NUEVO: Cargar extras para medicamentos que los requieren
+        await this.cargarExtrasParaMedicamentos()
+        
       } catch (error) {
         console.error('❌ Error cargando medicamentos:', error)
         this.error = error.message
@@ -834,6 +951,42 @@ export default {
       } finally {
         this.cargando = false
       }
+    },
+
+    // ✅ NUEVO: Cargar extras para medicamentos
+    async cargarExtrasParaMedicamentos() {
+      try {
+        const medicamentosConExtras = this.medicamentos.filter(m => m.requiere_extras)
+        
+        if (medicamentosConExtras.length === 0) return
+        
+        console.log('🧰 Cargando extras para', medicamentosConExtras.length, 'medicamentos...')
+        
+        // Cargar extras en paralelo
+        const promesasExtras = medicamentosConExtras.map(async (medicamento) => {
+          try {
+            const extras = await extrasService.getExtrasDeMedicamento(medicamento.id)
+            this.extrasCache[medicamento.id] = extras || []
+            return { medicamentoId: medicamento.id, extras: extras || [] }
+          } catch (error) {
+            console.warn(`Error cargando extras para medicamento ${medicamento.id}:`, error)
+            this.extrasCache[medicamento.id] = []
+            return { medicamentoId: medicamento.id, extras: [] }
+          }
+        })
+        
+        const resultados = await Promise.all(promesasExtras)
+        console.log('✅ Extras cargados para medicamentos:', resultados.length)
+        
+      } catch (error) {
+        console.error('❌ Error cargando extras:', error)
+      }
+    },
+
+    // ✅ NUEVO: Contar extras de un medicamento
+    contarExtras(medicamentoId) {
+      const extras = this.extrasCache[medicamentoId] || []
+      return extras.length
     },
 
     async cargarPresentaciones() {
@@ -909,6 +1062,61 @@ export default {
     },
 
     // =====================================
+    // ✅ NUEVOS MÉTODOS: MODAL EXTRAS
+    // =====================================
+
+    abrirModalExtras(medicamento) {
+      console.log('🧰 Abriendo modal extras para:', medicamento.nombre)
+      
+      this.modalExtras = {
+        visible: true,
+        medicamento: medicamento
+      }
+      
+      // Cerrar otros modales
+      this.modalDetalle.visible = false
+      this.modalFormulario.visible = false
+    },
+
+    abrirModalExtrasDesdeDetalle() {
+      this.abrirModalExtras(this.modalDetalle.medicamento)
+    },
+
+    abrirModalExtrasDesdeFormulario() {
+      // Solo si estamos editando un medicamento
+      if (this.modalFormulario.editando && this.modalFormulario.medicamentoId) {
+        const medicamento = this.medicamentos.find(m => m.id === this.modalFormulario.medicamentoId)
+        if (medicamento) {
+          this.abrirModalExtras(medicamento)
+        }
+      }
+    },
+
+    cerrarModalExtras() {
+      this.modalExtras = {
+        visible: false,
+        medicamento: null
+      }
+    },
+
+    async recargarDatosExtras() {
+      console.log('🔄 Recargando datos después de cambios en extras...')
+      
+      try {
+        // Recargar datos de medicamentos y extras
+        await Promise.all([
+          this.cargarMedicamentos(),
+          this.cargarEstadisticas()
+        ])
+        
+        console.log('✅ Datos recargados exitosamente')
+        
+      } catch (error) {
+        console.error('❌ Error recargando datos:', error)
+      }
+    },
+
+    // =====================================
     // MODAL FORMULARIO (AGREGAR/EDITAR)
     // =====================================
 
@@ -961,6 +1169,7 @@ export default {
       // Cerrar otros modales
       this.modalDetalle.visible = false
       this.modalStock.visible = false
+      this.modalExtras.visible = false
     },
 
     abrirModalEditarDesdeDetalle() {
@@ -1025,8 +1234,27 @@ export default {
           alert('✅ Medicamento actualizado exitosamente')
         } else {
           // Crear nuevo medicamento
-          await farmaciaService.crearMedicamento(datos)
+          const response = await farmaciaService.crearMedicamento(datos)
           alert('✅ Medicamento creado exitosamente')
+          
+          // Si requiere extras y es nuevo, preguntar si quiere configurarlos
+          if (datos.requiere_extras && response.data?.id) {
+            const configurarExtras = confirm('¿Deseas configurar los extras requeridos para este medicamento ahora?')
+            if (configurarExtras) {
+              // Cerrar modal formulario y abrir modal extras
+              this.cerrarModalFormulario()
+              
+              // Recargar medicamentos para obtener el nuevo
+              await this.cargarMedicamentos()
+              
+              // Buscar el medicamento recién creado
+              const nuevoMedicamento = this.medicamentos.find(m => m.id === response.data.id)
+              if (nuevoMedicamento) {
+                this.abrirModalExtras(nuevoMedicamento)
+              }
+              return
+            }
+          }
         }
         
         // Recargar datos
@@ -1060,6 +1288,7 @@ export default {
       
       // Cerrar modal detalle si está abierto
       this.modalDetalle.visible = false
+      this.modalExtras.visible = false
     },
 
     cerrarModalStock() {
@@ -1126,23 +1355,43 @@ export default {
       try {
         console.log('👁️ Viendo detalle del medicamento:', medicamento.id)
         
+        // Cargar extras si el medicamento los requiere
+        let extras = []
+        if (medicamento.requiere_extras) {
+          extras = this.extrasCache[medicamento.id] || []
+          
+          // Si no están en cache, cargarlos
+          if (extras.length === 0) {
+            try {
+              extras = await extrasService.getExtrasDeMedicamento(medicamento.id)
+              this.extrasCache[medicamento.id] = extras
+            } catch (error) {
+              console.warn('Error cargando extras para detalle:', error)
+              extras = []
+            }
+          }
+        }
+        
         // Si tenemos todos los datos, usar los del listado
         if (medicamento.indicaciones !== undefined) {
           this.modalDetalle = {
             visible: true,
-            medicamento: medicamento
+            medicamento: medicamento,
+            extras: extras
           }
         } else {
           // Si no, cargar desde el API
           const response = await farmaciaService.getMedicamento(medicamento.id)
           this.modalDetalle = {
             visible: true,
-            medicamento: response.data
+            medicamento: response.data,
+            extras: extras
           }
         }
         
         // Cerrar modal stock si está abierto
         this.modalStock.visible = false
+        this.modalExtras.visible = false
         
       } catch (error) {
         console.error('❌ Error cargando detalle:', error)
@@ -1153,7 +1402,8 @@ export default {
     cerrarModalDetalle() {
       this.modalDetalle = {
         visible: false,
-        medicamento: null
+        medicamento: null,
+        extras: []
       }
     },
 
@@ -1226,7 +1476,7 @@ export default {
       const headers = [
         'ID', 'Nombre', 'Presentación', 'Laboratorio', 'Existencias',
         'Fecha Vencimiento', 'Precio Tarjeta', 'Precio Efectivo', 'Costo Compra',
-        'Indicaciones', 'Contraindicaciones', 'Dosis', 'Comisión (%)'
+        'Indicaciones', 'Contraindicaciones', 'Dosis', 'Comisión (%)', 'Requiere Extras'
       ]
       
       const csvHeaders = headers.join(',')
@@ -1244,7 +1494,8 @@ export default {
           med.indicaciones,
           med.contraindicaciones,
           med.dosis,
-          med.porcentaje_comision
+          med.porcentaje_comision,
+          med.requiere_extras ? 'Sí' : 'No'
         ].map(value => 
           typeof value === 'string' && value.includes(',') 
             ? `"${value.replace(/"/g, '""')}"` 
@@ -1284,6 +1535,9 @@ export default {
           this.cargarMedicamentos(),
           this.cargarEstadisticas()
         ])
+        
+        // Limpiar cache de extras
+        delete this.extrasCache[medicamento.id]
         
         // Mostrar mensaje de éxito
         alert(`✅ Medicamento "${medicamento.nombre}" eliminado exitosamente`)
@@ -1341,5 +1595,114 @@ export default {
 .overflow-x-auto::-webkit-scrollbar-thumb {
   background-color: #d1d5db;
   border-radius: 3px;
+}
+
+/* ✅ NUEVOS ESTILOS: Para la columna de extras */
+.extras-indicator {
+  @apply flex items-center space-x-2 text-sm;
+}
+
+.extras-badge {
+  @apply px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium;
+}
+
+.no-extras {
+  @apply text-gray-400 text-xs;
+}
+
+/* Mejoras para modales */
+.modal-section {
+  @apply border-t pt-4 mt-4;
+}
+
+.modal-section:first-child {
+  @apply border-t-0 pt-0 mt-0;
+}
+
+/* Estados de carga mejorados */
+.loading-state {
+  @apply flex flex-col items-center justify-center py-12 text-gray-500;
+}
+
+.loading-spinner {
+  @apply w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .btn-icon {
+    @apply w-7 h-7 text-xs;
+  }
+  
+  .extras-indicator {
+    @apply flex-col items-start space-x-0 space-y-1;
+  }
+}
+
+/* Animaciones sutiles */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
+/* Mejor contraste para accesibilidad */
+.text-success { @apply text-green-700; }
+.text-warning { @apply text-yellow-700; }
+.text-danger { @apply text-red-700; }
+.text-info { @apply text-blue-700; }
+
+/* Estados hover mejorados */
+.card {
+  @apply transition-shadow duration-200;
+}
+
+.card:hover {
+  @apply shadow-md;
+}
+
+/* Indicadores visuales mejorados */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.success {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-badge.warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-badge.danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-badge.info {
+  @apply bg-blue-100 text-blue-800;
+}
+
+/* Mejoras de accesibilidad */
+.btn-icon:focus {
+  @apply ring-2 ring-offset-2 ring-blue-500 outline-none;
+}
+
+.input-base:focus {
+  @apply ring-2 ring-blue-500 border-blue-500;
+}
+
+/* Loading skeleton para mejor UX */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+  @apply h-4 bg-gray-200 rounded w-3/4 mb-2;
+}
+
+.skeleton-avatar {
+  @apply h-8 w-8 bg-gray-200 rounded-full;
 }
 </style>

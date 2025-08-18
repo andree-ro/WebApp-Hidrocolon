@@ -87,7 +87,7 @@
               </h3>
               <ul class="space-y-1 sm:space-y-2">
                 <li>
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
+                  <a href="#" @click.prevent="$router.push('/farmacia')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
                     <span class="text-lg mr-3">💊</span>
                     Farmacia
                   </a>
@@ -236,7 +236,7 @@
               Acciones Rápidas
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <button class="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-primary-500 hover:bg-primary-50 transition-colors">
+              <button @click="$router.push('/farmacia')" class="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-primary-500 hover:bg-primary-50 transition-colors">
                 <span class="text-2xl mb-2 block">💊</span>
                 <span class="text-xs sm:text-sm font-medium text-gray-700">Gestionar Farmacia</span>
               </button>
@@ -278,7 +278,7 @@
 </template>
 
 <script>
-import { authService } from '@/services/authService'
+import authService from '@/services/authService'
 
 export default {
   name: 'DashboardView',

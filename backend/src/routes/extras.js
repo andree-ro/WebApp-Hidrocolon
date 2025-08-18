@@ -40,19 +40,6 @@ router.put('/:id/stock', simpleAuth, ExtrasController.actualizarStock);
 router.delete('/:id', simpleAuth, ExtrasController.eliminarExtra);
 
 // =====================================
-// RUTAS PARA RELACIÓN CON MEDICAMENTOS
-// =====================================
-
-// GET /api/medicamentos/:id/extras - Obtener extras de un medicamento
-router.get('/medicamentos/:id/extras', simpleAuth, ExtrasController.getExtrasDeMedicamento);
-
-// POST /api/medicamentos/:id/extras - Vincular extra con medicamento
-router.post('/medicamentos/:id/extras', simpleAuth, ExtrasController.vincularExtraConMedicamento);
-
-// DELETE /api/medicamentos/:id/extras/:extraId - Desvincular extra de medicamento
-router.delete('/medicamentos/:id/extras/:extraId', simpleAuth, ExtrasController.desvincularExtraDeMedicamento);
-
-// =====================================
 // MIDDLEWARE DE VALIDACIÓN Y LOGGING
 // =====================================
 
@@ -96,8 +83,5 @@ console.log(' POST /api/extras - Crear extra');
 console.log(' PUT /api/extras/:id - Actualizar extra');
 console.log(' PUT /api/extras/:id/stock - Actualizar stock');
 console.log(' DELETE /api/extras/:id - Eliminar extra');
-console.log(' GET /api/medicamentos/:id/extras - Extras de medicamento');
-console.log(' POST /api/medicamentos/:id/extras - Vincular extra');
-console.log(' DELETE /api/medicamentos/:id/extras/:extraId - Desvincular extra');
 
 module.exports = router;

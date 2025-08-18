@@ -43,7 +43,7 @@ api.interceptors.response.use(
     
     // Si el token expiró, limpiar localStorage
     if (error.response?.status === 401) {
-      console.log('🔓 Token expirado, limpiando datos...')
+      console.log('🔒 Token expirado, limpiando datos...')
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user_data')
@@ -60,11 +60,11 @@ api.interceptors.response.use(
 )
 
 // Servicio de autenticación
-export const authService = {
+const authService = {
   // Login - VERSIÓN CORREGIDA
   async login(usuario, password) {
     try {
-      console.log('🔑 Intentando login con:', usuario)
+      console.log('🔐 Intentando login con:', usuario)
       
       const response = await api.post('/auth/login', {
         usuario,
@@ -202,33 +202,36 @@ export const authService = {
       hasUserData,
       isAuthenticated,
       tokenLength: token ? token.length : 0,
-      userDataKeys: userData ? Object.keys(JSON.parse(userData)) : []
+      userDataKeys: userData ? Object.keys(JSON.parse(userData)).join(', ') : 'N/A'
     })
     
     return isAuthenticated
   },
 
-  // Obtener datos del usuario desde localStorage
+  // Obtener datos del usuario autenticado
   getUser() {
     try {
       const userData = localStorage.getItem('user_data')
-      if (!userData) return null
+      if (!userData) {
+        console.log('❌ No hay datos de usuario en localStorage')
+        return null
+      }
       
       const user = JSON.parse(userData)
-      console.log('👤 Usuario obtenido desde localStorage:', user.nombres || user.usuario)
+      console.log('👤 Usuario obtenido:', user.nombres || user.usuario)
       return user
+      
     } catch (error) {
-      console.error('❌ Error parseando datos de usuario:', error)
-      // Si hay error, limpiar datos corruptos
-      localStorage.removeItem('user_data')
+      console.error('❌ Error obteniendo datos de usuario:', error)
       return null
     }
   },
 
-  // Obtener token de acceso
+  // Obtener token de acceso actual
   getToken() {
     const token = localStorage.getItem('access_token')
-    console.log('🎫 Token obtenido:', token ? `${token.substring(0, 20)}...` : 'No token')
+    console.log('🎫 Token obtenido:', token ? 
+      `${token.substring(0, 20)}...` : 'No token')
     return token
   },
 
@@ -238,7 +241,7 @@ export const authService = {
     if (!user || !user.rol_nombre) return false
     
     const hasRole = user.rol_nombre.toLowerCase() === requiredRole.toLowerCase()
-    console.log(`🔒 Verificando rol "${requiredRole}": ${hasRole}`)
+    console.log(`🔑 Verificando rol "${requiredRole}": ${hasRole}`)
     return hasRole
   },
 
@@ -316,6 +319,9 @@ export const authService = {
     }
   }
 }
+
+// ✅ EXPORTACIÓN CORREGIDA - AGREGAR DEFAULT EXPORT
+export default authService
 
 // Exportar también la instancia de axios configurada
 export { api }
