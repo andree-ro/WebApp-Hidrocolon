@@ -572,7 +572,7 @@ app.post('/api/extras/initialize-data', async (req, res) => {
         ];
 
         const insertQuery = `
-            INSERT INTO extras (nombre, descripcion, existencias, stock_minimo, precio_unitario, activo) 
+            INSERT INTO extras (nombre, descripcion, existencias, stock_minimo, costo_unitario, activo) 
             VALUES (?, ?, ?, ?, ?, 1)
         `;
 

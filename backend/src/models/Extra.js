@@ -43,7 +43,7 @@ class Extra {
                     descripcion,
                     existencias,
                     stock_minimo,
-                    precio_unitario,
+                    costo_unitario,
                     activo,
                     fecha_creacion,
                     fecha_actualizacion
@@ -94,7 +94,7 @@ class Extra {
                 ...extra,
                 estado_stock: extra.existencias < extra.stock_minimo ? 'bajo' : 
                              extra.existencias < (extra.stock_minimo * 2) ? 'medio' : 'normal',
-                precio_formateado: `Q ${parseFloat(extra.precio_unitario).toFixed(2)}`
+                precio_formateado: `Q ${parseFloat(extra.costo_unitario).toFixed(2)}`
             }));
 
             return extrasConEstados;
@@ -117,7 +117,7 @@ class Extra {
                     descripcion,
                     existencias,
                     stock_minimo,
-                    precio_unitario,
+                    costo_unitario,
                     activo,
                     fecha_creacion,
                     fecha_actualizacion
@@ -134,7 +134,7 @@ class Extra {
             // Agregar estados calculados
             extra.estado_stock = extra.existencias < extra.stock_minimo ? 'bajo' : 
                                extra.existencias < (extra.stock_minimo * 2) ? 'medio' : 'normal';
-            extra.precio_formateado = `Q ${parseFloat(extra.precio_unitario).toFixed(2)}`;
+            extra.precio_formateado = `Q ${parseFloat(extra.costo_unitario).toFixed(2)}`;
 
             console.log('✅ Extra encontrado:', extra.nombre);
             return extra;
@@ -156,7 +156,7 @@ class Extra {
                     descripcion, 
                     existencias, 
                     stock_minimo, 
-                    precio_unitario,
+                    costo_unitario,
                     activo
                 ) VALUES (?, ?, ?, ?, ?, ?)
             `;
@@ -166,7 +166,7 @@ class Extra {
                 datos.descripcion || null,
                 parseInt(datos.existencias) || 0,
                 parseInt(datos.stock_minimo) || 20,
-                parseFloat(datos.precio_unitario) || 0,
+                parseFloat(datos.costo_unitario) || 0,
                 datos.activo !== undefined ? datos.activo : true
             ];
 
@@ -199,7 +199,7 @@ class Extra {
                     descripcion = ?,
                     existencias = ?,
                     stock_minimo = ?,
-                    precio_unitario = ?,
+                    costo_unitario = ?,
                     activo = ?,
                     fecha_actualizacion = CURRENT_TIMESTAMP
                 WHERE id = ? AND activo = 1
@@ -210,7 +210,7 @@ class Extra {
                 datos.descripcion || null,
                 parseInt(datos.existencias),
                 parseInt(datos.stock_minimo) || 20,
-                parseFloat(datos.precio_unitario),
+                parseFloat(datos.costo_unitario),
                 datos.activo !== undefined ? datos.activo : true,
                 id
             ];
@@ -304,7 +304,7 @@ class Extra {
                     e.nombre,
                     e.descripcion,
                     e.existencias,
-                    e.precio_unitario,
+                    e.costo_unitario,
                     me.cantidad_requerida
                 FROM extras e
                 INNER JOIN medicamentos_extras me ON e.id = me.extra_id
@@ -385,7 +385,7 @@ class Extra {
                     COUNT(*) as total_extras,
                     SUM(CASE WHEN existencias < stock_minimo THEN 1 ELSE 0 END) as stock_bajo,
                     SUM(existencias) as total_existencias,
-                    ROUND(AVG(precio_unitario), 2) as precio_promedio
+                    ROUND(AVG(costo_unitario), 2) as precio_promedio
                 FROM extras 
                 WHERE activo = 1
             `;
