@@ -4,8 +4,11 @@
 const express = require('express');
 const router = express.Router();
 const ExtrasController = require('../controllers/extrasController');
-const { simpleAuth } = require('../middleware/auth');
 
+// ✅ IMPORT CORRECTO DEL MIDDLEWARE
+const authMiddleware = require('../middleware/authMiddleware');
+// Usar el método authenticate() del middleware existente
+const simpleAuth = authMiddleware.authenticate();
 
 // =====================================
 // RUTAS PÚBLICAS (con autenticación básica)
