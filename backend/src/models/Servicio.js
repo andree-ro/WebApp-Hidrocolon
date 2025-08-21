@@ -1,5 +1,5 @@
 // backend/src/models/Servicio.js
-const db = require('../config/database');
+const mysql = require('mysql2/promise');
 
 class Servicio {
     constructor(data) {
