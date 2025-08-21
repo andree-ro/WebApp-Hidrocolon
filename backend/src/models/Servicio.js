@@ -99,7 +99,8 @@ class Servicio {
             `;
 
             // Agregar LIMIT y OFFSET a los parámetros
-            const finalParams = [...queryParams, limitNum, offset];
+            queryParams.push(limitNum, offset);
+            const finalParams = queryParams;
 
             // Query para contar total (sin GROUP BY)
             const countQuery = `
