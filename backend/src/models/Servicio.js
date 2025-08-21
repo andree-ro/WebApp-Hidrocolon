@@ -14,7 +14,7 @@ class Servicio {
         this.activo = data.activo;
         this.fecha_creacion = data.fecha_creacion;
         this.fecha_actualizacion = data.fecha_actualizacion;
-        this.medicamentos_vinculados = 0; // Por ahora fijo
+        this.medicamentos_vinculados = data.medicamentos_vinculados || 0;
     }
 
     // Crear conexión a la base de datos
@@ -29,43 +29,110 @@ class Servicio {
     }
 
     // ============================================================================
-    // MÉTODO PRINCIPAL - VERSIÓN DE DEBUGGING SÚPER SIMPLE
+    // MÉTODO PRINCIPAL - LISTAR SERVICIOS CON FILTROS (VERSIÓN CORREGIDA)
     // ============================================================================
     static async findAll(options = {}) {
         let connection;
         try {
-            console.log('🔍 Debugging findAll - Query súper simple');
+            const {
+                page = 1,
+                limit = 10,
+                search = '',
+                orderBy = 'fecha_creacion',
+                orderDir = 'DESC',
+                activo = null,
+                precio_min = null,
+                precio_max = null
+            } = options;
 
-            // QUERY SÚPER SIMPLE PARA DEBUGGING
-            const query = `SELECT id, nombre, precio_efectivo, precio_tarjeta FROM servicios LIMIT 5`;
+            // Validar y limpiar parámetros
+            const pageNum = Math.max(1, parseInt(page) || 1);
+            const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
+            const offset = (pageNum - 1) * limitNum;
 
-            console.log('🔍 Query debug:', query);
-            console.log('📊 Sin parámetros');
+            // Validar orderBy para prevenir SQL injection
+            const validOrderFields = ['id', 'nombre', 'precio_efectivo', 'precio_tarjeta', 'fecha_creacion', 'fecha_actualizacion'];
+            const safeOrderBy = validOrderFields.includes(orderBy) ? orderBy : 'fecha_creacion';
+            const safeOrderDir = orderDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+            let whereConditions = [];
+            let queryParams = [];
+
+            // Construir WHERE dinámico
+            if (search && search.trim() !== '') {
+                whereConditions.push(`nombre LIKE ?`);
+                queryParams.push(`%${search.trim()}%`);
+            }
+
+            if (activo !== null && activo !== '') {
+                whereConditions.push('activo = ?');
+                queryParams.push(activo === 'true' || activo === '1' || activo === 1);
+            }
+
+            if (precio_min !== null && precio_min !== '' && !isNaN(precio_min)) {
+                whereConditions.push('precio_efectivo >= ?');
+                queryParams.push(parseFloat(precio_min));
+            }
+
+            if (precio_max !== null && precio_max !== '' && !isNaN(precio_max)) {
+                whereConditions.push('precio_efectivo <= ?');
+                queryParams.push(parseFloat(precio_max));
+            }
+
+            const whereClause = whereConditions.length > 0 
+                ? `WHERE ${whereConditions.join(' AND ')}`
+                : '';
+
+            // Query principal con LEFT JOIN a servicios_medicamentos
+            const query = `
+                SELECT 
+                    s.*,
+                    COUNT(sm.medicamento_id) as medicamentos_vinculados
+                FROM servicios s
+                LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
+                ${whereClause}
+                GROUP BY s.id, s.nombre, s.precio_tarjeta, s.precio_efectivo, s.monto_minimo, 
+                         s.porcentaje_comision, s.requiere_medicamentos, s.requiere_extras, 
+                         s.activo, s.fecha_creacion, s.fecha_actualizacion
+                ORDER BY s.${safeOrderBy} ${safeOrderDir}
+                LIMIT ? OFFSET ?
+            `;
+
+            // Agregar LIMIT y OFFSET a los parámetros
+            const finalParams = [...queryParams, limitNum, offset];
+
+            // Query para contar total (sin GROUP BY)
+            const countQuery = `
+                SELECT COUNT(DISTINCT s.id) as total
+                FROM servicios s
+                ${whereClause}
+            `;
+
+            console.log('🔍 Query servicios:', query);
+            console.log('📊 Parámetros finales:', finalParams);
+            console.log('🔢 Count query:', countQuery);
+            console.log('📊 Count parámetros:', queryParams);
 
             connection = await this.getConnection();
-            console.log('✅ Conexión establecida');
             
-            // SIN PARÁMETROS
-            const [servicios] = await connection.execute(query);
-            console.log('✅ Query ejecutada exitosamente');
-            console.log('📊 Resultados obtenidos:', servicios.length);
-
-            // Conteo simple también
-            const countQuery = `SELECT COUNT(*) as total FROM servicios`;
-            const [countResult] = await connection.execute(countQuery);
-            console.log('✅ Conteo ejecutado:', countResult[0].total);
+            // Ejecutar ambas queries
+            const [servicios] = await connection.execute(query, finalParams);
+            const [countResult] = await connection.execute(countQuery, queryParams);
             
             const total = countResult[0].total;
+            const totalPages = Math.ceil(total / limitNum);
+
+            console.log(`✅ ${servicios.length} servicios obtenidos de ${total} totales`);
 
             return {
                 servicios: servicios.map(servicio => new Servicio(servicio)),
                 pagination: {
-                    currentPage: 1,
-                    totalPages: 1,
+                    currentPage: pageNum,
+                    totalPages,
                     totalItems: total,
-                    itemsPerPage: servicios.length,
-                    hasNextPage: false,
-                    hasPrevPage: false
+                    itemsPerPage: limitNum,
+                    hasNextPage: pageNum < totalPages,
+                    hasPrevPage: pageNum > 1
                 }
             };
 
@@ -83,7 +150,17 @@ class Servicio {
     static async findById(id) {
         let connection;
         try {
-            const query = `SELECT * FROM servicios WHERE id = ?`;
+            const query = `
+                SELECT 
+                    s.*,
+                    COUNT(sm.medicamento_id) as medicamentos_vinculados
+                FROM servicios s
+                LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
+                WHERE s.id = ?
+                GROUP BY s.id, s.nombre, s.precio_tarjeta, s.precio_efectivo, s.monto_minimo, 
+                         s.porcentaje_comision, s.requiere_medicamentos, s.requiere_extras, 
+                         s.activo, s.fecha_creacion, s.fecha_actualizacion
+            `;
 
             connection = await this.getConnection();
             const [rows] = await connection.execute(query, [id]);
@@ -159,56 +236,7 @@ class Servicio {
     }
 
     // ============================================================================
-    // ESTADÍSTICAS DE SERVICIOS (SIMPLIFICADO)
-    // ============================================================================
-    static async getStats() {
-        let connection;
-        try {
-            const query = `
-                SELECT 
-                    COUNT(*) as total_servicios,
-                    COUNT(CASE WHEN activo = true THEN 1 END) as servicios_activos,
-                    COUNT(CASE WHEN activo = false THEN 1 END) as servicios_inactivos
-                FROM servicios
-            `;
-
-            connection = await this.getConnection();
-            const [stats] = await connection.execute(query);
-            
-            console.log('📊 Estadísticas de servicios generadas');
-            
-            return {
-                ...stats[0]
-            };
-
-        } catch (error) {
-            console.error('❌ Error en Servicio.getStats:', error);
-            throw new Error(`Error al obtener estadísticas: ${error.message}`);
-        } finally {
-            if (connection) await connection.end();
-        }
-    }
-
-    // ============================================================================
-    // MÉTODOS SIMPLIFICADOS PARA MEDICAMENTOS (SIN FUNCIONALIDAD POR AHORA)
-    // ============================================================================
-    static async getMedicamentosVinculados(servicioId) {
-        console.log(`💊 Función getMedicamentosVinculados - debug mode`);
-        return [];
-    }
-
-    static async vincularMedicamento(servicioId, medicamentoId, cantidadRequerida = 1) {
-        console.log(`🔗 Función vincularMedicamento - debug mode`);
-        return { message: 'Función en modo debug - no implementada' };
-    }
-
-    static async desvincularMedicamento(servicioId, medicamentoId) {
-        console.log(`🔗 Función desvincularMedicamento - debug mode`);
-        return { message: 'Función en modo debug - no implementada' };
-    }
-
-    // ============================================================================
-    // MÉTODOS RESTANTES (UPDATE, DELETE) - SIMPLIFICADOS
+    // ACTUALIZAR SERVICIO
     // ============================================================================
     static async update(id, data) {
         let connection;
@@ -273,6 +301,9 @@ class Servicio {
         }
     }
 
+    // ============================================================================
+    // ELIMINAR SERVICIO (SOFT DELETE)
+    // ============================================================================
     static async delete(id) {
         let connection;
         try {
@@ -300,6 +331,165 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.delete:', error);
             throw new Error(`Error al eliminar servicio: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    // ============================================================================
+    // ESTADÍSTICAS DE SERVICIOS
+    // ============================================================================
+    static async getStats() {
+        let connection;
+        try {
+            const query = `
+                SELECT 
+                    COUNT(*) as total_servicios,
+                    COUNT(CASE WHEN activo = true THEN 1 END) as servicios_activos,
+                    COUNT(CASE WHEN activo = false THEN 1 END) as servicios_inactivos,
+                    COUNT(CASE WHEN requiere_medicamentos = true THEN 1 END) as con_medicamentos,
+                    COUNT(CASE WHEN requiere_extras = true THEN 1 END) as con_extras,
+                    AVG(precio_efectivo) as precio_promedio_efectivo,
+                    AVG(precio_tarjeta) as precio_promedio_tarjeta,
+                    AVG(porcentaje_comision) as comision_promedio,
+                    MIN(precio_efectivo) as precio_min,
+                    MAX(precio_efectivo) as precio_max
+                FROM servicios
+            `;
+
+            connection = await this.getConnection();
+            const [stats] = await connection.execute(query);
+            
+            console.log('📊 Estadísticas de servicios generadas');
+            
+            return {
+                ...stats[0],
+                precio_promedio_efectivo: parseFloat(stats[0].precio_promedio_efectivo || 0).toFixed(2),
+                precio_promedio_tarjeta: parseFloat(stats[0].precio_promedio_tarjeta || 0).toFixed(2),
+                comision_promedio: parseFloat(stats[0].comision_promedio || 0).toFixed(2)
+            };
+
+        } catch (error) {
+            console.error('❌ Error en Servicio.getStats:', error);
+            throw new Error(`Error al obtener estadísticas: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    // ============================================================================
+    // OBTENER MEDICAMENTOS VINCULADOS A UN SERVICIO
+    // ============================================================================
+    static async getMedicamentosVinculados(servicioId) {
+        let connection;
+        try {
+            const query = `
+                SELECT 
+                    m.id,
+                    m.nombre as nombre_medicamento,
+                    m.precio_efectivo,
+                    m.precio_tarjeta,
+                    m.existencias,
+                    sm.cantidad_requerida,
+                    p.nombre as presentacion_nombre,
+                    l.nombre as laboratorio_nombre
+                FROM servicios_medicamentos sm
+                INNER JOIN medicamentos m ON sm.medicamento_id = m.id
+                LEFT JOIN presentaciones p ON m.presentacion_id = p.id
+                LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
+                WHERE sm.servicio_id = ? AND m.activo = true
+                ORDER BY m.nombre
+            `;
+
+            connection = await this.getConnection();
+            const [medicamentos] = await connection.execute(query, [servicioId]);
+            
+            console.log(`💊 ${medicamentos.length} medicamentos vinculados al servicio ${servicioId}`);
+            
+            return medicamentos;
+
+        } catch (error) {
+            console.error('❌ Error en getMedicamentosVinculados:', error);
+            throw new Error(`Error al obtener medicamentos: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    // ============================================================================
+    // VINCULAR MEDICAMENTO A SERVICIO
+    // ============================================================================
+    static async vincularMedicamento(servicioId, medicamentoId, cantidadRequerida = 1) {
+        let connection;
+        try {
+            const servicio = await this.findById(servicioId);
+            if (!servicio) {
+                throw new Error('Servicio no encontrado');
+            }
+
+            connection = await this.getConnection();
+
+            // Verificar si ya está vinculado
+            const checkQuery = `
+                SELECT id FROM servicios_medicamentos 
+                WHERE servicio_id = ? AND medicamento_id = ?
+            `;
+            const [existing] = await connection.execute(checkQuery, [servicioId, medicamentoId]);
+
+            if (existing.length > 0) {
+                // Actualizar cantidad
+                const updateQuery = `
+                    UPDATE servicios_medicamentos 
+                    SET cantidad_requerida = ?
+                    WHERE servicio_id = ? AND medicamento_id = ?
+                `;
+                await connection.execute(updateQuery, [cantidadRequerida, servicioId, medicamentoId]);
+                console.log('🔄 Cantidad actualizada para medicamento vinculado');
+            } else {
+                // Crear nueva vinculación
+                const insertQuery = `
+                    INSERT INTO servicios_medicamentos 
+                    (servicio_id, medicamento_id, cantidad_requerida, fecha_creacion)
+                    VALUES (?, ?, ?, NOW())
+                `;
+                await connection.execute(insertQuery, [servicioId, medicamentoId, cantidadRequerida]);
+                console.log('✅ Medicamento vinculado al servicio');
+            }
+
+            return { message: 'Medicamento vinculado correctamente' };
+
+        } catch (error) {
+            console.error('❌ Error en vincularMedicamento:', error);
+            throw new Error(`Error al vincular medicamento: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    // ============================================================================
+    // DESVINCULAR MEDICAMENTO DE SERVICIO
+    // ============================================================================
+    static async desvincularMedicamento(servicioId, medicamentoId) {
+        let connection;
+        try {
+            const query = `
+                DELETE FROM servicios_medicamentos 
+                WHERE servicio_id = ? AND medicamento_id = ?
+            `;
+
+            connection = await this.getConnection();
+            const [result] = await connection.execute(query, [servicioId, medicamentoId]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('Vinculación no encontrada');
+            }
+
+            console.log('🔗 Medicamento desvinculado del servicio');
+            return { message: 'Medicamento desvinculado correctamente' };
+
+        } catch (error) {
+            console.error('❌ Error en desvincularMedicamento:', error);
+            throw new Error(`Error al desvincular medicamento: ${error.message}`);
         } finally {
             if (connection) await connection.end();
         }
