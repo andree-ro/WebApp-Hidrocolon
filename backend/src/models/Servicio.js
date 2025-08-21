@@ -98,27 +98,22 @@ class Servicio {
                 LIMIT ? OFFSET ?
             `;
 
-            // Agregar LIMIT y OFFSET a los parámetros
+            // Crear array separado para count (sin LIMIT/OFFSET)
+            const countParams = [...queryParams];
+            
+            // Agregar LIMIT y OFFSET solo para la query principal
             queryParams.push(limitNum, offset);
-            const finalParams = queryParams;
-
-            // Query para contar total (sin GROUP BY)
-            const countQuery = `
-                SELECT COUNT(DISTINCT s.id) as total
-                FROM servicios s
-                ${whereClause}
-            `;
 
             console.log('🔍 Query servicios:', query);
-            console.log('📊 Parámetros finales:', finalParams);
+            console.log('📊 Parámetros finales:', queryParams);
             console.log('🔢 Count query:', countQuery);
-            console.log('📊 Count parámetros:', queryParams);
+            console.log('📊 Count parámetros:', countParams);
 
             connection = await this.getConnection();
             
-            // Ejecutar ambas queries
-            const [servicios] = await connection.execute(query, finalParams);
-            const [countResult] = await connection.execute(countQuery, queryParams);
+            // Ejecutar ambas queries con sus parámetros correctos
+            const [servicios] = await connection.execute(query, queryParams);
+            const [countResult] = await connection.execute(countQuery, countParams);
             
             const total = countResult[0].total;
             const totalPages = Math.ceil(total / limitNum);
