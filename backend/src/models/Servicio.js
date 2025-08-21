@@ -98,6 +98,13 @@ class Servicio {
                 LIMIT ? OFFSET ?
             `;
 
+            // Query para contar total (sin GROUP BY)
+            const countQuery = `
+                SELECT COUNT(DISTINCT s.id) as total
+                FROM servicios s
+                ${whereClause}
+            `;
+
             // Crear array separado para count (sin LIMIT/OFFSET)
             const countParams = [...queryParams];
             
