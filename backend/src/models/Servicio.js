@@ -4,14 +4,14 @@ const mysql = require('mysql2/promise');
 class Servicio {
     constructor(data) {
         this.id = data.id;
-        this.nombre_servicio = data.nombre_servicio;
+        this.nombre_servicio = data.nombre || data.nombre_servicio;
         this.precio_tarjeta = data.precio_tarjeta;
         this.precio_efectivo = data.precio_efectivo;
         this.monto_minimo = data.monto_minimo;
-        this.comision_venta = data.comision_venta;
-        this.descripcion = data.descripcion;
-        this.activo = data.activo;
+        this.comision_venta = data.porcentaje_comision; // Mapear nombre correcto
         this.requiere_medicamentos = data.requiere_medicamentos;
+        this.requiere_extras = data.requiere_extras;
+        this.activo = data.activo;
         this.fecha_creacion = data.fecha_creacion;
         this.fecha_actualizacion = data.fecha_actualizacion;
     }
@@ -50,8 +50,8 @@ class Servicio {
 
             // Filtro de búsqueda
             if (search) {
-                whereConditions.push(`(s.nombre_servicio LIKE ? OR s.descripcion LIKE ?)`);
-                queryParams.push(`%${search}%`, `%${search}%`);
+                whereConditions.push(`s.nombre LIKE ?`);
+                queryParams.push(`%${search}%`);
             }
 
             // Filtro por estado activo
@@ -153,7 +153,7 @@ class Servicio {
                 return null;
             }
 
-            console.log('✅ Servicio encontrado:', rows[0].nombre_servicio);
+            console.log('✅ Servicio encontrado:', rows[0].nombre);
             return new Servicio(rows[0]);
 
         } catch (error) {
@@ -176,16 +176,17 @@ class Servicio {
                 precio_efectivo,
                 monto_minimo = 0,
                 comision_venta = 0,
-                descripcion = '',
                 activo = true,
-                requiere_medicamentos = false
+                requiere_medicamentos = false,
+                requiere_extras = false
             } = data;
 
             const query = `
                 INSERT INTO servicios (
-                    nombre_servicio, precio_tarjeta, precio_efectivo, 
-                    monto_minimo, comision_venta, descripcion,
-                    activo, requiere_medicamentos, fecha_creacion, fecha_actualizacion
+                    nombre, precio_tarjeta, precio_efectivo, 
+                    monto_minimo, porcentaje_comision,
+                    activo, requiere_medicamentos, requiere_extras,
+                    fecha_creacion, fecha_actualizacion
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
             `;
 
@@ -195,9 +196,9 @@ class Servicio {
                 precio_efectivo,
                 monto_minimo,
                 comision_venta,
-                descripcion,
                 activo,
-                requiere_medicamentos
+                requiere_medicamentos,
+                requiere_extras
             ];
 
             console.log('💾 Creando servicio:', nombre_servicio);
@@ -235,21 +236,21 @@ class Servicio {
                 precio_efectivo,
                 monto_minimo,
                 comision_venta,
-                descripcion,
                 activo,
-                requiere_medicamentos
+                requiere_medicamentos,
+                requiere_extras
             } = data;
 
             const query = `
                 UPDATE servicios SET
-                    nombre_servicio = ?,
+                    nombre = ?,
                     precio_tarjeta = ?,
                     precio_efectivo = ?,
                     monto_minimo = ?,
-                    comision_venta = ?,
-                    descripcion = ?,
+                    porcentaje_comision = ?,
                     activo = ?,
                     requiere_medicamentos = ?,
+                    requiere_extras = ?,
                     fecha_actualizacion = NOW()
                 WHERE id = ?
             `;
@@ -260,9 +261,9 @@ class Servicio {
                 precio_efectivo,
                 monto_minimo,
                 comision_venta,
-                descripcion,
                 activo,
                 requiere_medicamentos,
+                requiere_extras,
                 id
             ];
 
@@ -331,14 +332,15 @@ class Servicio {
                     COUNT(CASE WHEN activo = true THEN 1 END) as servicios_activos,
                     COUNT(CASE WHEN activo = false THEN 1 END) as servicios_inactivos,
                     COUNT(CASE WHEN requiere_medicamentos = true THEN 1 END) as con_medicamentos,
+                    COUNT(CASE WHEN requiere_extras = true THEN 1 END) as con_extras,
                     AVG(precio_efectivo) as precio_promedio_efectivo,
                     AVG(precio_tarjeta) as precio_promedio_tarjeta,
-                    AVG(comision_venta) as comision_promedio,
+                    AVG(porcentaje_comision) as comision_promedio,
                     MIN(precio_efectivo) as precio_min,
                     MAX(precio_efectivo) as precio_max,
-                    COUNT(CASE WHEN comision_venta >= 10 THEN 1 END) as comision_alta,
-                    COUNT(CASE WHEN comision_venta >= 5 AND comision_venta < 10 THEN 1 END) as comision_media,
-                    COUNT(CASE WHEN comision_venta < 5 THEN 1 END) as comision_baja
+                    COUNT(CASE WHEN porcentaje_comision >= 10 THEN 1 END) as comision_alta,
+                    COUNT(CASE WHEN porcentaje_comision >= 5 AND porcentaje_comision < 10 THEN 1 END) as comision_media,
+                    COUNT(CASE WHEN porcentaje_comision < 5 THEN 1 END) as comision_baja
                 FROM servicios
             `;
 
