@@ -16,10 +16,22 @@ class Servicio {
         this.fecha_actualizacion = data.fecha_actualizacion;
     }
 
+    // Crear conexión a la base de datos
+    static async getConnection() {
+        return await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306
+        });
+    }
+
     // ============================================================================
     // MÉTODO PRINCIPAL - LISTAR SERVICIOS CON FILTROS
     // ============================================================================
     static async findAll(options = {}) {
+        let connection;
         try {
             const {
                 page = 1,
@@ -67,17 +79,7 @@ class Servicio {
             const query = `
                 SELECT 
                     s.*,
-                    COUNT(sm.medicamento_id) as medicamentos_vinculados,
-                    CASE 
-                        WHEN s.precio_efectivo > s.precio_tarjeta THEN 'efectivo_mayor'
-                        WHEN s.precio_tarjeta > s.precio_efectivo THEN 'tarjeta_mayor'
-                        ELSE 'precios_iguales'
-                    END as tipo_precio,
-                    CASE 
-                        WHEN s.comision_venta >= 10 THEN 'comision_alta'
-                        WHEN s.comision_venta >= 5 THEN 'comision_media'
-                        ELSE 'comision_baja'
-                    END as nivel_comision
+                    COUNT(sm.medicamento_id) as medicamentos_vinculados
                 FROM servicios s
                 LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
                 ${whereClause}
@@ -100,8 +102,10 @@ class Servicio {
             console.log('🔍 Query servicios:', query);
             console.log('📊 Parámetros:', queryParams);
 
-            const [servicios] = await db.execute(query, queryParams);
-            const [countResult] = await db.execute(countQuery, countParams);
+            connection = await this.getConnection();
+            
+            const [servicios] = await connection.execute(query, queryParams);
+            const [countResult] = await connection.execute(countQuery, countParams);
             
             const total = countResult[0].total;
             const totalPages = Math.ceil(total / limit);
@@ -121,6 +125,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.findAll:', error);
             throw new Error(`Error al obtener servicios: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -128,6 +134,7 @@ class Servicio {
     // BUSCAR SERVICIO POR ID
     // ============================================================================
     static async findById(id) {
+        let connection;
         try {
             const query = `
                 SELECT 
@@ -139,7 +146,8 @@ class Servicio {
                 GROUP BY s.id
             `;
 
-            const [rows] = await db.execute(query, [id]);
+            connection = await this.getConnection();
+            const [rows] = await connection.execute(query, [id]);
             
             if (rows.length === 0) {
                 return null;
@@ -151,6 +159,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.findById:', error);
             throw new Error(`Error al buscar servicio: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -158,6 +168,7 @@ class Servicio {
     // CREAR NUEVO SERVICIO
     // ============================================================================
     static async create(data) {
+        let connection;
         try {
             const {
                 nombre_servicio,
@@ -190,7 +201,9 @@ class Servicio {
             ];
 
             console.log('💾 Creando servicio:', nombre_servicio);
-            const [result] = await db.execute(query, values);
+            
+            connection = await this.getConnection();
+            const [result] = await connection.execute(query, values);
             
             const nuevoServicio = await this.findById(result.insertId);
             console.log('✅ Servicio creado con ID:', result.insertId);
@@ -200,6 +213,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.create:', error);
             throw new Error(`Error al crear servicio: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -207,6 +222,7 @@ class Servicio {
     // ACTUALIZAR SERVICIO
     // ============================================================================
     static async update(id, data) {
+        let connection;
         try {
             const servicioExistente = await this.findById(id);
             if (!servicioExistente) {
@@ -251,7 +267,9 @@ class Servicio {
             ];
 
             console.log('🔄 Actualizando servicio ID:', id);
-            await db.execute(query, values);
+            
+            connection = await this.getConnection();
+            await connection.execute(query, values);
             
             const servicioActualizado = await this.findById(id);
             console.log('✅ Servicio actualizado:', servicioActualizado.nombre_servicio);
@@ -261,6 +279,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.update:', error);
             throw new Error(`Error al actualizar servicio: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -268,6 +288,7 @@ class Servicio {
     // ELIMINAR SERVICIO (SOFT DELETE)
     // ============================================================================
     static async delete(id) {
+        let connection;
         try {
             const servicio = await this.findById(id);
             if (!servicio) {
@@ -282,7 +303,10 @@ class Servicio {
             `;
 
             console.log('🗑️ Desactivando servicio ID:', id);
-            await db.execute(query, [id]);
+            
+            connection = await this.getConnection();
+            await connection.execute(query, [id]);
+            
             console.log('✅ Servicio desactivado:', servicio.nombre_servicio);
             
             return { message: 'Servicio eliminado correctamente' };
@@ -290,6 +314,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.delete:', error);
             throw new Error(`Error al eliminar servicio: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -297,6 +323,7 @@ class Servicio {
     // ESTADÍSTICAS DE SERVICIOS
     // ============================================================================
     static async getStats() {
+        let connection;
         try {
             const query = `
                 SELECT 
@@ -315,7 +342,9 @@ class Servicio {
                 FROM servicios
             `;
 
-            const [stats] = await db.execute(query);
+            connection = await this.getConnection();
+            const [stats] = await connection.execute(query);
+            
             console.log('📊 Estadísticas de servicios generadas');
             
             return {
@@ -328,6 +357,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en Servicio.getStats:', error);
             throw new Error(`Error al obtener estadísticas: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -335,6 +366,7 @@ class Servicio {
     // OBTENER MEDICAMENTOS VINCULADOS A UN SERVICIO
     // ============================================================================
     static async getMedicamentosVinculados(servicioId) {
+        let connection;
         try {
             const query = `
                 SELECT 
@@ -355,7 +387,9 @@ class Servicio {
                 ORDER BY m.nombre_medicamento
             `;
 
-            const [medicamentos] = await db.execute(query, [servicioId]);
+            connection = await this.getConnection();
+            const [medicamentos] = await connection.execute(query, [servicioId]);
+            
             console.log(`💊 ${medicamentos.length} medicamentos vinculados al servicio ${servicioId}`);
             
             return medicamentos;
@@ -363,6 +397,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en getMedicamentosVinculados:', error);
             throw new Error(`Error al obtener medicamentos: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -370,6 +406,7 @@ class Servicio {
     // VINCULAR MEDICAMENTO A SERVICIO
     // ============================================================================
     static async vincularMedicamento(servicioId, medicamentoId, cantidadRequerida = 1) {
+        let connection;
         try {
             // Verificar que el servicio existe
             const servicio = await this.findById(servicioId);
@@ -377,12 +414,14 @@ class Servicio {
                 throw new Error('Servicio no encontrado');
             }
 
+            connection = await this.getConnection();
+
             // Verificar si ya está vinculado
             const checkQuery = `
                 SELECT id FROM servicios_medicamentos 
                 WHERE servicio_id = ? AND medicamento_id = ?
             `;
-            const [existing] = await db.execute(checkQuery, [servicioId, medicamentoId]);
+            const [existing] = await connection.execute(checkQuery, [servicioId, medicamentoId]);
 
             if (existing.length > 0) {
                 // Actualizar cantidad si ya existe
@@ -391,7 +430,7 @@ class Servicio {
                     SET cantidad_requerida = ?, fecha_actualizacion = NOW()
                     WHERE servicio_id = ? AND medicamento_id = ?
                 `;
-                await db.execute(updateQuery, [cantidadRequerida, servicioId, medicamentoId]);
+                await connection.execute(updateQuery, [cantidadRequerida, servicioId, medicamentoId]);
                 console.log('🔄 Cantidad actualizada para medicamento vinculado');
             } else {
                 // Crear nueva vinculación
@@ -400,7 +439,7 @@ class Servicio {
                     (servicio_id, medicamento_id, cantidad_requerida, fecha_creacion, fecha_actualizacion)
                     VALUES (?, ?, ?, NOW(), NOW())
                 `;
-                await db.execute(insertQuery, [servicioId, medicamentoId, cantidadRequerida]);
+                await connection.execute(insertQuery, [servicioId, medicamentoId, cantidadRequerida]);
                 console.log('✅ Medicamento vinculado al servicio');
             }
 
@@ -409,6 +448,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en vincularMedicamento:', error);
             throw new Error(`Error al vincular medicamento: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 
@@ -416,13 +457,15 @@ class Servicio {
     // DESVINCULAR MEDICAMENTO DE SERVICIO
     // ============================================================================
     static async desvincularMedicamento(servicioId, medicamentoId) {
+        let connection;
         try {
             const query = `
                 DELETE FROM servicios_medicamentos 
                 WHERE servicio_id = ? AND medicamento_id = ?
             `;
 
-            const [result] = await db.execute(query, [servicioId, medicamentoId]);
+            connection = await this.getConnection();
+            const [result] = await connection.execute(query, [servicioId, medicamentoId]);
             
             if (result.affectedRows === 0) {
                 throw new Error('Vinculación no encontrada');
@@ -434,6 +477,8 @@ class Servicio {
         } catch (error) {
             console.error('❌ Error en desvincularMedicamento:', error);
             throw new Error(`Error al desvincular medicamento: ${error.message}`);
+        } finally {
+            if (connection) await connection.end();
         }
     }
 }
