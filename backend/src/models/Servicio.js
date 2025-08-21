@@ -123,9 +123,14 @@ class Servicio {
         let connection;
         try {
             const {
-                nombre_servicio, precio_tarjeta, precio_efectivo,
-                monto_minimo, comision_venta, activo,
-                requiere_medicamentos, requiere_extras
+                nombre_servicio,
+                precio_tarjeta,
+                precio_efectivo,
+                monto_minimo = 0,
+                comision_venta = 0,
+                activo = true,
+                requiere_medicamentos = false,
+                requiere_extras = false
             } = data;
 
             const query = `
@@ -137,6 +142,12 @@ class Servicio {
                 WHERE id = ?
             `;
 
+            console.log('🔄 Actualizando con valores:', {
+                nombre_servicio, precio_tarjeta, precio_efectivo,
+                monto_minimo, comision_venta, activo,
+                requiere_medicamentos, requiere_extras, id
+            });
+
             connection = await this.getConnection();
             await connection.execute(query, [
                 nombre_servicio, precio_tarjeta, precio_efectivo,
@@ -146,6 +157,7 @@ class Servicio {
 
             return await this.findById(id);
         } catch (error) {
+            console.error('❌ Error en update:', error);
             throw new Error(`Error: ${error.message}`);
         } finally {
             if (connection) await connection.end();
