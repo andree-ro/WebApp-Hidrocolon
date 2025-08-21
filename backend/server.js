@@ -1,6 +1,6 @@
 // server.js
 // Servidor principal del Sistema Hidrocolon
-// Configuración completa con autenticación, farmacia y extras integrados
+// Configuración completa con autenticación, farmacia, extras y servicios integrados
 
 require('dotenv').config();
 const express = require('express');
@@ -25,7 +25,8 @@ const detectThreats = (req, body) => {
 // Importar rutas
 const authRoutes = require('./src/routes/auth');
 const farmaciaRoutes = require('./src/routes/farmacia');
-const extrasRoutes = require('./src/routes/extras'); // NUEVA RUTA EXTRAS
+const extrasRoutes = require('./src/routes/extras');
+const serviciosRoutes = require('./src/routes/servicios'); // NUEVA RUTA SERVICIOS
 
 // ============================================================================
 // 🚀 CONFIGURACIÓN DEL SERVIDOR
@@ -35,7 +36,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
-console.log(`🔒 Configurando seguridad para ambiente: ${NODE_ENV}`);
+console.log(`🔐 Configurando seguridad para ambiente: ${NODE_ENV}`);
 
 // ============================================================================
 // 🛡️ CONFIGURACIÓN DE SEGURIDAD
@@ -192,20 +193,22 @@ app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Sistema Hidrocolon API',
-        version: '1.2.0',
+        version: '1.4.0-servicios-integration',
         timestamp: new Date().toISOString(),
         environment: NODE_ENV,
         modules: {
             auth: 'Sistema de autenticación JWT completo',
             farmacia: 'Gestión de medicamentos e inventario',
             extras: 'Gestión de extras y utensilios médicos',
+            servicios: 'Gestión de servicios médicos y promociones',
             // Módulos futuros aquí
         },
         endpoints: {
             health: 'GET /health',
             auth: 'POST|GET /api/auth/*',
             farmacia: 'GET|POST|PUT|DELETE /api/farmacia/*',
-            extras: 'GET|POST|PUT|DELETE /api/extras/*'
+            extras: 'GET|POST|PUT|DELETE /api/extras/*',
+            servicios: 'GET|POST|PUT|DELETE /api/servicios/*'
         }
     });
 });
@@ -218,12 +221,13 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: NODE_ENV,
-        version: '1.2.0',
+        version: '1.4.0-servicios-integration',
         database: 'connected', // TODO: Verificar conexión real a BD
         services: {
             auth: 'active',
             farmacia: 'active',
             extras: 'active',
+            servicios: 'active',
             api: 'active'
         }
     });
@@ -254,6 +258,14 @@ app.use('/api/extras', extrasRoutes);
 console.log('✅ Rutas de extras configuradas en /api/extras');
 
 // ============================================================================
+// 🏥 RUTAS DE SERVICIOS
+// ============================================================================
+
+// Montar rutas de servicios (protegidas por autenticación)
+app.use('/api/servicios', serviciosRoutes);
+console.log('✅ Rutas de servicios configuradas en /api/servicios');
+
+// ============================================================================
 // 🔗 RUTAS DE RELACIÓN MEDICAMENTOS-EXTRAS
 // ============================================================================
 
@@ -277,14 +289,74 @@ console.log('   POST   /api/medicamentos/:id/extras');
 console.log('   DELETE /api/medicamentos/:id/extras/:extraId');
 
 // ============================================================================
+// 🔗 RUTAS DE RELACIÓN SERVICIOS-MEDICAMENTOS
+// ============================================================================
+
+// Importar funciones específicas del controlador de servicios
+const ServiciosController = require('./src/controllers/serviciosController');
+
+// GET /api/medicamentos/:id/servicios - Obtener servicios que usan un medicamento específico
+app.get('/api/medicamentos/:id/servicios', simpleAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(`🏥 GET /api/medicamentos/${id}/servicios - Servicios que usan medicamento`);
+
+        // Validar ID del medicamento
+        const medicamentoId = parseInt(id);
+        if (isNaN(medicamentoId) || medicamentoId <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de medicamento inválido'
+            });
+        }
+
+        // Query para obtener servicios que usan este medicamento
+        const db = require('./src/config/database');
+        const query = `
+            SELECT 
+                s.*,
+                sm.cantidad_requerida,
+                COUNT(sm2.medicamento_id) as total_medicamentos_vinculados
+            FROM servicios s
+            INNER JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
+            LEFT JOIN servicios_medicamentos sm2 ON s.id = sm2.servicio_id
+            WHERE sm.medicamento_id = ? AND s.activo = true
+            GROUP BY s.id, sm.cantidad_requerida
+            ORDER BY s.nombre_servicio
+        `;
+
+        const [servicios] = await db.execute(query, [medicamentoId]);
+
+        console.log(`✅ ${servicios.length} servicios encontrados que usan medicamento ${medicamentoId}`);
+
+        res.json({
+            success: true,
+            message: 'Servicios obtenidos correctamente',
+            data: servicios,
+            medicamento_id: medicamentoId
+        });
+
+    } catch (error) {
+        console.error('❌ Error en GET /api/medicamentos/:id/servicios:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo servicios del medicamento',
+            error: error.message
+        });
+    }
+});
+
+console.log('✅ Rutas adicionales servicios-medicamentos configuradas:');
+console.log('   GET    /api/medicamentos/:id/servicios');
+
+// ============================================================================
 // 📋 RUTAS DE MÓDULOS FUTUROS
 // ============================================================================
 
-// TODO: Descomentar cuando se implementen los módulos
+console.log('📋 Módulos implementados: auth, farmacia, extras, servicios');
+console.log('📋 Módulos pendientes: pacientes, carrito, financiero, usuarios, notificaciones');
 
-// Servicios
-// const serviciosRoutes = require('./src/routes/servicios');
-// app.use('/api/servicios', serviciosRoutes);
+// TODO: Descomentar cuando se implementen los módulos
 
 // Pacientes
 // const pacientesRoutes = require('./src/routes/pacientes');
@@ -302,7 +374,9 @@ console.log('   DELETE /api/medicamentos/:id/extras/:extraId');
 // const usuariosRoutes = require('./src/routes/usuarios');
 // app.use('/api/usuarios', usuariosRoutes);
 
-console.log('📋 Módulos pendientes: servicios, pacientes, carrito, financiero, usuarios');
+// Notificaciones
+// const notificacionesRoutes = require('./src/routes/notificaciones');
+// app.use('/api/notificaciones', notificacionesRoutes);
 
 // ============================================================================
 // 🧪 RUTAS DE DESARROLLO
@@ -385,6 +459,82 @@ if (NODE_ENV === 'development') {
         }
     });
 
+    // Test servicios (NUEVO)
+    app.get('/debug/servicios', async (req, res) => {
+        try {
+            const Servicio = require('./src/models/Servicio');
+            const stats = await Servicio.getStats();
+            const servicios = await Servicio.findAll({ limit: 3 });
+            
+            res.json({
+                success: true,
+                message: 'Módulo servicios funcionando',
+                data: {
+                    stats,
+                    sample_servicios: servicios.servicios
+                }
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Error en módulo servicios',
+                error: error.message
+            });
+        }
+    });
+
+    // Test completo del sistema (ACTUALIZADO)
+    app.get('/debug/system', async (req, res) => {
+        try {
+            console.log('🧪 Testing sistema completo...');
+            
+            const User = require('./src/models/User');
+            const Medicamento = require('./src/models/Medicamento');
+            const Extra = require('./src/models/Extra');
+            const Servicio = require('./src/models/Servicio');
+
+            // Test todos los módulos
+            const [usuarios, medicamentosResult, extrasResult, serviciosResult] = await Promise.all([
+                User.getAll(),
+                Medicamento.findAll({ limit: 1 }),
+                Extra.findAll({ limit: 1 }),
+                Servicio.findAll({ limit: 1 })
+            ]);
+
+            res.json({
+                success: true,
+                message: 'Sistema completo funcionando',
+                modules: {
+                    auth: {
+                        status: 'OK',
+                        users: usuarios.length
+                    },
+                    farmacia: {
+                        status: 'OK',
+                        medicamentos: medicamentosResult.pagination.totalItems
+                    },
+                    extras: {
+                        status: 'OK',
+                        extras: extrasResult.pagination.totalItems
+                    },
+                    servicios: {
+                        status: 'OK',
+                        servicios: serviciosResult.pagination.totalItems
+                    }
+                },
+                timestamp: new Date().toISOString()
+            });
+
+        } catch (error) {
+            console.error('❌ Error en test del sistema:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error en test del sistema',
+                error: error.message
+            });
+        }
+    });
+
     // Endpoint de información del sistema
     app.get('/debug/info', (req, res) => {
         res.json({
@@ -399,6 +549,7 @@ if (NODE_ENV === 'development') {
                     auth: 'Configurado y funcionando',
                     farmacia: 'Configurado y funcionando',
                     extras: 'Configurado y funcionando',
+                    servicios: 'Configurado y funcionando',
                     health: 'Configurado',
                     debug: 'Solo desarrollo'
                 },
@@ -545,6 +696,122 @@ if (NODE_ENV === 'development') {
         }
     });
 
+    // Endpoint para insertar datos de prueba de servicios (NUEVO)
+    app.post('/debug/insert-servicios-data', async (req, res) => {
+        try {
+            console.log('🏥 Insertando datos de prueba de servicios...');
+            
+            const mysql = require('mysql2/promise');
+            
+            // Crear conexión
+            const connection = await mysql.createConnection({
+                host: process.env.DB_HOST,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_NAME,
+                port: process.env.DB_PORT || 3306
+            });
+
+            // Verificar si ya existen servicios
+            const [existingServicios] = await connection.execute('SELECT COUNT(*) as count FROM servicios WHERE activo = 1');
+            
+            if (existingServicios[0].count > 0) {
+                await connection.end();
+                return res.json({
+                    success: true,
+                    message: `Ya existen ${existingServicios[0].count} servicios en la base de datos`,
+                    data: { servicios_existentes: existingServicios[0].count }
+                });
+            }
+
+            // Insertar servicios de prueba
+            const serviciosData = [
+                ['Hidroterapia de Colon Básica', 'Sesión básica de hidroterapia de colon con equipo estándar', 300.00, 280.00, 250.00, 15.00, true, false],
+                ['Hidroterapia de Colon Premium', 'Sesión premium con ozono, probióticos y seguimiento nutricional', 450.00, 420.00, 400.00, 20.00, true, true],
+                ['Consulta Nutricional', 'Evaluación nutricional completa con plan personalizado', 150.00, 140.00, 100.00, 10.00, true, false],
+                ['Paquete 3 Sesiones Hidrocolon', 'Paquete promocional de 3 sesiones de hidroterapia', 800.00, 750.00, 700.00, 25.00, true, true],
+                ['Ultrasonido Abdominal', 'Ultrasonido diagnóstico abdominal completo', 200.00, 180.00, 150.00, 12.00, true, false],
+                ['Terapia de Ozono', 'Sesión de ozonoterapia para desintoxicación', 180.00, 160.00, 120.00, 8.00, true, true],
+                ['Limpieza Hepática', 'Protocolo de limpieza hepática con suplementos naturales', 120.00, 100.00, 80.00, 5.00, true, true]
+            ];
+
+            const insertQuery = `
+                INSERT INTO servicios (
+                    nombre_servicio, descripcion, precio_tarjeta, precio_efectivo, 
+                    monto_minimo, comision_venta, activo, requiere_medicamentos,
+                    fecha_creacion, fecha_actualizacion
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            `;
+
+            let insertedCount = 0;
+            for (const servicioData of serviciosData) {
+                try {
+                    await connection.execute(insertQuery, servicioData);
+                    insertedCount++;
+                    console.log(`✅ Servicio insertado: ${servicioData[0]}`);
+                } catch (error) {
+                    console.log(`⚠️ Error insertando ${servicioData[0]}:`, error.message);
+                }
+            }
+
+            // Vincular algunos servicios con medicamentos existentes
+            const [medicamentos] = await connection.execute('SELECT id FROM medicamentos WHERE activo = 1 LIMIT 3');
+            const [servicios] = await connection.execute('SELECT id FROM servicios WHERE requiere_medicamentos = 1 LIMIT 3');
+            
+            let vinculacionesCreadas = 0;
+            if (medicamentos.length > 0 && servicios.length > 0) {
+                console.log('🔗 Vinculando servicios con medicamentos...');
+                
+                // Vincular primer servicio con medicamentos
+                for (let i = 0; i < Math.min(medicamentos.length, 2); i++) {
+                    try {
+                        await connection.execute(
+                            'INSERT IGNORE INTO servicios_medicamentos (servicio_id, medicamento_id, cantidad_requerida, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, NOW(), NOW())',
+                            [servicios[0].id, medicamentos[i].id, 1]
+                        );
+                        vinculacionesCreadas++;
+                    } catch (error) {
+                        console.log(`⚠️ Error vinculando:`, error.message);
+                    }
+                }
+
+                // Vincular segundo servicio si existe
+                if (servicios[1] && medicamentos.length > 1) {
+                    try {
+                        await connection.execute(
+                            'INSERT IGNORE INTO servicios_medicamentos (servicio_id, medicamento_id, cantidad_requerida, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, NOW(), NOW())',
+                            [servicios[1].id, medicamentos[1].id, 2]
+                        );
+                        vinculacionesCreadas++;
+                    } catch (error) {
+                        console.log(`⚠️ Error vinculando segundo servicio:`, error.message);
+                    }
+                }
+            }
+
+            await connection.end();
+
+            res.json({
+                success: true,
+                message: 'Datos de servicios insertados exitosamente',
+                data: {
+                    servicios_insertados: insertedCount,
+                    total_servicios: serviciosData.length,
+                    vinculaciones_creadas: vinculacionesCreadas,
+                    medicamentos_disponibles: medicamentos.length
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error insertando datos de servicios:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error insertando datos de servicios',
+                error: error.message
+            });
+        }
+    });
+
     console.log('🧪 Rutas de desarrollo habilitadas');
 }
 
@@ -631,6 +898,81 @@ app.post('/api/extras/initialize-data', async (req, res) => {
     }
 });
 
+// Endpoint para insertar datos de servicios (disponible en producción) - NUEVO
+app.post('/api/servicios/initialize-data', async (req, res) => {
+    try {
+        console.log('🏥 Inicializando datos de servicios...');
+        
+        const mysql = require('mysql2/promise');
+        
+        // Crear conexión
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306
+        });
+
+        // Verificar si ya existen servicios
+        const [existingServicios] = await connection.execute('SELECT COUNT(*) as count FROM servicios WHERE activo = 1');
+        
+        if (existingServicios[0].count > 0) {
+            await connection.end();
+            return res.json({
+                success: true,
+                message: `Ya existen ${existingServicios[0].count} servicios en la base de datos`,
+                data: { servicios_existentes: existingServicios[0].count }
+            });
+        }
+
+        // Insertar servicios iniciales
+        const serviciosData = [
+            ['Hidroterapia de Colon Básica', 'Sesión básica de hidroterapia de colon', 300.00, 280.00, 250.00, 15.00, true, false],
+            ['Hidroterapia de Colon Premium', 'Sesión premium con ozono y probióticos', 450.00, 420.00, 400.00, 20.00, true, true],
+            ['Consulta Nutricional', 'Evaluación nutricional completa', 150.00, 140.00, 100.00, 10.00, true, false]
+        ];
+
+        const insertQuery = `
+            INSERT INTO servicios (
+                nombre_servicio, descripcion, precio_tarjeta, precio_efectivo, 
+                monto_minimo, comision_venta, activo, requiere_medicamentos,
+                fecha_creacion, fecha_actualizacion
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+
+        let insertedCount = 0;
+        for (const servicioData of serviciosData) {
+            try {
+                await connection.execute(insertQuery, servicioData);
+                insertedCount++;
+                console.log(`✅ Servicio insertado: ${servicioData[0]}`);
+            } catch (error) {
+                console.log(`⚠️ Error insertando ${servicioData[0]}:`, error.message);
+            }
+        }
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            message: 'Datos de servicios insertados exitosamente',
+            data: {
+                servicios_insertados: insertedCount,
+                total_servicios: serviciosData.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error insertando datos de servicios:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error insertando datos de servicios',
+            error: error.message
+        });
+    }
+});
+
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
     res.status(404).json({
@@ -642,7 +984,8 @@ app.use('*', (req, res) => {
             health: 'GET /health',
             auth: 'POST|GET /api/auth/*',
             farmacia: 'GET|POST|PUT|DELETE /api/farmacia/*',
-            extras: 'GET|POST|PUT|DELETE /api/extras/*'
+            extras: 'GET|POST|PUT|DELETE /api/extras/*',
+            servicios: 'GET|POST|PUT|DELETE /api/servicios/*'
         }
     });
 });
@@ -700,7 +1043,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
     console.log('🚀 Servidor corriendo en puerto', PORT);
     console.log('🌍 Ambiente:', NODE_ENV);
-    console.log('🔒 Seguridad: Estricta');
+    console.log('🔐 Seguridad: Estricta');
     console.log('📊 Health check: http://localhost:' + PORT + '/health');
     console.log('✅ Sistema Hidrocolon listo para uso');
     
@@ -738,6 +1081,19 @@ app.listen(PORT, () => {
     console.log('   GET  /api/medicamentos/:id/extras - Extras de medicamento');
     console.log('   POST /api/medicamentos/:id/extras - Vincular extra');
     console.log('   DELETE /api/medicamentos/:id/extras/:extraId - Desvincular extra');
+    console.log('');
+    console.log('🏥 Servicios:');
+    console.log('   GET  /api/servicios - Listar servicios');
+    console.log('   POST /api/servicios - Crear servicio (admin)');
+    console.log('   GET  /api/servicios/:id - Ver servicio');
+    console.log('   PUT  /api/servicios/:id - Actualizar servicio (admin)');
+    console.log('   DELETE /api/servicios/:id - Eliminar servicio (admin)');
+    console.log('   GET  /api/servicios/stats - Estadísticas');
+    console.log('   GET  /api/servicios/export/excel - Exportar datos');
+    console.log('   GET  /api/servicios/:id/medicamentos - Medicamentos del servicio');
+    console.log('   POST /api/servicios/:id/medicamentos - Vincular medicamento');
+    console.log('   DELETE /api/servicios/:id/medicamentos/:medId - Desvincular medicamento');
+    console.log('   GET  /api/medicamentos/:id/servicios - Servicios que usan medicamento');
     
     if (NODE_ENV === 'development') {
         console.log('');
@@ -745,13 +1101,21 @@ app.listen(PORT, () => {
         console.log('   GET  /debug/db - Test conexión BD');
         console.log('   GET  /debug/farmacia - Test módulo farmacia');
         console.log('   GET  /debug/extras - Test módulo extras');
+        console.log('   GET  /debug/servicios - Test módulo servicios');
+        console.log('   GET  /debug/system - Test sistema completo');
         console.log('   GET  /debug/info - Info del sistema');
+        console.log('   POST /debug/insert-extras-data - Insertar datos extras');
+        console.log('   POST /debug/insert-servicios-data - Insertar datos servicios');
         console.log('   GET  /api/auth/debug - Debug auth');
         console.log('   GET  /api/farmacia/debug/test - Test farmacia');
+        console.log('   GET  /api/servicios/debug/basic - Test servicios básico');
+        console.log('   GET  /api/servicios/debug/auth - Test servicios auth');
+        console.log('   GET  /api/servicios/debug/db - Test servicios BD');
     }
     
-    console.log('\n🔥 ¡Módulos Farmacia y Extras integrados y listos para testing!');
-    console.log('📝 Credenciales de prueba: admin@hidrocolon.com / admin123');
+    console.log('\n🔥 ¡Módulos Farmacia, Extras y Servicios integrados y listos para testing!');
+    console.log('🔐 Credenciales de prueba: admin@hidrocolon.com / admin123');
+    console.log('📋 Próximos módulos: pacientes, carrito, financiero, usuarios, notificaciones');
 });
 
 // ============================================================================
