@@ -177,7 +177,8 @@ class Servicio {
             // ============================================================
 
             baseQuery += ` ORDER BY s.${safeOrderBy} ${safeOrderDir} LIMIT ? OFFSET ?`;
-            queryParams.push(limitNum, offset);
+            queryParams.push(parseInt(limitNum));
+            queryParams.push(parseInt(offset));
 
             console.log('🔍 Query final:', baseQuery);
             console.log('📋 Parámetros:', queryParams);
