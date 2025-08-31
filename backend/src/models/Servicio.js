@@ -41,129 +41,170 @@ class Servicio {
     // FINDALL - VERSIÓN SÚPER SIMPLE SIN PROBLEMAS
     // ========================================================================
     static async findAll(options = {}) {
-        console.log('🔍 DEBUG LIMIT - Analizando problema específico con LIMIT');
+        console.log('🎯 SOLUCIÓN FINAL - Paginación con query concatenado');
         console.log('📋 Options recibidas:', options);
         
         let connection;
         try {
             connection = await this.getConnection();
 
-            // ===== VALIDACIÓN BÁSICA =====
-            const pageNum = Math.max(1, parseInt(options.page) || 1);
-            const limitNum = Math.min(100, Math.max(1, parseInt(options.limit) || 10));
+            // ===== PASO 1: VALIDACIÓN ESTRICTA (MANTENER SEGURIDAD) =====
+            const {
+                page = 1,
+                limit = 10,
+                search = '',
+                orderBy = 'fecha_creacion',
+                orderDir = 'DESC',
+                activo = null,
+                precio_min = null,
+                precio_max = null
+            } = options;
+
+            // Validación crítica para seguridad
+            const pageNum = Math.max(1, parseInt(page) || 1);
+            const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+            const offset = (pageNum - 1) * limitNum;
+
+            // VERIFICACIÓN EXTRA de seguridad antes de concatenar
+            if (!Number.isInteger(pageNum) || !Number.isInteger(limitNum) || !Number.isInteger(offset)) {
+                throw new Error(`Parámetros no son enteros válidos: page=${pageNum}, limit=${limitNum}, offset=${offset}`);
+            }
+
+            if (pageNum < 1 || limitNum < 1 || limitNum > 100 || offset < 0) {
+                throw new Error(`Parámetros fuera de rango válido: page=${pageNum}, limit=${limitNum}, offset=${offset}`);
+            }
+
+            console.log('🔢 Parámetros validados para concatenación:', { pageNum, limitNum, offset });
+
+            // ===== PASO 2: VALIDACIÓN DE ORDENAMIENTO =====
+            const validOrderColumns = [
+                'id', 'nombre', 'descripcion', 'precio_tarjeta', 'precio_efectivo', 
+                'monto_minimo', 'porcentaje_comision', 'fecha_creacion', 'fecha_actualizacion'
+            ];
             
-            console.log('🔢 DEBUG - Valores antes de procesamiento:', {
-                'options.limit': options.limit,
-                'limitNum': limitNum,
-                'typeof limitNum': typeof limitNum
+            const validOrderBy = validOrderColumns.includes(orderBy) ? orderBy : 'fecha_creacion';
+            const validOrderDir = ['ASC', 'DESC'].includes(orderDir?.toUpperCase()) ? orderDir.toUpperCase() : 'DESC';
+
+            // ===== PASO 3: CONSTRUCCIÓN DE QUERIES CON FILTROS =====
+            let baseQuery = 'SELECT * FROM servicios WHERE 1=1';
+            let countQuery = 'SELECT COUNT(*) as total FROM servicios WHERE 1=1';
+            let queryParams = [];
+            let countParams = [];
+
+            // Filtro de búsqueda
+            const searchTerm = search ? search.trim() : '';
+            if (searchTerm) {
+                baseQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
+                countQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
+                const searchPattern = `%${searchTerm}%`;
+                queryParams.push(searchPattern, searchPattern);
+                countParams.push(searchPattern, searchPattern);
+                console.log('🔍 Filtro búsqueda aplicado:', searchPattern);
+            }
+
+            // Filtro activo/inactivo
+            if (activo !== null && activo !== '') {
+                const isActive = activo === 'true' || activo === '1';
+                baseQuery += ` AND activo = ?`;
+                countQuery += ` AND activo = ?`;
+                queryParams.push(isActive);
+                countParams.push(isActive);
+                console.log('✅ Filtro activo aplicado:', isActive);
+            }
+
+            // Filtro precio mínimo
+            if (precio_min !== null && precio_min !== '') {
+                const minPrice = parseFloat(precio_min);
+                if (!isNaN(minPrice) && minPrice >= 0) {
+                    baseQuery += ` AND precio_efectivo >= ?`;
+                    countQuery += ` AND precio_efectivo >= ?`;
+                    queryParams.push(minPrice);
+                    countParams.push(minPrice);
+                    console.log('💰 Filtro precio mínimo aplicado:', minPrice);
+                }
+            }
+
+            // Filtro precio máximo
+            if (precio_max !== null && precio_max !== '') {
+                const maxPrice = parseFloat(precio_max);
+                if (!isNaN(maxPrice) && maxPrice >= 0) {
+                    baseQuery += ` AND precio_efectivo <= ?`;
+                    countQuery += ` AND precio_efectivo <= ?`;
+                    queryParams.push(maxPrice);
+                    countParams.push(maxPrice);
+                    console.log('💰 Filtro precio máximo aplicado:', maxPrice);
+                }
+            }
+
+            // ===== PASO 4: AGREGAR ORDENAMIENTO Y PAGINACIÓN (CONCATENADO) =====
+            baseQuery += ` ORDER BY ${validOrderBy} ${validOrderDir}`;
+            
+            // CONCATENACIÓN SEGURA (valores ya validados como enteros)
+            baseQuery += ` LIMIT ${limitNum} OFFSET ${offset}`;
+
+            console.log('🔍 Query final:', baseQuery);
+            console.log('📋 Parámetros (solo para filtros):', queryParams);
+
+            // ===== PASO 5: EJECUCIÓN DE QUERIES =====
+            
+            // Query COUNT (para metadatos de paginación)
+            const [countResult] = await connection.execute(countQuery, countParams);
+            const totalItems = countResult[0].total;
+            
+            // Query SELECT (con paginación concatenada)
+            const [serviciosRows] = await connection.execute(baseQuery, queryParams);
+            
+            console.log('📊 Resultados:', {
+                totalItems: totalItems,
+                itemsEnPagina: serviciosRows.length,
+                paginaActual: pageNum
             });
 
-            // ===== TEST 1: QUERY BÁSICO (YA SABEMOS QUE FUNCIONA) =====
-            console.log('✅ Saltando query básico (ya funciona)');
-
-            // ===== TEST 2: ANÁLISIS DETALLADO DEL PARÁMETRO LIMIT =====
-            console.log('🧪 DEBUG - Analizando parámetro LIMIT en detalle...');
+            // ===== PASO 6: CONSTRUCCIÓN DE METADATOS =====
+            const totalPages = Math.ceil(totalItems / limitNum);
             
-            // Probar diferentes formas de preparar el LIMIT
-            const limit1 = limitNum;                    // Directo
-            const limit2 = parseInt(limitNum);          // parseInt explícito  
-            const limit3 = Number(limitNum);            // Number() conversion
-            const limit4 = Math.floor(limitNum);        // Math.floor para asegurar entero
-            
-            console.log('🔍 DEBUG - Variaciones de LIMIT:', {
-                limit1: { value: limit1, type: typeof limit1, isInteger: Number.isInteger(limit1) },
-                limit2: { value: limit2, type: typeof limit2, isInteger: Number.isInteger(limit2) },
-                limit3: { value: limit3, type: typeof limit3, isInteger: Number.isInteger(limit3) },
-                limit4: { value: limit4, type: typeof limit4, isInteger: Number.isInteger(limit4) }
-            });
+            const paginationMetadata = {
+                currentPage: pageNum,
+                totalPages: totalPages,
+                totalItems: totalItems,
+                itemsPerPage: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1,
+                nextPage: pageNum < totalPages ? pageNum + 1 : null,
+                prevPage: pageNum > 1 ? pageNum - 1 : null
+            };
 
-            // ===== TEST 3: PROBAR LIMIT HARDCODEADO =====
-            console.log('🧪 DEBUG - Probando LIMIT hardcodeado...');
-            try {
-                const [hardcodedTest] = await connection.execute('SELECT * FROM servicios LIMIT 5');
-                console.log('✅ DEBUG - LIMIT hardcodeado funciona:', hardcodedTest.length);
-            } catch (hardcodedError) {
-                console.error('❌ DEBUG - LIMIT hardcodeado falló:', hardcodedError.message);
-            }
+            // ===== PASO 7: RESPUESTA FINAL =====
+            const servicios = serviciosRows.map(servicio => new Servicio(servicio));
 
-            // ===== TEST 4: PROBAR DIFERENTES FORMAS DE PASAR PARÁMETRO =====
-            
-            // Forma 1: Array con número directo
-            console.log('🧪 DEBUG - Probando [limitNum]...');
-            try {
-                const [test1] = await connection.execute('SELECT * FROM servicios LIMIT ?', [limitNum]);
-                console.log('✅ DEBUG - [limitNum] funciona:', test1.length);
-            } catch (error1) {
-                console.error('❌ DEBUG - [limitNum] falló:', error1.message);
-            }
-
-            // Forma 2: Array con parseInt
-            console.log('🧪 DEBUG - Probando [parseInt(limitNum)]...');
-            try {
-                const [test2] = await connection.execute('SELECT * FROM servicios LIMIT ?', [parseInt(limitNum)]);
-                console.log('✅ DEBUG - [parseInt(limitNum)] funciona:', test2.length);
-            } catch (error2) {
-                console.error('❌ DEBUG - [parseInt(limitNum)] falló:', error2.message);
-            }
-
-            // Forma 3: Array con Number()
-            console.log('🧪 DEBUG - Probando [Number(limitNum)]...');
-            try {
-                const [test3] = await connection.execute('SELECT * FROM servicios LIMIT ?', [Number(limitNum)]);
-                console.log('✅ DEBUG - [Number(limitNum)] funciona:', test3.length);
-            } catch (error3) {
-                console.error('❌ DEBUG - [Number(limitNum)] falló:', error3.message);
-            }
-
-            // Forma 4: String concatenado (NO recomendado, solo para debug)
-            console.log('🧪 DEBUG - Probando query concatenado...');
-            try {
-                const queryString = `SELECT * FROM servicios LIMIT ${limitNum}`;
-                console.log('🔍 DEBUG - Query concatenado:', queryString);
-                const [test4] = await connection.execute(queryString);
-                console.log('✅ DEBUG - Query concatenado funciona:', test4.length);
-            } catch (error4) {
-                console.error('❌ DEBUG - Query concatenado falló:', error4.message);
-            }
-
-            // ===== TEST 5: VERIFICAR ESTRUCTURA DE LA TABLA =====
-            console.log('🧪 DEBUG - Verificando estructura de tabla servicios...');
-            try {
-                const [structure] = await connection.execute('DESCRIBE servicios');
-                console.log('✅ DEBUG - Estructura de tabla:', structure.map(col => ({ 
-                    Field: col.Field, 
-                    Type: col.Type, 
-                    Key: col.Key 
-                })));
-            } catch (structureError) {
-                console.error('❌ DEBUG - Error verificando estructura:', structureError.message);
-            }
-
-            // ===== RESPUESTA DE DEBUG =====
             return {
-                servicios: [],
-                pagination: {
-                    currentPage: pageNum,
-                    totalPages: 1,
-                    totalItems: 0,
-                    itemsPerPage: limitNum,
-                    hasNextPage: false,
-                    hasPrevPage: false,
-                    nextPage: null,
-                    prevPage: null
-                },
+                servicios: servicios,
+                pagination: paginationMetadata,
                 debug: {
-                    step: 'DEBUG LIMIT COMPLETADO',
-                    message: 'Análisis detallado del problema con LIMIT',
-                    problema_identificado: 'Query básico funciona, LIMIT falla',
-                    limitNum_analizado: limitNum,
-                    tipo_limitNum: typeof limitNum
+                    step: 'PAGINACIÓN REAL IMPLEMENTADA',
+                    message: 'Solución final: query concatenado funciona perfectamente',
+                    solucion: 'Concatenar LIMIT/OFFSET en lugar de usar parámetros ?',
+                    query_usado: baseQuery,
+                    resultados: {
+                        totalItems: totalItems,
+                        itemsObtenidos: servicios.length,
+                        paginaActual: pageNum,
+                        totalPaginas: totalPages
+                    },
+                    filtros_aplicados: {
+                        search: searchTerm || null,
+                        activo: activo !== null ? (activo === 'true' || activo === '1') : null,
+                        precio_min: precio_min ? parseFloat(precio_min) : null,
+                        precio_max: precio_max ? parseFloat(precio_max) : null,
+                        orderBy: validOrderBy,
+                        orderDir: validOrderDir
+                    }
                 }
             };
 
         } catch (error) {
-            console.error('❌ DEBUG LIMIT - Error:', error.message);
-            throw new Error(`DEBUG LIMIT - ${error.message}`);
+            console.error('❌ Error en paginación final:', error.message);
+            throw new Error(`Paginación falló: ${error.message}`);
         } finally {
             if (connection) {
                 try {
