@@ -1,7 +1,3 @@
-// backend/src/models/Servicio.js
-// 🚨 VERSIÓN DE EMERGENCIA - SIMPLE Y FUNCIONAL
-// REEMPLAZA TODO EL ARCHIVO CON ESTE CONTENIDO
-
 const mysql = require('mysql2/promise');
 
 class Servicio {
