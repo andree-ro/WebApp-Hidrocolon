@@ -41,85 +41,156 @@ class Servicio {
     // FINDALL - VERSIÓN SÚPER SIMPLE SIN PROBLEMAS
     // ========================================================================
     static async findAll(options = {}) {
+        console.log('🎯 PASO 1 - Iniciando findAll con validación estricta');
+        console.log('📋 Options recibidas:', options);
+        
         let connection;
         try {
-            console.log('🔍 Servicio.findAll SIMPLE - Opciones:', options);
-
             connection = await this.getConnection();
 
-            // Extraer filtros básicos
-            const search = (options.search || '').trim();
-            const activo = options.activo;
-            const precio_min = options.precio_min;
-            const precio_max = options.precio_max;
+            // ===== PASO 1A: VALIDACIÓN ESTRICTA DE PARÁMETROS =====
+            
+            // Extraer y sanitizar parámetros
+            const {
+                page = 1,
+                limit = 10,
+                search = '',
+                orderBy = 'fecha_creacion',
+                orderDir = 'DESC',
+                activo = null,
+                precio_min = null,
+                precio_max = null
+            } = options;
 
-            // Query base SIN JOIN complicado
-            let query = 'SELECT * FROM servicios WHERE 1=1';
-            let params = [];
+            console.log('📥 Parámetros extraídos (raw):', { page, limit, orderBy, orderDir });
 
-            // Aplicar filtros simples
-            if (search) {
-                query += ' AND nombre LIKE ?';
-                params.push(`%${search}%`);
+            // ===== VALIDACIÓN CRÍTICA PARA EVITAR ERROR MYSQL =====
+            
+            // 1. Validar PAGE (entero >= 1)
+            const pageNum = Math.max(1, parseInt(page) || 1);
+            if (isNaN(pageNum) || pageNum < 1) {
+                throw new Error(`Page inválido: ${page} → Debe ser número entero >= 1`);
             }
 
-            if (activo !== null && activo !== undefined) {
-                query += ' AND activo = ?';
-                params.push(Boolean(activo) ? 1 : 0);
+            // 2. Validar LIMIT (entero entre 1-100)  
+            const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+            if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+                throw new Error(`Limit inválido: ${limit} → Debe ser número entre 1-100`);
             }
 
-            if (precio_min !== null && precio_min !== undefined && !isNaN(precio_min)) {
-                query += ' AND precio_efectivo >= ?';
-                params.push(parseFloat(precio_min));
+            // 3. Calcular OFFSET (entero >= 0)
+            const offset = (pageNum - 1) * limitNum;
+            if (isNaN(offset) || offset < 0) {
+                throw new Error(`Offset calculado inválido: ${offset}`);
             }
 
-            if (precio_max !== null && precio_max !== undefined && !isNaN(precio_max)) {
-                query += ' AND precio_efectivo <= ?';
-                params.push(parseFloat(precio_max));
+            // ===== VERIFICACIÓN FINAL DE TIPOS =====
+            console.log('🔢 Tipos después de validación:', {
+                pageNum: typeof pageNum,
+                limitNum: typeof limitNum,
+                offset: typeof offset,
+                valores: { pageNum, limitNum, offset }
+            });
+
+            // Verificación de seguridad CRÍTICA
+            if (typeof pageNum !== 'number' || typeof limitNum !== 'number' || typeof offset !== 'number') {
+                throw new Error('CRITICAL: Tipos no son números después de validación');
             }
 
-            // Ordenamiento simple
-            query += ' ORDER BY fecha_creacion DESC';
+            if (pageNum < 1 || limitNum < 1 || offset < 0) {
+                throw new Error('CRITICAL: Valores fuera de rango después de validación');
+            }
 
-            // SIN PAGINACIÓN PROBLEMÁTICA - Traemos todos
-            console.log('🔍 Query simple:', query);
-            console.log('📋 Params:', params);
+            // ===== PASO 1B: VALIDACIÓN DE ORDENAMIENTO =====
+            
+            const validOrderColumns = [
+                'id', 'nombre', 'descripcion', 'precio_tarjeta', 'precio_efectivo', 
+                'monto_minimo', 'porcentaje_comision', 'fecha_creacion', 'fecha_actualizacion'
+            ];
+            
+            const validOrderBy = validOrderColumns.includes(orderBy) ? orderBy : 'fecha_creacion';
+            const validOrderDir = ['ASC', 'DESC'].includes(orderDir?.toUpperCase()) ? orderDir.toUpperCase() : 'DESC';
 
-            const [servicios] = await connection.execute(query, params);
+            console.log('📊 Ordenamiento validado:', { validOrderBy, validOrderDir });
 
-            // Count simple separado
-            const [countResult] = await connection.execute('SELECT COUNT(*) as total FROM servicios');
-            const totalItems = countResult[0].total;
+            // ===== PASO 1C: VALIDACIÓN DE FILTROS =====
+            
+            const searchTerm = search ? search.trim() : '';
+            const activoFilter = (activo !== null && activo !== '') ? (activo === 'true' || activo === '1') : null;
+            
+            let precioMin = null;
+            let precioMax = null;
+            
+            if (precio_min !== null && precio_min !== '') {
+                const minPrice = parseFloat(precio_min);
+                if (!isNaN(minPrice) && minPrice >= 0) {
+                    precioMin = minPrice;
+                }
+            }
+            
+            if (precio_max !== null && precio_max !== '') {
+                const maxPrice = parseFloat(precio_max);
+                if (!isNaN(maxPrice) && maxPrice >= 0) {
+                    precioMax = maxPrice;
+                }
+            }
 
-            console.log(`✅ ${servicios.length} servicios obtenidos de ${totalItems} total`);
+            console.log('🔍 Filtros validados:', { searchTerm, activoFilter, precioMin, precioMax });
 
-            return {
-                servicios: servicios.map(servicio => new Servicio(servicio)),
+            // ===== RESPUESTA TEMPORAL PARA PASO 1 =====
+            // Por ahora, devolvemos metadatos sin hacer query real
+            // Esto confirma que la validación funciona sin tocar MySQL
+            
+            const responseStep1 = {
+                servicios: [], // Vacío por ahora en PASO 1
                 pagination: {
-                    currentPage: 1,
-                    totalPages: 1,
-                    totalItems: totalItems,
-                    itemsPerPage: servicios.length,
-                    hasNextPage: false,
-                    hasPrevPage: false
+                    currentPage: pageNum,
+                    totalPages: 1, // Temporal
+                    totalItems: 0, // Temporal  
+                    itemsPerPage: limitNum,
+                    hasNextPage: false, // Temporal
+                    hasPrevPage: pageNum > 1,
+                    nextPage: null, // Temporal
+                    prevPage: pageNum > 1 ? pageNum - 1 : null
                 },
-                filters: {
-                    search,
-                    precio_min,
-                    precio_max,
-                    activo
+                debug: {
+                    step: 'PASO 1 COMPLETADO',
+                    message: 'Validación estricta de parámetros exitosa',
+                    parametros_validados: {
+                        pageNum: pageNum,
+                        limitNum: limitNum,
+                        offset: offset,
+                        validOrderBy: validOrderBy,
+                        validOrderDir: validOrderDir
+                    },
+                    tipos_verificados: {
+                        pageNum: typeof pageNum,
+                        limitNum: typeof limitNum,
+                        offset: typeof offset
+                    },
+                    filtros_aplicables: {
+                        searchTerm: searchTerm,
+                        activoFilter: activoFilter,
+                        precioMin: precioMin,
+                        precioMax: precioMax
+                    },
+                    query_preparado: 'SELECT * FROM servicios WHERE 1=1 ORDER BY ' + validOrderBy + ' ' + validOrderDir + ' LIMIT ' + limitNum + ' OFFSET ' + offset
                 }
             };
 
+            console.log('✅ PASO 1 COMPLETADO - Respuesta preparada:', responseStep1.debug);
+            
+            return responseStep1;
+
         } catch (error) {
-            console.error('❌ Error en findAll SIMPLE:', error);
-            throw new Error(`Error obteniendo servicios: ${error.message}`);
+            console.error('❌ Error en PASO 1 - Validación:', error.message);
+            throw new Error(`PASO 1 - Error en validación: ${error.message}`);
         } finally {
             if (connection) {
                 try {
                     await connection.end();
                 } catch (closeError) {
-                    console.warn('⚠️ Error cerrando conexión:', closeError);
+                    console.warn('⚠️ Error cerrando conexión:', closeError.message);
                 }
             }
         }
