@@ -2,7 +2,7 @@
 // Agregar esta configuración a tu router existente
 
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore' // Si usas Pinia
+import authService from '@/services/authService'
 
 // Importar vistas
 import LoginView from '@/views/LoginView.vue'
@@ -137,11 +137,9 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Verificar autenticación
-  const authStore = useAuthStore()
-  
-  // Rutas que requieren autenticación
   if (to.meta.requiresAuth) {
-    if (!authStore.isAuthenticated) {
+    // ✅ USAR authService en lugar de useAuthStore
+    if (!authService.isAuthenticated()) {
       console.log('🔒 Redirigiendo a login - usuario no autenticado')
       next({
         name: 'Login',
@@ -149,28 +147,10 @@ router.beforeEach(async (to, from, next) => {
       })
       return
     }
-    
-    // Verificar token válido
-    if (authStore.tokenExpired) {
-      console.log('⏰ Token expirado, intentando refresh...')
-      
-      try {
-        await authStore.refreshToken()
-        console.log('✅ Token renovado exitosamente')
-      } catch (error) {
-        console.log('❌ Error renovando token, redirigiendo a login')
-        authStore.logout()
-        next({
-          name: 'Login',
-          query: { redirect: to.fullPath }
-        })
-        return
-      }
-    }
   }
   
   // Si ya está autenticado y va a login, redirigir a dashboard
-  if (to.name === 'Login' && authStore.isAuthenticated) {
+  if (to.name === 'Login' && authService.isAuthenticated()) {
     console.log('✅ Usuario ya autenticado, redirigiendo a dashboard')
     next({ name: 'Dashboard' })
     return
