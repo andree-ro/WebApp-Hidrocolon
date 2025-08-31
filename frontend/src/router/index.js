@@ -1,92 +1,122 @@
-// src/router/index.js
-// Router principal del Sistema Hidrocolon
+// frontend/src/router/index.js
+// Agregar esta configuración a tu router existente
 
 import { createRouter, createWebHistory } from 'vue-router'
-// ✅ AGREGAR ESTE IMPORT AL INICIO
-import authService from '@/services/authService'
+import { useAuthStore } from '@/stores/authStore' // Si usas Pinia
 
-// =====================================
-// IMPORTAR COMPONENTES
-// =====================================
-
-// Vistas principales
+// Importar vistas
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
-
-// =====================================
-// DEFINIR RUTAS
-// =====================================
+import ServiciosView from '@/views/ServiciosView.vue' // ⭐ NUEVA VISTA
 
 const routes = [
-  // Ruta raíz - redirige al dashboard
-  {
-    path: '/',
-    redirect: '/dashboard'
-  },
-
-  // Login
+  // Rutas públicas
   {
     path: '/login',
     name: 'Login',
     component: LoginView,
-    meta: {
+    meta: { 
       requiresAuth: false,
-      title: 'Iniciar Sesión'
+      title: 'Iniciar Sesión - Sistema Hidrocolon'
     }
   },
-
-  // Dashboard principal
+  
+  // Rutas protegidas
   {
-    path: '/dashboard',
+    path: '/',
     name: 'Dashboard',
     component: DashboardView,
-    meta: {
+    meta: { 
       requiresAuth: true,
-      title: 'Dashboard'
+      title: 'Dashboard - Sistema Hidrocolon',
+      breadcrumb: 'Dashboard'
     }
   },
-
-  // Módulo Farmacia
+  
   {
     path: '/farmacia',
     name: 'Farmacia',
     component: FarmaciaView,
-    meta: {
+    meta: { 
       requiresAuth: true,
-      title: 'Módulo Farmacia'
+      title: 'Farmacia - Sistema Hidrocolon',
+      breadcrumb: 'Farmacia'
     }
   },
-
-  // Módulo Extras
+  
   {
     path: '/extras',
     name: 'Extras',
-    component: () => import('@/views/ExtrasView.vue'),
-    meta: {
+    component: ExtrasView,
+    meta: { 
       requiresAuth: true,
-      title: 'Módulo Extras'
+      title: 'Extras - Sistema Hidrocolon',
+      breadcrumb: 'Extras'
+    }
+  },
+  
+  // ⭐ NUEVA RUTA DE SERVICIOS
+  {
+    path: '/servicios',
+    name: 'Servicios',
+    component: ServiciosView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Servicios - Sistema Hidrocolon',
+      breadcrumb: 'Servicios Médicos',
+      description: 'Gestión de servicios médicos, precios y medicamentos vinculados'
+    }
+  },
+  
+  // Rutas futuras (placeholder)
+  {
+    path: '/pacientes',
+    name: 'Pacientes',
+    component: () => import('@/views/PacientesView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Pacientes - Sistema Hidrocolon',
+      breadcrumb: 'Pacientes'
+    }
+  },
+  
+  {
+    path: '/carrito',
+    name: 'Carrito',
+    component: () => import('@/views/CarritoView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Carrito de Ventas - Sistema Hidrocolon',
+      breadcrumb: 'Ventas'
+    }
+  },
+  
+  {
+    path: '/financiero',
+    name: 'Financiero',
+    component: () => import('@/views/FinancieroView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Módulo Financiero - Sistema Hidrocolon',
+      breadcrumb: 'Financiero'
     }
   },
 
-  // Ruta 404 - Página no encontrada
+  // Página 404
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue'),
     meta: {
-      title: 'Página no encontrada'
+      title: 'Página no encontrada - Sistema Hidrocolon'
     }
   }
 ]
 
-// =====================================
-// CREAR ROUTER
-// =====================================
-
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
@@ -97,107 +127,161 @@ const router = createRouter({
   }
 })
 
-// =====================================
-// GUARDS DE NAVEGACIÓN - VERSIÓN CORREGIDA
-// =====================================
+// Navigation Guard para autenticación
+router.beforeEach(async (to, from, next) => {
+  console.log(`🧭 Navegando a: ${to.name} (${to.path})`)
+  
+  // Actualizar título de la página
+  if (to.meta.title) {
+    document.title = to.meta.title
+  }
 
-// Guard global - verificar autenticación
-router.beforeEach((to, from, next) => {
-  console.log(`Navegando de ${from.path} a ${to.path}`)
-
-  // Verificar si la ruta requiere autenticación
+  // Verificar autenticación
+  const authStore = useAuthStore()
+  
+  // Rutas que requieren autenticación
   if (to.meta.requiresAuth) {
-    
-    // ✅ USAR authService.isAuthenticated() directamente
-    if (!authService.isAuthenticated()) {
-      console.log('❌ No autenticado, redirigiendo al login')
+    if (!authStore.isAuthenticated) {
+      console.log('🔒 Redirigiendo a login - usuario no autenticado')
       next({
-        path: '/login',
+        name: 'Login',
         query: { redirect: to.fullPath }
       })
       return
     }
-
-    // Verificar si requiere rol de administrador
-    if (to.meta.requiresAdmin) {
+    
+    // Verificar token válido
+    if (authStore.tokenExpired) {
+      console.log('⏰ Token expirado, intentando refresh...')
+      
       try {
-        // ✅ USAR authService.getUser() directamente
-        const userData = authService.getUser()
-        
-        if (!userData || userData.rol_nombre !== 'administrador') {
-          console.log('❌ No es administrador, acceso denegado')
-          next('/dashboard')
-          return
-        }
+        await authStore.refreshToken()
+        console.log('✅ Token renovado exitosamente')
       } catch (error) {
-        console.error('❌ Error obteniendo datos de usuario:', error)
-        next('/login')
+        console.log('❌ Error renovando token, redirigiendo a login')
+        authStore.logout()
+        next({
+          name: 'Login',
+          query: { redirect: to.fullPath }
+        })
         return
       }
     }
-
-    console.log('✅ Autenticado, permitiendo acceso')
   }
-
-  // Si está en login y ya está autenticado, redirigir al dashboard
-  if (to.path === '/login' && authService.isAuthenticated()) {
-    console.log('✅ Ya autenticado, redirigiendo al dashboard')
-    next('/dashboard')
+  
+  // Si ya está autenticado y va a login, redirigir a dashboard
+  if (to.name === 'Login' && authStore.isAuthenticated) {
+    console.log('✅ Usuario ya autenticado, redirigiendo a dashboard')
+    next({ name: 'Dashboard' })
     return
   }
-
-  // Actualizar título de la página
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - Sistema Hidrocolon`
-  } else {
-    document.title = 'Sistema Hidrocolon'
-  }
-
-  console.log('Navegación completada:', `${from.path} -> ${to.path}`)
+  
   next()
 })
 
-// Guard después de cada navegación
+// After navigation
 router.afterEach((to, from) => {
-  if (import.meta.env.DEV) {
-    console.log(`✅ Navegación exitosa: ${from.path} → ${to.path}`)
-  }
+  console.log(`📍 Navegación completada: ${from.name} → ${to.name}`)
 })
 
-// =====================================
-// UTILIDADES DEL ROUTER
-// =====================================
-
-// Función para navegar programáticamente con manejo de errores
-router.navigateTo = (path, replace = false) => {
-  try {
-    if (replace) {
-      router.replace(path)
-    } else {
-      router.push(path)
-    }
-  } catch (error) {
-    console.error('❌ Error en navegación:', error)
-  }
-}
-
-// Función para ir atrás de forma segura
-router.goBack = () => {
-  if (window.history.length > 1) {
-    router.go(-1)
-  } else {
-    router.push('/dashboard')
-  }
-}
-
-// Función para logout y limpiar estado
-router.logout = () => {
-  authService.logout()
-  router.push('/login')
-}
-
-// =====================================
-// EXPORTAR ROUTER
-// =====================================
-
 export default router
+
+// ==========================================
+// UTILIDAD: Navegación programática
+// ==========================================
+export const navegarA = {
+  dashboard: () => router.push({ name: 'Dashboard' }),
+  farmacia: () => router.push({ name: 'Farmacia' }),
+  extras: () => router.push({ name: 'Extras' }),
+  servicios: () => router.push({ name: 'Servicios' }), // ⭐ NUEVA
+  pacientes: () => router.push({ name: 'Pacientes' }),
+  carrito: () => router.push({ name: 'Carrito' }),
+  financiero: () => router.push({ name: 'Financiero' }),
+  login: (redirect) => router.push({ 
+    name: 'Login', 
+    query: redirect ? { redirect } : undefined 
+  })
+}
+
+// ==========================================
+// UTILIDAD: Breadcrumbs
+// ==========================================
+export const obtenerBreadcrumbs = (route) => {
+  const breadcrumbs = []
+  
+  // Siempre agregar Dashboard como base
+  if (route.name !== 'Dashboard') {
+    breadcrumbs.push({
+      text: '🏠 Dashboard',
+      to: { name: 'Dashboard' }
+    })
+  }
+  
+  // Agregar página actual
+  if (route.meta?.breadcrumb) {
+    breadcrumbs.push({
+      text: route.meta.breadcrumb,
+      to: route
+    })
+  }
+  
+  return breadcrumbs
+}
+
+// ==========================================
+// UTILIDAD: Menú de navegación
+// ==========================================
+export const menuItems = [
+  {
+    name: 'Dashboard',
+    path: '/',
+    icon: '🏠',
+    title: 'Panel Principal',
+    description: 'Resumen general del sistema'
+  },
+  {
+    name: 'Farmacia',
+    path: '/farmacia',
+    icon: '💊',
+    title: 'Farmacia',
+    description: 'Gestión de medicamentos e inventario'
+  },
+  {
+    name: 'Extras',
+    path: '/extras',
+    icon: '🧰',
+    title: 'Extras',
+    description: 'Productos adicionales y suministros'
+  },
+  {
+    name: 'Servicios', // ⭐ NUEVO ITEM
+    path: '/servicios',
+    icon: '🏥',
+    title: 'Servicios Médicos',
+    description: 'Gestión de servicios y precios'
+  },
+  {
+    name: 'Pacientes',
+    path: '/pacientes',
+    icon: '👥',
+    title: 'Pacientes',
+    description: 'Base de datos de pacientes',
+    disabled: true // Por implementar
+  },
+  {
+    name: 'Carrito',
+    path: '/carrito',
+    icon: '🛒',
+    title: 'Ventas',
+    description: 'Sistema de ventas y facturación',
+    disabled: true // Por implementar
+  },
+  {
+    name: 'Financiero',
+    path: '/financiero',
+    icon: '💰',
+    title: 'Financiero',
+    description: 'Control de turnos y reportes',
+    disabled: true // Por implementar
+  }
+]
