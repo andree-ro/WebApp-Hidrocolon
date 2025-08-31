@@ -41,16 +41,15 @@ class Servicio {
     // FINDALL - VERSIÓN SÚPER SIMPLE SIN PROBLEMAS
     // ========================================================================
     static async findAll(options = {}) {
-        console.log('🎯 PASO 1 - Iniciando findAll con validación estricta');
+        console.log('🎯 PASO 2 - Iniciando findAll con query SQL real');
         console.log('📋 Options recibidas:', options);
         
         let connection;
         try {
             connection = await this.getConnection();
 
-            // ===== PASO 1A: VALIDACIÓN ESTRICTA DE PARÁMETROS =====
+            // ===== PASO 1: VALIDACIÓN ESTRICTA (REUTILIZADA) =====
             
-            // Extraer y sanitizar parámetros
             const {
                 page = 1,
                 limit = 10,
@@ -62,47 +61,19 @@ class Servicio {
                 precio_max = null
             } = options;
 
-            console.log('📥 Parámetros extraídos (raw):', { page, limit, orderBy, orderDir });
-
-            // ===== VALIDACIÓN CRÍTICA PARA EVITAR ERROR MYSQL =====
-            
-            // 1. Validar PAGE (entero >= 1)
+            // Validación crítica para evitar error MySQL
             const pageNum = Math.max(1, parseInt(page) || 1);
-            if (isNaN(pageNum) || pageNum < 1) {
-                throw new Error(`Page inválido: ${page} → Debe ser número entero >= 1`);
-            }
-
-            // 2. Validar LIMIT (entero entre 1-100)  
             const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
-            if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-                throw new Error(`Limit inválido: ${limit} → Debe ser número entre 1-100`);
-            }
-
-            // 3. Calcular OFFSET (entero >= 0)
             const offset = (pageNum - 1) * limitNum;
-            if (isNaN(offset) || offset < 0) {
-                throw new Error(`Offset calculado inválido: ${offset}`);
-            }
 
-            // ===== VERIFICACIÓN FINAL DE TIPOS =====
-            console.log('🔢 Tipos después de validación:', {
-                pageNum: typeof pageNum,
-                limitNum: typeof limitNum,
-                offset: typeof offset,
-                valores: { pageNum, limitNum, offset }
-            });
-
-            // Verificación de seguridad CRÍTICA
+            // Verificación de tipos CRÍTICA
             if (typeof pageNum !== 'number' || typeof limitNum !== 'number' || typeof offset !== 'number') {
                 throw new Error('CRITICAL: Tipos no son números después de validación');
             }
 
-            if (pageNum < 1 || limitNum < 1 || offset < 0) {
-                throw new Error('CRITICAL: Valores fuera de rango después de validación');
-            }
+            console.log('🔢 Parámetros validados:', { pageNum, limitNum, offset });
 
-            // ===== PASO 1B: VALIDACIÓN DE ORDENAMIENTO =====
-            
+            // Validación de ordenamiento
             const validOrderColumns = [
                 'id', 'nombre', 'descripcion', 'precio_tarjeta', 'precio_efectivo', 
                 'monto_minimo', 'porcentaje_comision', 'fecha_creacion', 'fecha_actualizacion'
@@ -111,80 +82,141 @@ class Servicio {
             const validOrderBy = validOrderColumns.includes(orderBy) ? orderBy : 'fecha_creacion';
             const validOrderDir = ['ASC', 'DESC'].includes(orderDir?.toUpperCase()) ? orderDir.toUpperCase() : 'DESC';
 
-            console.log('📊 Ordenamiento validado:', { validOrderBy, validOrderDir });
+            // ===== PASO 2A: CONSTRUCCIÓN DE QUERY BASE =====
+            
+            let baseQuery = 'SELECT * FROM servicios WHERE 1=1';
+            let countQuery = 'SELECT COUNT(*) as total FROM servicios WHERE 1=1';
+            let queryParams = [];
+            let countParams = [];
 
-            // ===== PASO 1C: VALIDACIÓN DE FILTROS =====
+            console.log('🔧 Query base preparado:', baseQuery);
+
+            // ===== PASO 2B: APLICAR FILTROS BÁSICOS (SIN COMPLEJIDAD) =====
+            
+            // Por ahora, solo filtros simples para evitar errores
+            // En pasos futuros agregaremos filtros más complejos
             
             const searchTerm = search ? search.trim() : '';
-            const activoFilter = (activo !== null && activo !== '') ? (activo === 'true' || activo === '1') : null;
-            
-            let precioMin = null;
-            let precioMax = null;
-            
-            if (precio_min !== null && precio_min !== '') {
-                const minPrice = parseFloat(precio_min);
-                if (!isNaN(minPrice) && minPrice >= 0) {
-                    precioMin = minPrice;
-                }
-            }
-            
-            if (precio_max !== null && precio_max !== '') {
-                const maxPrice = parseFloat(precio_max);
-                if (!isNaN(maxPrice) && maxPrice >= 0) {
-                    precioMax = maxPrice;
-                }
+            if (searchTerm) {
+                baseQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
+                countQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
+                const searchPattern = `%${searchTerm}%`;
+                queryParams.push(searchPattern, searchPattern);
+                countParams.push(searchPattern, searchPattern);
+                console.log('🔍 Filtro de búsqueda aplicado:', searchPattern);
             }
 
-            console.log('🔍 Filtros validados:', { searchTerm, activoFilter, precioMin, precioMax });
+            // Filtro activo/inactivo
+            if (activo !== null && activo !== '') {
+                const isActive = activo === 'true' || activo === '1';
+                baseQuery += ` AND activo = ?`;
+                countQuery += ` AND activo = ?`;
+                queryParams.push(isActive);
+                countParams.push(isActive);
+                console.log('✅ Filtro activo aplicado:', isActive);
+            }
 
-            // ===== RESPUESTA TEMPORAL PARA PASO 1 =====
-            // Por ahora, devolvemos metadatos sin hacer query real
-            // Esto confirma que la validación funciona sin tocar MySQL
+            // ===== PASO 2C: AGREGAR ORDENAMIENTO =====
             
-            const responseStep1 = {
-                servicios: [], // Vacío por ahora en PASO 1
-                pagination: {
-                    currentPage: pageNum,
-                    totalPages: 1, // Temporal
-                    totalItems: 0, // Temporal  
-                    itemsPerPage: limitNum,
-                    hasNextPage: false, // Temporal
-                    hasPrevPage: pageNum > 1,
-                    nextPage: null, // Temporal
-                    prevPage: pageNum > 1 ? pageNum - 1 : null
-                },
+            baseQuery += ` ORDER BY ${validOrderBy} ${validOrderDir}`;
+            console.log('📊 Ordenamiento aplicado:', `${validOrderBy} ${validOrderDir}`);
+
+            // ===== PASO 2D: AGREGAR PAGINACIÓN - PARTE CRÍTICA =====
+            
+            baseQuery += ` LIMIT ? OFFSET ?`;
+            
+            // CONVERSIÓN EXPLÍCITA para evitar error MySQL
+            const limitParam = parseInt(limitNum);
+            const offsetParam = parseInt(offset);
+            
+            queryParams.push(limitParam);
+            queryParams.push(offsetParam);
+
+            // VERIFICACIÓN FINAL ANTES DE EXECUTE
+            console.log('🔍 Query final:', baseQuery);
+            console.log('📋 Parámetros finales:', queryParams);
+            console.log('🔢 Tipos de parámetros LIMIT/OFFSET:', {
+                limitParam: typeof limitParam,
+                offsetParam: typeof offsetParam,
+                valores: { limitParam, offsetParam }
+            });
+
+            // Verificación de seguridad final
+            if (typeof limitParam !== 'number' || typeof offsetParam !== 'number') {
+                throw new Error(`CRITICAL: Parámetros LIMIT/OFFSET no son números: ${typeof limitParam}, ${typeof offsetParam}`);
+            }
+
+            if (limitParam < 1 || offsetParam < 0) {
+                throw new Error(`CRITICAL: Parámetros fuera de rango: LIMIT=${limitParam}, OFFSET=${offsetParam}`);
+            }
+
+            // ===== PASO 2E: EJECUCIÓN DE QUERIES =====
+            
+            console.log('📊 Ejecutando COUNT query...');
+            const [countResult] = await connection.execute(countQuery, countParams);
+            const totalItems = countResult[0].total;
+            
+            console.log('📊 Total items encontrados:', totalItems);
+            
+            console.log('📊 Ejecutando SELECT query...');
+            const [serviciosRows] = await connection.execute(baseQuery, queryParams);
+            
+            console.log('📊 Servicios obtenidos:', serviciosRows.length);
+
+            // ===== PASO 2F: CONSTRUCCIÓN DE METADATOS =====
+            
+            const totalPages = Math.ceil(totalItems / limitNum);
+            
+            const paginationMetadata = {
+                currentPage: pageNum,
+                totalPages: totalPages,
+                totalItems: totalItems,
+                itemsPerPage: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1,
+                nextPage: pageNum < totalPages ? pageNum + 1 : null,
+                prevPage: pageNum > 1 ? pageNum - 1 : null
+            };
+
+            // ===== PASO 2G: CONSTRUCCIÓN DE RESPUESTA FINAL =====
+            
+            const servicios = serviciosRows.map(servicio => new Servicio(servicio));
+
+            const response = {
+                servicios: servicios,
+                pagination: paginationMetadata,
                 debug: {
-                    step: 'PASO 1 COMPLETADO',
-                    message: 'Validación estricta de parámetros exitosa',
-                    parametros_validados: {
-                        pageNum: pageNum,
-                        limitNum: limitNum,
-                        offset: offset,
-                        validOrderBy: validOrderBy,
-                        validOrderDir: validOrderDir
+                    step: 'PASO 2 COMPLETADO',
+                    message: 'Query SQL real con paginación exitoso',
+                    query_ejecutado: baseQuery,
+                    parametros_usados: queryParams,
+                    resultados: {
+                        totalItems: totalItems,
+                        itemsEnPagina: servicios.length,
+                        paginaActual: pageNum,
+                        totalPaginas: totalPages
                     },
-                    tipos_verificados: {
-                        pageNum: typeof pageNum,
-                        limitNum: typeof limitNum,
-                        offset: typeof offset
-                    },
-                    filtros_aplicables: {
-                        searchTerm: searchTerm,
-                        activoFilter: activoFilter,
-                        precioMin: precioMin,
-                        precioMax: precioMax
-                    },
-                    query_preparado: 'SELECT * FROM servicios WHERE 1=1 ORDER BY ' + validOrderBy + ' ' + validOrderDir + ' LIMIT ' + limitNum + ' OFFSET ' + offset
+                    filtros_aplicados: {
+                        search: searchTerm,
+                        activo: activo !== null ? (activo === 'true' || activo === '1') : null
+                    }
                 }
             };
 
-            console.log('✅ PASO 1 COMPLETADO - Respuesta preparada:', responseStep1.debug);
+            console.log('✅ PASO 2 COMPLETADO - Query exitoso');
+            console.log('📊 Resumen:', {
+                totalItems: totalItems,
+                itemsObtenidos: servicios.length,
+                paginaActual: pageNum,
+                totalPaginas: totalPages
+            });
             
-            return responseStep1;
+            return response;
 
         } catch (error) {
-            console.error('❌ Error en PASO 1 - Validación:', error.message);
-            throw new Error(`PASO 1 - Error en validación: ${error.message}`);
+            console.error('❌ Error en PASO 2 - Query SQL:', error.message);
+            console.error('🔍 Stack trace:', error.stack);
+            throw new Error(`PASO 2 - Error en query SQL: ${error.message}`);
         } finally {
             if (connection) {
                 try {
