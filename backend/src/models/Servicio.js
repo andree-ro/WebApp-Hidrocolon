@@ -94,12 +94,12 @@ class Servicio {
             // Filtro de búsqueda
             const searchTerm = search ? search.trim() : '';
             if (searchTerm) {
-                baseQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
-                countQuery += ` AND (nombre LIKE ? OR descripcion LIKE ?)`;
+                baseQuery += ` AND nombre LIKE ?`;              // ✅ SOLO NOMBRE
+                countQuery += ` AND nombre LIKE ?`;             // ✅ SOLO NOMBRE  
                 const searchPattern = `%${searchTerm}%`;
-                queryParams.push(searchPattern, searchPattern);
-                countParams.push(searchPattern, searchPattern);
-                console.log('🔍 Filtro búsqueda aplicado:', searchPattern);
+                queryParams.push(searchPattern);                // ✅ UN PARÁMETRO
+                countParams.push(searchPattern);                // ✅ UN PARÁMETRO
+                console.log('🔍 Filtro búsqueda aplicado (solo nombre):', searchPattern);
             }
 
             // Filtro activo/inactivo
