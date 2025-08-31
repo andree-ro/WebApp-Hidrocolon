@@ -156,17 +156,18 @@ class Servicio {
             connection = await this.getConnection();
 
             // Validación de datos requeridos
-            if (!data.nombre || data.nombre.trim() === '') {
+            const nombre = data.nombre_servicio || data.nombre;
+            if (!nombre || nombre.trim() === '') {
                 throw new Error('El nombre del servicio es requerido');
             }
 
             // Valores por defecto seguros
             const servicioData = {
-                nombre: data.nombre.trim(),
+                nombre: nombre.trim(), // ✅ AQUÍ va la línea corregida
                 precio_tarjeta: parseFloat(data.precio_tarjeta) || 0,
                 precio_efectivo: parseFloat(data.precio_efectivo) || 0,
                 monto_minimo: parseFloat(data.monto_minimo) || 0,
-                porcentaje_comision: parseFloat(data.porcentaje_comision) || 0,
+                porcentaje_comision: parseFloat(data.porcentaje_comision) || parseFloat(data.comision_venta) || 0, // ✅ Acepta ambos campos
                 requiere_medicamentos: Boolean(data.requiere_medicamentos),
                 requiere_extras: Boolean(data.requiere_extras),
                 activo: data.activo !== undefined ? Boolean(data.activo) : true
