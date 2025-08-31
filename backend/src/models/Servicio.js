@@ -41,133 +41,129 @@ class Servicio {
     // FINDALL - VERSIÓN SÚPER SIMPLE SIN PROBLEMAS
     // ========================================================================
     static async findAll(options = {}) {
-        console.log('🔍 DEBUG - Iniciando análisis step by step');
+        console.log('🔍 DEBUG LIMIT - Analizando problema específico con LIMIT');
         console.log('📋 Options recibidas:', options);
         
         let connection;
         try {
             connection = await this.getConnection();
 
-            // ===== DEBUG PASO A: VALIDACIÓN =====
+            // ===== VALIDACIÓN BÁSICA =====
             const pageNum = Math.max(1, parseInt(options.page) || 1);
             const limitNum = Math.min(100, Math.max(1, parseInt(options.limit) || 10));
-            const offset = (pageNum - 1) * limitNum;
-
-            console.log('🔢 DEBUG - Parámetros después de validación:', {
-                pageNum, limitNum, offset,
-                tipos: { pageNum: typeof pageNum, limitNum: typeof limitNum, offset: typeof offset }
+            
+            console.log('🔢 DEBUG - Valores antes de procesamiento:', {
+                'options.limit': options.limit,
+                'limitNum': limitNum,
+                'typeof limitNum': typeof limitNum
             });
 
-            // ===== DEBUG PASO B: QUERY SIN PARÁMETROS =====
-            console.log('🧪 DEBUG - Probando query básico sin parámetros...');
+            // ===== TEST 1: QUERY BÁSICO (YA SABEMOS QUE FUNCIONA) =====
+            console.log('✅ Saltando query básico (ya funciona)');
+
+            // ===== TEST 2: ANÁLISIS DETALLADO DEL PARÁMETRO LIMIT =====
+            console.log('🧪 DEBUG - Analizando parámetro LIMIT en detalle...');
             
+            // Probar diferentes formas de preparar el LIMIT
+            const limit1 = limitNum;                    // Directo
+            const limit2 = parseInt(limitNum);          // parseInt explícito  
+            const limit3 = Number(limitNum);            // Number() conversion
+            const limit4 = Math.floor(limitNum);        // Math.floor para asegurar entero
+            
+            console.log('🔍 DEBUG - Variaciones de LIMIT:', {
+                limit1: { value: limit1, type: typeof limit1, isInteger: Number.isInteger(limit1) },
+                limit2: { value: limit2, type: typeof limit2, isInteger: Number.isInteger(limit2) },
+                limit3: { value: limit3, type: typeof limit3, isInteger: Number.isInteger(limit3) },
+                limit4: { value: limit4, type: typeof limit4, isInteger: Number.isInteger(limit4) }
+            });
+
+            // ===== TEST 3: PROBAR LIMIT HARDCODEADO =====
+            console.log('🧪 DEBUG - Probando LIMIT hardcodeado...');
             try {
-                const [basicTest] = await connection.execute('SELECT COUNT(*) as total FROM servicios');
-                console.log('✅ DEBUG - Query básico exitoso:', basicTest[0].total);
-            } catch (basicError) {
-                console.error('❌ DEBUG - Falla en query básico:', basicError.message);
-                throw new Error(`Query básico falló: ${basicError.message}`);
+                const [hardcodedTest] = await connection.execute('SELECT * FROM servicios LIMIT 5');
+                console.log('✅ DEBUG - LIMIT hardcodeado funciona:', hardcodedTest.length);
+            } catch (hardcodedError) {
+                console.error('❌ DEBUG - LIMIT hardcodeado falló:', hardcodedError.message);
             }
 
-            // ===== DEBUG PASO C: QUERY SOLO CON LIMIT =====
-            console.log('🧪 DEBUG - Probando query solo con LIMIT...');
+            // ===== TEST 4: PROBAR DIFERENTES FORMAS DE PASAR PARÁMETRO =====
             
+            // Forma 1: Array con número directo
+            console.log('🧪 DEBUG - Probando [limitNum]...');
             try {
-                const limitOnly = parseInt(limitNum);
-                console.log('🔢 DEBUG - LIMIT preparado:', { limitOnly, tipo: typeof limitOnly });
-                
-                const [limitTest] = await connection.execute('SELECT * FROM servicios LIMIT ?', [limitOnly]);
-                console.log('✅ DEBUG - Query con LIMIT exitoso:', limitTest.length, 'resultados');
-            } catch (limitError) {
-                console.error('❌ DEBUG - Falla en query LIMIT:', limitError.message);
-                throw new Error(`Query LIMIT falló: ${limitError.message}`);
+                const [test1] = await connection.execute('SELECT * FROM servicios LIMIT ?', [limitNum]);
+                console.log('✅ DEBUG - [limitNum] funciona:', test1.length);
+            } catch (error1) {
+                console.error('❌ DEBUG - [limitNum] falló:', error1.message);
             }
 
-            // ===== DEBUG PASO D: QUERY CON LIMIT Y OFFSET =====
-            console.log('🧪 DEBUG - Probando query con LIMIT y OFFSET...');
-            
+            // Forma 2: Array con parseInt
+            console.log('🧪 DEBUG - Probando [parseInt(limitNum)]...');
             try {
-                const limitParam = parseInt(limitNum);
-                const offsetParam = parseInt(offset);
-                
-                console.log('🔢 DEBUG - LIMIT/OFFSET preparados:', {
-                    limitParam, offsetParam,
-                    tipos: { limitParam: typeof limitParam, offsetParam: typeof offsetParam }
-                });
-                
-                // VERIFICACIÓN EXTRA de que son números válidos
-                if (!Number.isInteger(limitParam) || !Number.isInteger(offsetParam)) {
-                    throw new Error(`No son enteros válidos: LIMIT=${limitParam}, OFFSET=${offsetParam}`);
-                }
-                
-                if (limitParam <= 0 || offsetParam < 0) {
-                    throw new Error(`Valores fuera de rango: LIMIT=${limitParam}, OFFSET=${offsetParam}`);
-                }
-                
-                console.log('🔍 DEBUG - Ejecutando: SELECT * FROM servicios LIMIT ? OFFSET ?');
-                console.log('🔍 DEBUG - Con parámetros:', [limitParam, offsetParam]);
-                
-                const [fullTest] = await connection.execute('SELECT * FROM servicios LIMIT ? OFFSET ?', [limitParam, offsetParam]);
-                console.log('✅ DEBUG - Query completo exitoso:', fullTest.length, 'resultados');
-                
-                // Si llegamos aquí, el problema NO es LIMIT/OFFSET
-                
-            } catch (fullError) {
-                console.error('❌ DEBUG - Falla en query LIMIT/OFFSET:', fullError.message);
-                console.error('❌ DEBUG - Query que falló: SELECT * FROM servicios LIMIT ? OFFSET ?');
-                console.error('❌ DEBUG - Parámetros que fallaron:', [parseInt(limitNum), parseInt(offset)]);
-                throw new Error(`Query LIMIT/OFFSET falló: ${fullError.message}`);
+                const [test2] = await connection.execute('SELECT * FROM servicios LIMIT ?', [parseInt(limitNum)]);
+                console.log('✅ DEBUG - [parseInt(limitNum)] funciona:', test2.length);
+            } catch (error2) {
+                console.error('❌ DEBUG - [parseInt(limitNum)] falló:', error2.message);
             }
 
-            // ===== DEBUG PASO E: QUERY CON ORDENAMIENTO =====
-            console.log('🧪 DEBUG - Probando query con ORDER BY...');
-            
+            // Forma 3: Array con Number()
+            console.log('🧪 DEBUG - Probando [Number(limitNum)]...');
             try {
-                const limitParam = parseInt(limitNum);
-                const offsetParam = parseInt(offset);
-                
-                const orderQuery = 'SELECT * FROM servicios ORDER BY fecha_creacion DESC LIMIT ? OFFSET ?';
-                console.log('🔍 DEBUG - Query con ORDER BY:', orderQuery);
-                
-                const [orderTest] = await connection.execute(orderQuery, [limitParam, offsetParam]);
-                console.log('✅ DEBUG - Query con ORDER BY exitoso:', orderTest.length, 'resultados');
-                
-            } catch (orderError) {
-                console.error('❌ DEBUG - Falla en query ORDER BY:', orderError.message);
-                throw new Error(`Query ORDER BY falló: ${orderError.message}`);
+                const [test3] = await connection.execute('SELECT * FROM servicios LIMIT ?', [Number(limitNum)]);
+                console.log('✅ DEBUG - [Number(limitNum)] funciona:', test3.length);
+            } catch (error3) {
+                console.error('❌ DEBUG - [Number(limitNum)] falló:', error3.message);
+            }
+
+            // Forma 4: String concatenado (NO recomendado, solo para debug)
+            console.log('🧪 DEBUG - Probando query concatenado...');
+            try {
+                const queryString = `SELECT * FROM servicios LIMIT ${limitNum}`;
+                console.log('🔍 DEBUG - Query concatenado:', queryString);
+                const [test4] = await connection.execute(queryString);
+                console.log('✅ DEBUG - Query concatenado funciona:', test4.length);
+            } catch (error4) {
+                console.error('❌ DEBUG - Query concatenado falló:', error4.message);
+            }
+
+            // ===== TEST 5: VERIFICAR ESTRUCTURA DE LA TABLA =====
+            console.log('🧪 DEBUG - Verificando estructura de tabla servicios...');
+            try {
+                const [structure] = await connection.execute('DESCRIBE servicios');
+                console.log('✅ DEBUG - Estructura de tabla:', structure.map(col => ({ 
+                    Field: col.Field, 
+                    Type: col.Type, 
+                    Key: col.Key 
+                })));
+            } catch (structureError) {
+                console.error('❌ DEBUG - Error verificando estructura:', structureError.message);
             }
 
             // ===== RESPUESTA DE DEBUG =====
-            
             return {
-                servicios: [], // Temporal para debug
+                servicios: [],
                 pagination: {
                     currentPage: pageNum,
                     totalPages: 1,
                     totalItems: 0,
                     itemsPerPage: limitNum,
                     hasNextPage: false,
-                    hasPrevPage: pageNum > 1,
+                    hasPrevPage: false,
                     nextPage: null,
-                    prevPage: pageNum > 1 ? pageNum - 1 : null
+                    prevPage: null
                 },
                 debug: {
-                    step: 'DEBUG COMPLETADO',
-                    message: 'Todos los tests de query pasaron exitosamente',
-                    tests_ejecutados: [
-                        'Query básico sin parámetros',
-                        'Query solo con LIMIT', 
-                        'Query con LIMIT y OFFSET',
-                        'Query con ORDER BY + LIMIT + OFFSET'
-                    ],
-                    parametros_validados: { pageNum, limitNum, offset }
+                    step: 'DEBUG LIMIT COMPLETADO',
+                    message: 'Análisis detallado del problema con LIMIT',
+                    problema_identificado: 'Query básico funciona, LIMIT falla',
+                    limitNum_analizado: limitNum,
+                    tipo_limitNum: typeof limitNum
                 }
             };
 
         } catch (error) {
-            console.error('❌ DEBUG - Error encontrado:', error.message);
-            console.error('🔍 DEBUG - Stack trace:', error.stack);
-            throw new Error(`DEBUG - ${error.message}`);
+            console.error('❌ DEBUG LIMIT - Error:', error.message);
+            throw new Error(`DEBUG LIMIT - ${error.message}`);
         } finally {
             if (connection) {
                 try {
