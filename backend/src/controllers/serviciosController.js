@@ -1,13 +1,21 @@
 // backend/src/controllers/serviciosController.js
 const Servicio = require('../models/Servicio');
 
+// Función de mapeo para compatibilidad frontend
+const mapearServicio = (servicio) => ({
+    ...servicio,
+    nombre_servicio: servicio.nombre,
+    comision_venta: servicio.porcentaje_comision,
+    activo: Boolean(servicio.activo)
+});
+
 // ============================================================================
 // LISTAR SERVICIOS CON FILTROS Y PAGINACIÓN
 // ============================================================================
 const getServicios = async (req, res) => {
     try {
         console.log('🔍 GET /api/servicios - Obteniendo lista de servicios');
-        console.log('📥 Query params:', req.query);
+        console.log('🔥 Query params:', req.query);
 
         const {
             page = 1,
@@ -24,9 +32,10 @@ const getServicios = async (req, res) => {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
         
+        // CORREGIDO: Campos reales de la BD
         const validOrderFields = [
-            'nombre_servicio', 'precio_efectivo', 'precio_tarjeta', 
-            'comision_venta', 'fecha_creacion', 'fecha_actualizacion'
+            'nombre', 'precio_efectivo', 'precio_tarjeta', 
+            'porcentaje_comision', 'fecha_creacion', 'fecha_actualizacion'
         ];
         const validOrderBy = validOrderFields.includes(orderBy) ? orderBy : 'fecha_creacion';
         const validOrderDir = ['ASC', 'DESC'].includes(orderDir?.toUpperCase()) ? orderDir.toUpperCase() : 'DESC';
@@ -63,12 +72,15 @@ const getServicios = async (req, res) => {
 
         const resultado = await Servicio.findAll(filters);
 
+        // AGREGADO: Mapear servicios para el frontend
+        const serviciosMapeados = resultado.servicios.map(servicio => mapearServicio(servicio));
+
         console.log(`✅ ${resultado.servicios.length} servicios obtenidos de ${resultado.pagination.totalItems} totales`);
 
         res.json({
             success: true,
             message: 'Servicios obtenidos correctamente',
-            data: resultado.servicios,
+            data: serviciosMapeados,
             pagination: resultado.pagination,
             filters: filters
         });
@@ -109,12 +121,15 @@ const getServicio = async (req, res) => {
             });
         }
 
-        console.log(`✅ Servicio obtenido: ${servicio.nombre_servicio}`);
+        // AGREGADO: Mapear servicio para el frontend
+        const servicioMapeado = mapearServicio(servicio);
+
+        console.log(`✅ Servicio obtenido: ${servicio.nombre}`);
 
         res.json({
             success: true,
             message: 'Servicio obtenido correctamente',
-            data: servicio
+            data: servicioMapeado
         });
 
     } catch (error) {
@@ -133,7 +148,7 @@ const getServicio = async (req, res) => {
 const crearServicio = async (req, res) => {
     try {
         console.log('💾 POST /api/servicios - Creando nuevo servicio');
-        console.log('📥 Datos recibidos:', req.body);
+        console.log('🔥 Datos recibidos:', req.body);
 
         const {
             nombre_servicio,
@@ -185,25 +200,29 @@ const crearServicio = async (req, res) => {
             });
         }
 
+        // CORREGIDO: Mapear campos frontend -> BD
         const datosServicio = {
-            nombre_servicio: nombre_servicio.trim(),
+            nombre: nombre_servicio.trim(),
             precio_tarjeta: parseFloat(precio_tarjeta),
             precio_efectivo: parseFloat(precio_efectivo),
             monto_minimo: montoMinimoNum,
-            comision_venta: comisionNum,
+            porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',
-            activo: Boolean(activo),
-            requiere_medicamentos: Boolean(requiere_medicamentos)
+            activo: Boolean(activo) ? 1 : 0,
+            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0
         };
 
         const nuevoServicio = await Servicio.create(datosServicio);
+
+        // AGREGADO: Mapear servicio para el frontend
+        const servicioMapeado = mapearServicio(nuevoServicio);
 
         console.log(`✅ Servicio creado con ID: ${nuevoServicio.id}`);
 
         res.status(201).json({
             success: true,
             message: 'Servicio creado correctamente',
-            data: nuevoServicio
+            data: servicioMapeado
         });
 
     } catch (error) {
@@ -231,7 +250,7 @@ const actualizarServicio = async (req, res) => {
     try {
         const { id } = req.params;
         console.log(`🔄 PUT /api/servicios/${id} - Actualizando servicio`);
-        console.log('📥 Datos recibidos:', req.body);
+        console.log('🔥 Datos recibidos:', req.body);
 
         // Validar ID
         const servicioId = parseInt(id);
@@ -283,25 +302,29 @@ const actualizarServicio = async (req, res) => {
             });
         }
 
+        // CORREGIDO: Mapear campos frontend -> BD
         const datosActualizacion = {
-            nombre_servicio: nombre_servicio.trim(),
+            nombre: nombre_servicio.trim(),
             precio_tarjeta: parseFloat(precio_tarjeta),
             precio_efectivo: parseFloat(precio_efectivo),
             monto_minimo: parseFloat(monto_minimo || 0),
-            comision_venta: comisionNum,
+            porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',
-            activo: Boolean(activo),
-            requiere_medicamentos: Boolean(requiere_medicamentos)
+            activo: Boolean(activo) ? 1 : 0,
+            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0
         };
 
         const servicioActualizado = await Servicio.update(servicioId, datosActualizacion);
 
-        console.log(`✅ Servicio actualizado: ${servicioActualizado.nombre_servicio}`);
+        // AGREGADO: Mapear servicio para el frontend
+        const servicioMapeado = mapearServicio(servicioActualizado);
+
+        console.log(`✅ Servicio actualizado: ${servicioActualizado.nombre}`);
 
         res.json({
             success: true,
             message: 'Servicio actualizado correctamente',
-            data: servicioActualizado
+            data: servicioMapeado
         });
 
     } catch (error) {
@@ -423,15 +446,14 @@ const getMedicamentosVinculados = async (req, res) => {
 
         console.log(`✅ ${medicamentos.length} medicamentos vinculados obtenidos`);
 
+        // AGREGADO: Mapear servicio para el frontend
+        const servicioMapeado = mapearServicio(servicio);
+
         res.json({
             success: true,
             message: 'Medicamentos vinculados obtenidos correctamente',
             data: medicamentos,
-            servicio: {
-                id: servicio.id,
-                nombre_servicio: servicio.nombre_servicio,
-                requiere_medicamentos: servicio.requiere_medicamentos
-            }
+            servicio: servicioMapeado
         });
 
     } catch (error) {
@@ -453,7 +475,7 @@ const vincularMedicamento = async (req, res) => {
         const { medicamento_id, cantidad_requerida = 1 } = req.body;
         
         console.log(`🔗 POST /api/servicios/${id}/medicamentos - Vinculando medicamento`);
-        console.log('📥 Datos:', { medicamento_id, cantidad_requerida });
+        console.log('🔥 Datos:', { medicamento_id, cantidad_requerida });
 
         // Validaciones
         const servicioId = parseInt(id);
@@ -569,16 +591,17 @@ const exportarExcel = async (req, res) => {
     try {
         console.log('📊 GET /api/servicios/export/excel - Exportando servicios');
 
-        // Por ahora devolvemos los datos en JSON
-        // En el futuro se puede implementar la generación real de Excel
         const resultado = await Servicio.findAll({ limit: 1000 });
+
+        // AGREGADO: Mapear servicios para exportar
+        const serviciosMapeados = resultado.servicios.map(servicio => mapearServicio(servicio));
 
         console.log(`✅ ${resultado.servicios.length} servicios preparados para exportación`);
 
         res.json({
             success: true,
             message: 'Datos preparados para exportación',
-            data: resultado.servicios,
+            data: serviciosMapeados,
             total: resultado.pagination.totalItems,
             note: 'Implementación de Excel pendiente - datos en JSON'
         });

@@ -99,13 +99,15 @@ class Servicio {
             }
 
             // Filtro activo/inactivo
+            // Filtro activo/inactivo
             if (activo !== null && activo !== '') {
                 const isActive = activo === 'true' || activo === '1';
+                const activoValue = isActive ? 1 : 0; 
                 baseQuery += ` AND activo = ?`;
                 countQuery += ` AND activo = ?`;
-                queryParams.push(isActive);
-                countParams.push(isActive);
-                console.log('✅ Filtro activo aplicado:', isActive);
+                queryParams.push(activoValue);         
+                countParams.push(activoValue);         
+                console.log('✅ Filtro activo aplicado:', activoValue);
             }
 
             // Filtro precio mínimo
