@@ -90,11 +90,11 @@ class Servicio {
             // Filtro de búsqueda
             const searchTerm = search ? search.trim() : '';
             if (searchTerm) {
-                baseQuery += ` AND nombre LIKE ?`;              // ✅ SOLO NOMBRE
-                countQuery += ` AND nombre LIKE ?`;             // ✅ SOLO NOMBRE  
+                baseQuery += ` AND nombre LIKE ?`;             
+                countQuery += ` AND nombre LIKE ?`;              
                 const searchPattern = `%${searchTerm}%`;
-                queryParams.push(searchPattern);                // ✅ UN PARÁMETRO
-                countParams.push(searchPattern);                // ✅ UN PARÁMETRO
+                queryParams.push(searchPattern);                
+                countParams.push(searchPattern);                
                 console.log('🔍 Filtro búsqueda aplicado (solo nombre):', searchPattern);
             }
 
