@@ -14,78 +14,31 @@ const mapearServicio = (servicio) => ({
 // ============================================================================
 const getServicios = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search, activo, precio_min, precio_max } = req.query;
+        const options = {
+            page: req.query.page || 1,
+            limit: req.query.limit || 10,
+            search: req.query.search || '',
+            activo: req.query.activo || null,
+            precio_min: req.query.precio_min || null,
+            precio_max: req.query.precio_max || null
+        };
         
-        console.log('🔍 Query params recibidos:', req.query);
-        console.log('🎯 Filtro activo recibido:', { activo, type: typeof activo });
+        console.log('Parámetros recibidos:', options);
         
-        let whereConditions = [];
-        let queryParams = [];
+        // Usar el modelo que YA FUNCIONA
+        const resultado = await Servicio.findAll(options);
         
-        // 🔥 FIX CRÍTICO: Filtro de estado activo
-        if (activo !== undefined && activo !== null && activo !== '') {
-            // El problema puede estar aquí - comparación incorrecta
-            if (activo === 'true' || activo === true) {
-                whereConditions.push('activo = ?');
-                queryParams.push(1); // Base de datos usa 1 para true
-                console.log('✅ Aplicando filtro: SOLO ACTIVOS');
-            } else if (activo === 'false' || activo === false) {
-                whereConditions.push('activo = ?');
-                queryParams.push(0); // Base de datos usa 0 para false
-                console.log('✅ Aplicando filtro: SOLO INACTIVOS');
-            }
-        }
-        
-        // Otros filtros...
-        if (search) {
-            whereConditions.push('(nombre LIKE ? OR descripcion LIKE ?)');
-            queryParams.push(`%${search}%`, `%${search}%`);
-        }
-        
-        if (precio_min) {
-            whereConditions.push('precio_efectivo >= ?');
-            queryParams.push(parseFloat(precio_min));
-        }
-        
-        if (precio_max) {
-            whereConditions.push('precio_efectivo <= ?');
-            queryParams.push(parseFloat(precio_max));
-        }
-        
-        // Construir query SQL
-        let sqlQuery = `
-            SELECT 
-                s.*,
-                COUNT(sm.medicamento_id) as total_medicamentos
-            FROM servicios s
-            LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
-        `;
-        
-        if (whereConditions.length > 0) {
-            sqlQuery += ' WHERE ' + whereConditions.join(' AND ');
-        }
-        
-        sqlQuery += ' GROUP BY s.id ORDER BY s.fecha_creacion DESC';
-        
-        console.log('📝 SQL Query generado:', sqlQuery);
-        console.log('📝 Parámetros SQL:', queryParams);
-        
-        // Ejecutar query...
-        const servicios = await db.query(sqlQuery, queryParams);
-        
-        console.log('📊 Servicios encontrados:', servicios.length);
-        console.log('🔍 Estados de servicios:', servicios.map(s => ({ id: s.id, activo: s.activo })));
+        // Mapear servicios para el frontend
+        const serviciosMapeados = resultado.servicios.map(servicio => mapearServicio(servicio));
         
         res.json({
             success: true,
-            data: servicios,
-            pagination: {
-                // ... info de paginación
-            }
+            data: serviciosMapeados,
+            pagination: resultado.pagination
         });
         
     } catch (error) {
-        console.error('❌ Error en getServicios:', error);
+        console.error('Error en getServicios:', error);
         res.status(500).json({
             success: false,
             message: 'Error obteniendo servicios'
