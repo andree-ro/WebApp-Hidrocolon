@@ -1,14 +1,14 @@
 // frontend/src/router/index.js
-// Router completo del Sistema Hidrocolon
+// Router limpio del Sistema Hidrocolon - Solo archivos existentes
 
 import { createRouter, createWebHistory } from 'vue-router'
 import authService from '@/services/authService'
 
 // =====================================
-// IMPORTAR COMPONENTES
+// IMPORTAR COMPONENTES EXISTENTES ÚNICAMENTE
 // =====================================
 
-// Vistas principales
+// Vistas principales existentes
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
@@ -16,7 +16,7 @@ import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
 
 // =====================================
-// DEFINIR RUTAS
+// DEFINIR RUTAS - SOLO EXISTENTES
 // =====================================
 
 const routes = [
@@ -88,72 +88,31 @@ const routes = [
     }
   },
 
-  // Rutas futuras (placeholder con lazy loading)
-  {
-    path: '/pacientes',
-    name: 'Pacientes',
-    component: () => import('@/views/PacientesView.vue'),
-    meta: { 
-      requiresAuth: true,
-      title: 'Pacientes - Sistema Hidrocolon',
-      breadcrumb: 'Pacientes',
-      description: 'Base de datos de pacientes'
-    }
-  },
-
-  {
-    path: '/carrito',
-    name: 'Carrito',
-    component: () => import('@/views/CarritoView.vue'),
-    meta: { 
-      requiresAuth: true,
-      title: 'Carrito de Ventas - Sistema Hidrocolon',
-      breadcrumb: 'Ventas',
-      description: 'Sistema de ventas y facturación'
-    }
-  },
-
-  {
-    path: '/financiero',
-    name: 'Financiero',
-    component: () => import('@/views/FinancieroView.vue'),
-    meta: { 
-      requiresAuth: true,
-      title: 'Módulo Financiero - Sistema Hidrocolon',
-      breadcrumb: 'Financiero',
-      description: 'Control de turnos y reportes'
-    }
-  },
-
-  // Rutas de sistema
-  {
-    path: '/perfil',
-    name: 'Perfil',
-    component: () => import('@/views/PerfilView.vue'),
-    meta: { 
-      requiresAuth: true,
-      title: 'Mi Perfil - Sistema Hidrocolon',
-      breadcrumb: 'Perfil'
-    }
-  },
-
-  {
-    path: '/configuracion',
-    name: 'Configuracion',
-    component: () => import('@/views/ConfiguracionView.vue'),
-    meta: { 
-      requiresAuth: true,
-      title: 'Configuración - Sistema Hidrocolon',
-      breadcrumb: 'Configuración',
-      adminOnly: true
-    }
-  },
-
-  // Página 404 - DEBE SER LA ÚLTIMA RUTA
+  // Página 404 simple - sin importar archivo inexistente
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('@/views/NotFoundView.vue'),
+    component: {
+      template: `
+        <div class="min-h-screen flex items-center justify-center bg-gray-50">
+          <div class="text-center">
+            <h1 class="text-6xl font-bold text-gray-400 mb-4">404</h1>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+              Página no encontrada
+            </h2>
+            <p class="text-gray-600 mb-8">
+              La página que buscas no existe en el Sistema Hidrocolon.
+            </p>
+            <router-link
+              to="/"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
+            >
+              Volver al Dashboard
+            </router-link>
+          </div>
+        </div>
+      `
+    },
     meta: {
       title: 'Página no encontrada - Sistema Hidrocolon'
     }
@@ -203,7 +162,7 @@ router.beforeEach(async (to, from, next) => {
     // Verificar permisos de administrador si es necesario
     if (to.meta.adminOnly) {
       const user = authService.getUser()
-      if (!user || user.rol?.nombre !== 'administrador') {
+      if (!user || user.rol_nombre !== 'administrador') {
         console.log('⛔ Acceso denegado - se requieren permisos de administrador')
         next({ name: 'Dashboard' })
         return
@@ -234,7 +193,7 @@ router.onError((error) => {
 export default router
 
 // ==========================================
-// UTILIDADES DE NAVEGACIÓN
+// UTILIDADES DE NAVEGACIÓN - SOLO RUTAS EXISTENTES
 // ==========================================
 
 export const navegarA = {
@@ -242,16 +201,11 @@ export const navegarA = {
   farmacia: () => router.push({ name: 'Farmacia' }),
   extras: () => router.push({ name: 'Extras' }),
   servicios: () => router.push({ name: 'Servicios' }),
-  pacientes: () => router.push({ name: 'Pacientes' }),
-  carrito: () => router.push({ name: 'Carrito' }),
-  financiero: () => router.push({ name: 'Financiero' }),
-  perfil: () => router.push({ name: 'Perfil' }),
-  configuracion: () => router.push({ name: 'Configuracion' }),
   login: (redirect) => router.push({ 
     name: 'Login', 
-    query: redirect ? { redirect } : undefined 
+    query: redirect ? { redirect } : {} 
   }),
-  // Navegación con parámetros
+  // Navegación básica
   goBack: () => router.go(-1),
   reload: () => router.go(0)
 }
@@ -266,7 +220,7 @@ export const obtenerBreadcrumbs = (route) => {
   // Siempre agregar Dashboard como base (excepto si ya estamos ahí)
   if (route.name !== 'Dashboard') {
     breadcrumbs.push({
-      text: '🏠 Dashboard',
+      text: 'Dashboard',
       to: { name: 'Dashboard' },
       active: false
     })
@@ -285,14 +239,14 @@ export const obtenerBreadcrumbs = (route) => {
 }
 
 // ==========================================
-// UTILIDADES DE MENÚ
+// MENÚ SOLO CON MÓDULOS EXISTENTES
 // ==========================================
 
 export const menuItems = [
   {
     name: 'Dashboard',
     path: '/',
-    icon: '🏠',
+    icon: 'home',
     title: 'Panel Principal',
     description: 'Resumen general del sistema',
     active: true
@@ -300,7 +254,7 @@ export const menuItems = [
   {
     name: 'Farmacia',
     path: '/farmacia',
-    icon: '💊',
+    icon: 'beaker',
     title: 'Farmacia',
     description: 'Gestión de medicamentos e inventario',
     active: true
@@ -308,7 +262,7 @@ export const menuItems = [
   {
     name: 'Extras',
     path: '/extras',
-    icon: '🧰',
+    icon: 'cube',
     title: 'Extras',
     description: 'Productos adicionales y suministros',
     active: true
@@ -316,38 +270,10 @@ export const menuItems = [
   {
     name: 'Servicios',
     path: '/servicios',
-    icon: '🏥',
+    icon: 'heart',
     title: 'Servicios Médicos',
     description: 'Gestión de servicios y precios',
-    active: true,
-    badge: 'Nuevo'
-  },
-  {
-    name: 'Pacientes',
-    path: '/pacientes',
-    icon: '👥',
-    title: 'Pacientes',
-    description: 'Base de datos de pacientes',
-    active: false,
-    badge: 'Próximo'
-  },
-  {
-    name: 'Carrito',
-    path: '/carrito',
-    icon: '🛒',
-    title: 'Ventas',
-    description: 'Sistema de ventas y facturación',
-    active: false,
-    badge: 'Próximo'
-  },
-  {
-    name: 'Financiero',
-    path: '/financiero',
-    icon: '💰',
-    title: 'Financiero',
-    description: 'Control de turnos y reportes',
-    active: false,
-    badge: 'Próximo'
+    active: true
   }
 ]
 
