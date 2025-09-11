@@ -1,20 +1,38 @@
 // src/services/authService.js
-// VERSIÓN CORREGIDA - Servicio de autenticación con login funcionando
-// Arregla el problema de redirección al dashboard
+// VERSIÓN CORREGIDA - Solución para error 405
 
 import axios from 'axios'
 
-// Configuración base de Axios para conectar con Railway
-const api = axios.create({
-  // En producción, conectar directamente con Railway
-  baseURL: import.meta.env.PROD 
-    ? 'https://webapp-hidrocolon-production.up.railway.app/api'
-    : '/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
+// Detectar el entorno y configurar la URL base correctamente
+const getBaseURL = () => {
+  // Si estamos en producción (Vercel), usar Railway directamente
+  if (import.meta.env.PROD) {
+    return 'https://webapp-hidrocolon-production.up.railway.app/api'
   }
+  
+  // Si estamos en desarrollo local
+  if (import.meta.env.DEV) {
+    // Intentar usar proxy primero, si falla usar Railway directamente
+    return window.location.hostname === 'localhost' 
+      ? 'https://webapp-hidrocolon-production.up.railway.app/api'  // Cambio aquí
+      : '/api'
+  }
+  
+  return '/api'
+}
+
+// Configuración base de Axios
+const api = axios.create({
+  baseURL: getBaseURL(),
+  timeout: 15000,  // Aumentar timeout
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  withCredentials: false  // Agregar esto para CORS
 })
+
+console.log('🌐 API Base URL configurada:', api.defaults.baseURL)
 
 // Interceptor para requests (agregar token automáticamente)
 api.interceptors.request.use(
@@ -23,7 +41,14 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    console.log('🚀 Enviando request:', config.method.toUpperCase(), config.url)
+    
+    console.log('🚀 Enviando request:', {
+      method: config.method.toUpperCase(), 
+      url: config.url,
+      fullURL: `${config.baseURL}${config.url}`,
+      headers: config.headers
+    })
+    
     return config
   },
   (error) => {
@@ -39,7 +64,12 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
-    console.error('❌ Error en response:', error.response?.status, error.response?.data)
+    console.error('❌ Error en response:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url
+    })
     
     // Si el token expiró, limpiar localStorage
     if (error.response?.status === 401) {
@@ -65,6 +95,7 @@ const authService = {
   async login(usuario, password) {
     try {
       console.log('🔐 Intentando login con:', usuario)
+      console.log('🌐 URL de login:', `${api.defaults.baseURL}/auth/login`)
       
       const response = await api.post('/auth/login', {
         usuario,
@@ -160,12 +191,11 @@ const authService = {
     }
   },
 
-  // Logout
+  // Resto de métodos iguales...
   async logout() {
     try {
       console.log('🚪 Cerrando sesión...')
       
-      // Llamar al endpoint de logout si tenemos token
       const token = localStorage.getItem('access_token')
       if (token) {
         try {
@@ -179,7 +209,6 @@ const authService = {
     } catch (error) {
       console.error('❌ Error en logout:', error)
     } finally {
-      // Limpiar datos locales siempre
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user_data')
@@ -188,7 +217,6 @@ const authService = {
     }
   },
 
-  // Verificar si está autenticado - VERSIÓN CORREGIDA
   isAuthenticated() {
     const token = localStorage.getItem('access_token')
     const userData = localStorage.getItem('user_data')
@@ -208,7 +236,6 @@ const authService = {
     return isAuthenticated
   },
 
-  // Obtener datos del usuario autenticado
   getUser() {
     try {
       const userData = localStorage.getItem('user_data')
@@ -227,7 +254,6 @@ const authService = {
     }
   },
 
-  // Obtener token de acceso actual
   getToken() {
     const token = localStorage.getItem('access_token')
     console.log('🎫 Token obtenido:', token ? 
@@ -235,27 +261,23 @@ const authService = {
     return token
   },
 
-  // Verificar si el usuario tiene un rol específico
   hasRole(requiredRole) {
     const user = this.getUser()
     if (!user || !user.rol_nombre) return false
     
     const hasRole = user.rol_nombre.toLowerCase() === requiredRole.toLowerCase()
-    console.log(`🔑 Verificando rol "${requiredRole}": ${hasRole}`)
+    console.log(`🔒 Verificando rol "${requiredRole}": ${hasRole}`)
     return hasRole
   },
 
-  // Verificar si es administrador
   isAdmin() {
     return this.hasRole('administrador')
   },
 
-  // Verificar si es vendedor
   isVendedor() {
     return this.hasRole('vendedor')
   },
 
-  // Refrescar token de acceso
   async refreshToken() {
     try {
       const refreshToken = localStorage.getItem('refresh_token')
@@ -281,7 +303,6 @@ const authService = {
     } catch (error) {
       console.error('❌ Error refrescando token:', error)
       
-      // Si no se puede refrescar, limpiar todo y forzar re-login
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user_data')
@@ -290,7 +311,6 @@ const authService = {
     }
   },
 
-  // Verificar token en el servidor
   async verifyToken() {
     try {
       console.log('🔍 Verificando token en servidor...')
@@ -308,7 +328,6 @@ const authService = {
     } catch (error) {
       console.error('❌ Error verificando token:', error)
       
-      // Si el token no es válido, limpiar datos
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
@@ -320,8 +339,5 @@ const authService = {
   }
 }
 
-// ✅ EXPORTACIÓN CORREGIDA - AGREGAR DEFAULT EXPORT
 export default authService
-
-// Exportar también la instancia de axios configurada
 export { api }
