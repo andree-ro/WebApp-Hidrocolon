@@ -13,7 +13,7 @@ class Servicio {
         this.activo = Boolean(data.activo);
         this.fecha_creacion = data.fecha_creacion;
         this.fecha_actualizacion = data.fecha_actualizacion;
-        this.medicamentos_count = 0; // Sin JOIN por ahora
+        this.total_medicamentos = parseInt(data.total_medicamentos) || 0; // CAMBIO AQUÍ
     }
 
     static async getConnection() {
@@ -37,7 +37,7 @@ class Servicio {
     // FINDALL - VERSIÓN SÚPER SIMPLE SIN PROBLEMAS
     // ========================================================================
     static async findAll(options = {}) {
-        console.log('🎯 SOLUCIÓN FINAL - Paginación con query concatenado');
+        console.log('🎯 SOLUCIÓN FINAL - Paginación con medicamentos incluidos');
         console.log('📋 Options recibidas:', options);
         
         let connection;
@@ -81,17 +81,30 @@ class Servicio {
             const validOrderBy = validOrderColumns.includes(orderBy) ? orderBy : 'fecha_creacion';
             const validOrderDir = ['ASC', 'DESC'].includes(orderDir?.toUpperCase()) ? orderDir.toUpperCase() : 'DESC';
 
-            // ===== PASO 3: CONSTRUCCIÓN DE QUERIES CON FILTROS =====
-            let baseQuery = 'SELECT * FROM servicios WHERE 1=1';
-            let countQuery = 'SELECT COUNT(*) as total FROM servicios WHERE 1=1';
+            // ===== PASO 3: CONSTRUCCIÓN DE QUERIES CON FILTROS Y MEDICAMENTOS =====
+            let baseQuery = `
+                SELECT s.*, 
+                    COALESCE(COUNT(sm.medicamento_id), 0) as total_medicamentos
+                FROM servicios s
+                LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
+                WHERE 1=1
+            `;
+            
+            let countQuery = `
+                SELECT COUNT(DISTINCT s.id) as total 
+                FROM servicios s
+                LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
+                WHERE 1=1
+            `;
+            
             let queryParams = [];
             let countParams = [];
 
             // Filtro de búsqueda
             const searchTerm = search ? search.trim() : '';
             if (searchTerm) {
-                baseQuery += ` AND nombre LIKE ?`;             
-                countQuery += ` AND nombre LIKE ?`;              
+                baseQuery += ` AND s.nombre LIKE ?`;             
+                countQuery += ` AND s.nombre LIKE ?`;              
                 const searchPattern = `%${searchTerm}%`;
                 queryParams.push(searchPattern);                
                 countParams.push(searchPattern);                
@@ -99,12 +112,11 @@ class Servicio {
             }
 
             // Filtro activo/inactivo
-            // Filtro activo/inactivo
             if (activo !== null && activo !== '') {
                 const isActive = activo === 'true' || activo === '1';
                 const activoValue = isActive ? 1 : 0; 
-                baseQuery += ` AND activo = ?`;
-                countQuery += ` AND activo = ?`;
+                baseQuery += ` AND s.activo = ?`;
+                countQuery += ` AND s.activo = ?`;
                 queryParams.push(activoValue);         
                 countParams.push(activoValue);         
                 console.log('✅ Filtro activo aplicado:', activoValue);
@@ -114,8 +126,8 @@ class Servicio {
             if (precio_min !== null && precio_min !== '') {
                 const minPrice = parseFloat(precio_min);
                 if (!isNaN(minPrice) && minPrice >= 0) {
-                    baseQuery += ` AND precio_efectivo >= ?`;
-                    countQuery += ` AND precio_efectivo >= ?`;
+                    baseQuery += ` AND s.precio_efectivo >= ?`;
+                    countQuery += ` AND s.precio_efectivo >= ?`;
                     queryParams.push(minPrice);
                     countParams.push(minPrice);
                     console.log('💰 Filtro precio mínimo aplicado:', minPrice);
@@ -126,16 +138,17 @@ class Servicio {
             if (precio_max !== null && precio_max !== '') {
                 const maxPrice = parseFloat(precio_max);
                 if (!isNaN(maxPrice) && maxPrice >= 0) {
-                    baseQuery += ` AND precio_efectivo <= ?`;
-                    countQuery += ` AND precio_efectivo <= ?`;
+                    baseQuery += ` AND s.precio_efectivo <= ?`;
+                    countQuery += ` AND s.precio_efectivo <= ?`;
                     queryParams.push(maxPrice);
                     countParams.push(maxPrice);
                     console.log('💰 Filtro precio máximo aplicado:', maxPrice);
                 }
             }
 
-            // ===== PASO 4: AGREGAR ORDENAMIENTO Y PAGINACIÓN (CONCATENADO) =====
-            baseQuery += ` ORDER BY ${validOrderBy} ${validOrderDir}`;
+            // ===== PASO 4: AGREGAR GROUP BY Y ORDENAMIENTO =====
+            baseQuery += ` GROUP BY s.id`;
+            baseQuery += ` ORDER BY s.${validOrderBy} ${validOrderDir}`;
             
             // CONCATENACIÓN SEGURA (valores ya validados como enteros)
             baseQuery += ` LIMIT ${limitNum} OFFSET ${offset}`;
@@ -179,9 +192,9 @@ class Servicio {
                 servicios: servicios,
                 pagination: paginationMetadata,
                 debug: {
-                    step: 'PAGINACIÓN REAL IMPLEMENTADA',
-                    message: 'Solución final: query concatenado funciona perfectamente',
-                    solucion: 'Concatenar LIMIT/OFFSET en lugar de usar parámetros ?',
+                    step: 'PAGINACIÓN CON MEDICAMENTOS IMPLEMENTADA',
+                    message: 'Solución final: query con LEFT JOIN para contar medicamentos',
+                    solucion: 'LEFT JOIN + GROUP BY + COALESCE para conteo correcto',
                     query_usado: baseQuery,
                     resultados: {
                         totalItems: totalItems,
@@ -201,7 +214,7 @@ class Servicio {
             };
 
         } catch (error) {
-            console.error('❌ Error en paginación final:', error.message);
+            console.error('❌ Error en paginación con medicamentos:', error.message);
             throw new Error(`Paginación falló: ${error.message}`);
         } finally {
             if (connection) {
@@ -439,18 +452,90 @@ class Servicio {
     // ========================================================================
     
     static async getMedicamentosVinculados(servicioId) {
-        // Placeholder - sin funcionalidad compleja por ahora
-        return [];
+        let connection;
+        try {
+            connection = await this.getConnection();
+            
+            const query = `
+                SELECT m.*, sm.cantidad_requerida,
+                    p.nombre as presentacion_nombre,
+                    l.nombre as laboratorio_nombre
+                FROM servicios_medicamentos sm
+                JOIN medicamentos m ON sm.medicamento_id = m.id
+                LEFT JOIN presentaciones p ON m.presentacion_id = p.id
+                LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
+                WHERE sm.servicio_id = ?
+            `;
+            
+            const [rows] = await connection.execute(query, [servicioId]);
+            return rows;
+            
+        } catch (error) {
+            console.error('Error obteniendo medicamentos vinculados:', error);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
     }
 
     static async vincularMedicamento(servicioId, medicamentoId, cantidadRequerida = 1) {
-        // Placeholder - implementar después cuando todo funcione
-        return { message: 'Funcionalidad de medicamentos pendiente de implementar' };
+        let connection;
+        try {
+            connection = await this.getConnection();
+            
+            const query = `
+                INSERT INTO servicios_medicamentos (servicio_id, medicamento_id, cantidad_requerida)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE cantidad_requerida = VALUES(cantidad_requerida)
+            `;
+            
+            await connection.execute(query, [servicioId, medicamentoId, cantidadRequerida]);
+            
+            return { message: 'Medicamento vinculado exitosamente' };
+            
+        } catch (error) {
+            console.error('Error vinculando medicamento:', error);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
     }
 
     static async desvincularMedicamento(servicioId, medicamentoId) {
-        // Placeholder - implementar después cuando todo funcione
-        return { message: 'Funcionalidad de medicamentos pendiente de implementar' };
+        let connection;
+        try {
+            connection = await this.getConnection();
+            
+            // Verificar que la vinculación existe
+            const checkQuery = `
+                SELECT * FROM servicios_medicamentos 
+                WHERE servicio_id = ? AND medicamento_id = ?
+            `;
+            
+            const [existing] = await connection.execute(checkQuery, [servicioId, medicamentoId]);
+            
+            if (existing.length === 0) {
+                throw new Error('Vinculación no encontrada');
+            }
+            
+            // Eliminar la vinculación
+            const deleteQuery = `
+                DELETE FROM servicios_medicamentos 
+                WHERE servicio_id = ? AND medicamento_id = ?
+            `;
+            
+            await connection.execute(deleteQuery, [servicioId, medicamentoId]);
+            
+            console.log(`Medicamento ${medicamentoId} desvinculado del servicio ${servicioId}`);
+            
+            return { message: 'Medicamento desvinculado exitosamente' };
+            
+        } catch (error) {
+            console.error('Error desvinculando medicamento:', error);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
     }
 
     static async getExportData() {
