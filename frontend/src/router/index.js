@@ -1,29 +1,26 @@
 // frontend/src/router/index.js
-// Agregar esta configuración a tu router existente
+// Router completo del Sistema Hidrocolon
 
 import { createRouter, createWebHistory } from 'vue-router'
 import authService from '@/services/authService'
 
-// Importar vistas
+// =====================================
+// IMPORTAR COMPONENTES
+// =====================================
+
+// Vistas principales
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
-import ServiciosView from '@/views/ServiciosView.vue' // ⭐ NUEVA VISTA
+import ServiciosView from '@/views/ServiciosView.vue'
+
+// =====================================
+// DEFINIR RUTAS
+// =====================================
 
 const routes = [
-  // Rutas públicas
-  {
-    path: '/login',
-    name: 'Login',
-    component: LoginView,
-    meta: { 
-      requiresAuth: false,
-      title: 'Iniciar Sesión - Sistema Hidrocolon'
-    }
-  },
-  
-  // Rutas protegidas
+  // Ruta raíz - Dashboard principal
   {
     path: '/',
     name: 'Dashboard',
@@ -34,7 +31,25 @@ const routes = [
       breadcrumb: 'Dashboard'
     }
   },
-  
+
+  // Login
+  {
+    path: '/login',
+    name: 'Login',
+    component: LoginView,
+    meta: { 
+      requiresAuth: false,
+      title: 'Iniciar Sesión - Sistema Hidrocolon'
+    }
+  },
+
+  // Dashboard alternativo (redirige a /)
+  {
+    path: '/dashboard',
+    redirect: '/'
+  },
+
+  // Módulo Farmacia
   {
     path: '/farmacia',
     name: 'Farmacia',
@@ -42,10 +57,12 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Farmacia - Sistema Hidrocolon',
-      breadcrumb: 'Farmacia'
+      breadcrumb: 'Farmacia',
+      description: 'Gestión de medicamentos e inventario'
     }
   },
-  
+
+  // Módulo Extras
   {
     path: '/extras',
     name: 'Extras',
@@ -53,11 +70,12 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Extras - Sistema Hidrocolon',
-      breadcrumb: 'Extras'
+      breadcrumb: 'Extras',
+      description: 'Productos adicionales y suministros'
     }
   },
-  
-  // ⭐ NUEVA RUTA DE SERVICIOS
+
+  // Módulo Servicios
   {
     path: '/servicios',
     name: 'Servicios',
@@ -69,8 +87,8 @@ const routes = [
       description: 'Gestión de servicios médicos, precios y medicamentos vinculados'
     }
   },
-  
-  // Rutas futuras (placeholder)
+
+  // Rutas futuras (placeholder con lazy loading)
   {
     path: '/pacientes',
     name: 'Pacientes',
@@ -78,10 +96,11 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Pacientes - Sistema Hidrocolon',
-      breadcrumb: 'Pacientes'
+      breadcrumb: 'Pacientes',
+      description: 'Base de datos de pacientes'
     }
   },
-  
+
   {
     path: '/carrito',
     name: 'Carrito',
@@ -89,10 +108,11 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Carrito de Ventas - Sistema Hidrocolon',
-      breadcrumb: 'Ventas'
+      breadcrumb: 'Ventas',
+      description: 'Sistema de ventas y facturación'
     }
   },
-  
+
   {
     path: '/financiero',
     name: 'Financiero',
@@ -100,11 +120,36 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Módulo Financiero - Sistema Hidrocolon',
-      breadcrumb: 'Financiero'
+      breadcrumb: 'Financiero',
+      description: 'Control de turnos y reportes'
     }
   },
 
-  // Página 404
+  // Rutas de sistema
+  {
+    path: '/perfil',
+    name: 'Perfil',
+    component: () => import('@/views/PerfilView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Mi Perfil - Sistema Hidrocolon',
+      breadcrumb: 'Perfil'
+    }
+  },
+
+  {
+    path: '/configuracion',
+    name: 'Configuracion',
+    component: () => import('@/views/ConfiguracionView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Configuración - Sistema Hidrocolon',
+      breadcrumb: 'Configuración',
+      adminOnly: true
+    }
+  },
+
+  // Página 404 - DEBE SER LA ÚLTIMA RUTA
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -114,6 +159,10 @@ const routes = [
     }
   }
 ]
+
+// =====================================
+// CREAR ROUTER
+// =====================================
 
 const router = createRouter({
   history: createWebHistory(),
@@ -127,7 +176,11 @@ const router = createRouter({
   }
 })
 
-// Navigation Guard para autenticación
+// =====================================
+// GUARDS DE NAVEGACIÓN
+// =====================================
+
+// Guard global - verificar autenticación
 router.beforeEach(async (to, from, next) => {
   console.log(`🧭 Navegando a: ${to.name} (${to.path})`)
   
@@ -138,7 +191,6 @@ router.beforeEach(async (to, from, next) => {
 
   // Verificar autenticación
   if (to.meta.requiresAuth) {
-    // ✅ USAR authService en lugar de useAuthStore
     if (!authService.isAuthenticated()) {
       console.log('🔒 Redirigiendo a login - usuario no autenticado')
       next({
@@ -146,6 +198,16 @@ router.beforeEach(async (to, from, next) => {
         query: { redirect: to.fullPath }
       })
       return
+    }
+
+    // Verificar permisos de administrador si es necesario
+    if (to.meta.adminOnly) {
+      const user = authService.getUser()
+      if (!user || user.rol?.nombre !== 'administrador') {
+        console.log('⛔ Acceso denegado - se requieren permisos de administrador')
+        next({ name: 'Dashboard' })
+        return
+      }
     }
   }
   
@@ -159,41 +221,54 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-// After navigation
+// Guard posterior a la navegación
 router.afterEach((to, from) => {
-  console.log(`📍 Navegación completada: ${from.name} → ${to.name}`)
+  console.log(`📍 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
+})
+
+// Guard de error
+router.onError((error) => {
+  console.error('❌ Error en router:', error)
 })
 
 export default router
 
 // ==========================================
-// UTILIDAD: Navegación programática
+// UTILIDADES DE NAVEGACIÓN
 // ==========================================
+
 export const navegarA = {
   dashboard: () => router.push({ name: 'Dashboard' }),
   farmacia: () => router.push({ name: 'Farmacia' }),
   extras: () => router.push({ name: 'Extras' }),
-  servicios: () => router.push({ name: 'Servicios' }), // ⭐ NUEVA
+  servicios: () => router.push({ name: 'Servicios' }),
   pacientes: () => router.push({ name: 'Pacientes' }),
   carrito: () => router.push({ name: 'Carrito' }),
   financiero: () => router.push({ name: 'Financiero' }),
+  perfil: () => router.push({ name: 'Perfil' }),
+  configuracion: () => router.push({ name: 'Configuracion' }),
   login: (redirect) => router.push({ 
     name: 'Login', 
     query: redirect ? { redirect } : undefined 
-  })
+  }),
+  // Navegación con parámetros
+  goBack: () => router.go(-1),
+  reload: () => router.go(0)
 }
 
 // ==========================================
-// UTILIDAD: Breadcrumbs
+// UTILIDADES DE BREADCRUMBS
 // ==========================================
+
 export const obtenerBreadcrumbs = (route) => {
   const breadcrumbs = []
   
-  // Siempre agregar Dashboard como base
+  // Siempre agregar Dashboard como base (excepto si ya estamos ahí)
   if (route.name !== 'Dashboard') {
     breadcrumbs.push({
       text: '🏠 Dashboard',
-      to: { name: 'Dashboard' }
+      to: { name: 'Dashboard' },
+      active: false
     })
   }
   
@@ -201,7 +276,8 @@ export const obtenerBreadcrumbs = (route) => {
   if (route.meta?.breadcrumb) {
     breadcrumbs.push({
       text: route.meta.breadcrumb,
-      to: route
+      to: route,
+      active: true
     })
   }
   
@@ -209,36 +285,42 @@ export const obtenerBreadcrumbs = (route) => {
 }
 
 // ==========================================
-// UTILIDAD: Menú de navegación
+// UTILIDADES DE MENÚ
 // ==========================================
+
 export const menuItems = [
   {
     name: 'Dashboard',
     path: '/',
     icon: '🏠',
     title: 'Panel Principal',
-    description: 'Resumen general del sistema'
+    description: 'Resumen general del sistema',
+    active: true
   },
   {
     name: 'Farmacia',
     path: '/farmacia',
     icon: '💊',
     title: 'Farmacia',
-    description: 'Gestión de medicamentos e inventario'
+    description: 'Gestión de medicamentos e inventario',
+    active: true
   },
   {
     name: 'Extras',
     path: '/extras',
     icon: '🧰',
     title: 'Extras',
-    description: 'Productos adicionales y suministros'
+    description: 'Productos adicionales y suministros',
+    active: true
   },
   {
-    name: 'Servicios', // ⭐ NUEVO ITEM
+    name: 'Servicios',
     path: '/servicios',
     icon: '🏥',
     title: 'Servicios Médicos',
-    description: 'Gestión de servicios y precios'
+    description: 'Gestión de servicios y precios',
+    active: true,
+    badge: 'Nuevo'
   },
   {
     name: 'Pacientes',
@@ -246,7 +328,8 @@ export const menuItems = [
     icon: '👥',
     title: 'Pacientes',
     description: 'Base de datos de pacientes',
-    disabled: true // Por implementar
+    active: false,
+    badge: 'Próximo'
   },
   {
     name: 'Carrito',
@@ -254,7 +337,8 @@ export const menuItems = [
     icon: '🛒',
     title: 'Ventas',
     description: 'Sistema de ventas y facturación',
-    disabled: true // Por implementar
+    active: false,
+    badge: 'Próximo'
   },
   {
     name: 'Financiero',
@@ -262,6 +346,42 @@ export const menuItems = [
     icon: '💰',
     title: 'Financiero',
     description: 'Control de turnos y reportes',
-    disabled: true // Por implementar
+    active: false,
+    badge: 'Próximo'
   }
 ]
+
+// ==========================================
+// UTILIDADES DE VALIDACIÓN DE RUTAS
+// ==========================================
+
+export const esRutaValida = (path) => {
+  return routes.some(route => route.path === path)
+}
+
+export const esRutaProtegida = (path) => {
+  const route = routes.find(route => route.path === path)
+  return route?.meta?.requiresAuth === true
+}
+
+export const esRutaAdmin = (path) => {
+  const route = routes.find(route => route.path === path)
+  return route?.meta?.adminOnly === true
+}
+
+// ==========================================
+// FUNCIONES DE DEBUGGING
+// ==========================================
+
+export const debugRouter = () => {
+  console.log('🔍 Debug del Router:')
+  console.log('- Rutas registradas:', routes.length)
+  console.log('- Ruta actual:', router.currentRoute.value)
+  console.log('- Usuario autenticado:', authService.isAuthenticated())
+  console.log('- Datos de usuario:', authService.getUser())
+}
+
+// Exportar debug globalmente para console
+if (typeof window !== 'undefined') {
+  window.debugRouter = debugRouter
+}

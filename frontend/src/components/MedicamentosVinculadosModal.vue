@@ -1,258 +1,182 @@
-<!-- frontend/src/components/MedicamentosVinculadosModal.vue -->
 <template>
-  <div class="modal-overlay" @click="cerrarModal">
-    <div class="modal-content-large" @click.stop>
-      <!-- Header -->
-      <div class="modal-header">
-        <div>
-          <h3 class="text-lg font-medium text-gray-900">
-            💊 Medicamentos Vinculados
-          </h3>
-          <p class="text-sm text-gray-600 mt-1">
-            Servicio: {{ servicio?.nombre_servicio }}
-          </p>
-        </div>
-        <button @click="cerrarModal" class="modal-close-btn">
-          ❌
-        </button>
-      </div>
-
-      <!-- Contenido del modal -->
-      <div class="modal-body">
-        <!-- Mensaje de error -->
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-          <div class="flex items-center">
-            <span class="text-red-600 mr-2">⚠️</span>
-            <span class="text-red-800">{{ error }}</span>
+  <div v-if="visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+      <div class="p-6">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">
+              Medicamentos del Servicio
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">
+              Servicio: <span class="font-medium">{{ servicio?.nombre || servicio?.nombre_servicio || 'Sin nombre' }}</span>
+            </p>
           </div>
+          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Panel izquierdo: Medicamentos vinculados -->
-          <div class="space-y-4">
-            <div class="flex justify-between items-center">
-              <h4 class="text-md font-medium text-gray-900">
-                🔗 Medicamentos Vinculados ({{ medicamentosVinculados.length }})
-              </h4>
-              
-              <button
-                @click="recargarMedicamentosVinculados"
-                class="btn-secondary-sm"
-                :disabled="cargandoVinculados"
-                title="Recargar lista"
-              >
-                🔄
-              </button>
-            </div>
+        <!-- Loading state -->
+        <div v-if="cargando" class="flex justify-center items-center py-12">
+          <div class="spinner mr-3"></div>
+          <span class="text-gray-600">Cargando medicamentos...</span>
+        </div>
 
-            <!-- Lista de medicamentos vinculados -->
-            <div class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-              <!-- Estado de carga -->
-              <div v-if="cargandoVinculados" class="text-center py-8">
-                <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-r-transparent rounded-full"></div>
-                <p class="mt-2 text-sm text-gray-600">Cargando medicamentos...</p>
-              </div>
-
-              <!-- Lista -->
-              <div v-else-if="medicamentosVinculados.length > 0" class="space-y-3">
-                <div
-                  v-for="medicamento in medicamentosVinculados"
-                  :key="medicamento.id"
-                  class="bg-white rounded-lg p-3 border border-gray-200"
-                >
-                  <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                      <h5 class="font-medium text-gray-900 text-sm">
-                        {{ medicamento.nombre }}
-                      </h5>
-                      <div class="text-xs text-gray-500 mt-1 space-y-1">
-                        <div>Presentación: {{ medicamento.presentacion || 'N/A' }}</div>
-                        <div>Cantidad requerida: {{ medicamento.cantidad_requerida }}</div>
-                        <div class="flex items-center gap-2">
-                          <span>Stock: {{ medicamento.stock }}</span>
-                          <span 
-                            :class="{
-                              'text-red-500': medicamento.stock < 11,
-                              'text-yellow-500': medicamento.stock >= 11 && medicamento.stock <= 50,
-                              'text-green-500': medicamento.stock > 50
-                            }"
-                          >
-                            {{ 
-                              medicamento.stock < 11 ? '⚠️ Bajo' : 
-                              medicamento.stock <= 50 ? '⚡ Medio' : '✅ Alto'
-                            }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <button
-                      @click="desvincularMedicamento(medicamento)"
-                      class="text-red-600 hover:text-red-800 p-1 rounded"
-                      :disabled="eliminandoMedicamento"
-                      title="Desvincular medicamento"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Estado vacío -->
-              <div v-else class="text-center py-8">
-                <div class="text-4xl mb-2">💊</div>
-                <p class="text-gray-600 text-sm">
-                  No hay medicamentos vinculados a este servicio
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Panel derecho: Agregar medicamentos -->
-          <div class="space-y-4">
-            <h4 class="text-md font-medium text-gray-900">
-              ➕ Vincular Nuevo Medicamento
+        <!-- Content -->
+        <div v-else class="space-y-6">
+          <!-- Medicamentos vinculados actuales -->
+          <div>
+            <h4 class="text-md font-medium text-gray-900 mb-3">
+              Medicamentos Vinculados ({{ medicamentosVinculados.length }})
             </h4>
-
-            <!-- Formulario de vinculación -->
-            <div class="bg-blue-50 rounded-lg p-4 space-y-4">
-              <!-- Búsqueda de medicamentos -->
-              <div>
-                <label class="form-label">
-                  🔍 Buscar Medicamento
-                </label>
-                <div class="relative">
-                  <input
-                    v-model="busquedaMedicamento"
-                    @input="buscarMedicamentos"
-                    type="text"
-                    class="input-field"
-                    placeholder="Buscar por nombre de medicamento..."
-                    :disabled="vinculandoMedicamento"
-                  />
-                  
-                  <!-- Dropdown de resultados -->
-                  <div v-if="mostrarResultados && resultadosBusqueda.length > 0" 
-                       class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
-                    <div
-                      v-for="medicamento in resultadosBusqueda"
-                      :key="medicamento.id"
-                      @click="seleccionarMedicamento(medicamento)"
-                      class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    >
-                      <div class="font-medium text-sm">{{ medicamento.nombre }}</div>
-                      <div class="text-xs text-gray-500">
-                        {{ medicamento.presentacion }} - Stock: {{ medicamento.stock }}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Sin resultados -->
-                  <div v-else-if="mostrarResultados && busquedaMedicamento && resultadosBusqueda.length === 0"
-                       class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 p-3 shadow-lg">
-                    <div class="text-sm text-gray-500 text-center">
-                      No se encontraron medicamentos
-                    </div>
+            
+            <div v-if="medicamentosVinculados.length > 0" class="space-y-3">
+              <div 
+                v-for="medicamento in medicamentosVinculados" 
+                :key="medicamento.id"
+                class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="text-2xl">💊</div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">
+                      {{ medicamento.nombre }}
+                    </p>
+                    <p class="text-xs text-gray-600">
+                      {{ medicamento.presentacion_nombre }} - {{ medicamento.laboratorio_nombre }}
+                    </p>
+                    <p class="text-xs text-blue-600">
+                      Cantidad requerida: {{ medicamento.cantidad_requerida || 1 }}
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              <!-- Medicamento seleccionado -->
-              <div v-if="medicamentoSeleccionado" class="bg-white rounded-lg p-3 border border-blue-200">
-                <div class="flex justify-between items-start mb-3">
-                  <div>
-                    <h5 class="font-medium text-gray-900 text-sm">
-                      {{ medicamentoSeleccionado.nombre }}
-                    </h5>
-                    <div class="text-xs text-gray-500">
-                      {{ medicamentoSeleccionado.presentacion }} - Stock: {{ medicamentoSeleccionado.stock }}
-                    </div>
-                  </div>
+                <div class="flex items-center space-x-2">
+                  <!-- Cambiar cantidad -->
                   <button
-                    @click="limpiarSeleccion"
-                    class="text-gray-400 hover:text-gray-600"
-                    title="Limpiar selección"
+                    @click="cambiarCantidad(medicamento)"
+                    class="btn-icon btn-blue"
+                    title="Cambiar cantidad"
                   >
-                    ❌
+                    📝
+                  </button>
+                  <!-- Desvincular -->
+                  <button
+                    @click="desvincularMedicamento(medicamento)"
+                    class="btn-icon btn-red"
+                    title="Quitar medicamento"
+                    :disabled="desvinculando === medicamento.id"
+                  >
+                    <span v-if="desvinculando === medicamento.id" class="spinner-small"></span>
+                    <span v-else>❌</span>
                   </button>
                 </div>
-
-                <!-- Cantidad requerida -->
-                <div>
-                  <label class="form-label text-sm">
-                    📦 Cantidad Requerida
-                  </label>
-                  <input
-                    v-model="cantidadRequerida"
-                    type="number"
-                    min="1"
-                    max="999"
-                    class="input-field"
-                    placeholder="1"
-                    :disabled="vinculandoMedicamento"
-                  />
-                  <div class="text-xs text-gray-500 mt-1">
-                    Cantidad necesaria de este medicamento para el servicio
-                  </div>
-                </div>
-
-                <!-- Botón vincular -->
-                <button
-                  @click="vincularMedicamento"
-                  class="btn-primary w-full mt-4"
-                  :disabled="vinculandoMedicamento || !cantidadRequerida"
-                >
-                  <span v-if="vinculandoMedicamento" class="animate-spin inline-block w-4 h-4 border-2 border-white border-r-transparent rounded-full mr-2"></span>
-                  {{ vinculandoMedicamento ? 'Vinculando...' : '🔗 Vincular Medicamento' }}
-                </button>
-              </div>
-
-              <!-- Instrucciones -->
-              <div v-else class="text-center py-6 text-gray-500 text-sm">
-                <div class="text-2xl mb-2">💊</div>
-                <p>Busca y selecciona un medicamento para vincularlo</p>
               </div>
             </div>
 
-            <!-- Medicamentos disponibles (muestra) -->
-            <div>
-              <h5 class="text-sm font-medium text-gray-700 mb-2">
-                📋 Medicamentos Disponibles (últimos agregados)
-              </h5>
-              <div class="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
-                <div v-if="cargandoDisponibles" class="text-center py-4">
-                  <div class="animate-spin inline-block w-4 h-4 border-2 border-gray-400 border-r-transparent rounded-full"></div>
-                </div>
-                
-                <div v-else-if="medicamentosDisponibles.length > 0" class="space-y-2">
-                  <div
-                    v-for="medicamento in medicamentosDisponibles.slice(0, 5)"
-                    :key="medicamento.id"
-                    @click="seleccionarMedicamento(medicamento)"
-                    class="text-xs p-2 bg-white rounded border cursor-pointer hover:bg-blue-50"
-                  >
-                    <div class="font-medium">{{ medicamento.nombre }}</div>
-                    <div class="text-gray-500">Stock: {{ medicamento.stock }}</div>
+            <div v-else class="text-center py-8 bg-gray-50 rounded-lg">
+              <div class="text-4xl mb-2">💊</div>
+              <p class="text-gray-600">No hay medicamentos vinculados</p>
+              <p class="text-sm text-gray-500">Agrega medicamentos que requiere este servicio</p>
+            </div>
+          </div>
+
+          <!-- Agregar nuevos medicamentos -->
+          <div class="border-t pt-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">
+              Agregar Medicamentos
+            </h4>
+            
+            <!-- Búsqueda de medicamentos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Buscar Medicamento
+                </label>
+                <input
+                  v-model="busquedaMedicamento"
+                  type="text"
+                  class="input-base"
+                  placeholder="Nombre del medicamento..."
+                  @input="buscarMedicamentos"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Cantidad Requerida
+                </label>
+                <input
+                  v-model.number="cantidadNueva"
+                  type="number"
+                  min="1"
+                  max="999"
+                  class="input-base"
+                  placeholder="1"
+                />
+              </div>
+            </div>
+
+            <!-- Lista de medicamentos disponibles -->
+            <div v-if="medicamentosDisponibles.length > 0" class="space-y-2 max-h-60 overflow-y-auto">
+              <div
+                v-for="medicamento in medicamentosDisponibles"
+                :key="medicamento.id"
+                class="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="text-lg">💊</div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">
+                      {{ medicamento.nombre }}
+                    </p>
+                    <p class="text-xs text-gray-600">
+                      {{ medicamento.presentacion_nombre }} - {{ medicamento.laboratorio_nombre }}
+                    </p>
+                    <p class="text-xs text-green-600">
+                      Stock: {{ medicamento.existencias }} - 💳 {{ formatPrice(medicamento.precio_tarjeta) }}
+                    </p>
                   </div>
                 </div>
-                
-                <div v-else class="text-center py-4 text-xs text-gray-500">
-                  No hay medicamentos disponibles
-                </div>
+                <button
+                  @click="vincularMedicamento(medicamento)"
+                  class="btn-small btn-primary"
+                  :disabled="vinculando === medicamento.id"
+                >
+                  <span v-if="vinculando === medicamento.id" class="spinner-small mr-2"></span>
+                  {{ vinculando === medicamento.id ? 'Agregando...' : 'Agregar' }}
+                </button>
               </div>
+            </div>
+
+            <!-- Estado de búsqueda -->
+            <div v-else-if="busquedaMedicamento && busquedaMedicamento.length > 2" class="text-center py-8 text-gray-500">
+              <div class="text-2xl mb-2">🔍</div>
+              <p>No se encontraron medicamentos con "{{ busquedaMedicamento }}"</p>
+            </div>
+
+            <div v-else-if="!busquedaMedicamento" class="text-center py-6 text-gray-400">
+              <p class="text-sm">Escribe al menos 3 caracteres para buscar medicamentos</p>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Footer -->
-      <div class="modal-footer">
-        <button
-          @click="cerrarModal"
-          class="btn-secondary"
-        >
-          Cerrar
-        </button>
+        <!-- Footer -->
+        <div class="flex justify-between items-center pt-6 border-t mt-6">
+          <div class="text-sm text-gray-600">
+            {{ medicamentosVinculados.length }} medicamento(s) vinculado(s)
+          </div>
+          <div class="flex space-x-3">
+            <button @click="$emit('close')" class="btn-secondary">
+              Cerrar
+            </button>
+            <button @click="guardarCambios" class="btn-primary" :disabled="!cambiosRealizados">
+              ✅ Listo
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -266,291 +190,289 @@ export default {
   name: 'MedicamentosVinculadosModal',
   
   props: {
+    visible: {
+      type: Boolean,
+      default: false
+    },
     servicio: {
       type: Object,
       required: true
     }
   },
-
-  emits: ['cerrar', 'actualizado'],
-
+  
+  emits: ['close', 'updated'],
+  
   data() {
     return {
-      // Estados principales
+      cargando: false,
       medicamentosVinculados: [],
       medicamentosDisponibles: [],
-      
-      // Estados de carga
-      cargandoVinculados: false,
-      cargandoDisponibles: false,
-      vinculandoMedicamento: false,
-      eliminandoMedicamento: false,
-      
-      // Búsqueda y selección
       busquedaMedicamento: '',
-      resultadosBusqueda: [],
-      mostrarResultados: false,
-      medicamentoSeleccionado: null,
-      cantidadRequerida: 1,
-      
-      // Error
-      error: null,
-      
-      // Timeouts
-      busquedaTimeout: null
+      cantidadNueva: 1,
+      vinculando: null,
+      desvinculando: null,
+      cambiosRealizados: false,
+      searchTimeout: null
     }
   },
-
-  async mounted() {
-    console.log('💊 Inicializando modal de medicamentos vinculados...')
-    await this.inicializarModal()
+  
+  watch: {
+    visible(newVal) {
+      console.log('👀 WATCH VISIBLE CAMBIÓ A:', newVal)
+      console.log('👀 SERVICIO DISPONIBLE:', !!this.servicio)
+      console.log('👀 SERVICIO ID:', this.servicio?.id)
+      
+      if (newVal) {
+        console.log('🚀 EJECUTANDO INICIALIZAR...')
+        this.inicializar()
+      } else {
+        console.log('🧹 LIMPIANDO DATOS...')
+        this.limpiarDatos()
+      }
+    }
   },
-
+  
   beforeUnmount() {
-    if (this.busquedaTimeout) {
-      clearTimeout(this.busquedaTimeout)
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout)
     }
   },
-
+  
   methods: {
-    async inicializarModal() {
-      try {
-        await Promise.all([
-          this.cargarMedicamentosVinculados(),
-          this.cargarMedicamentosDisponibles()
-        ])
-      } catch (error) {
-        console.error('❌ Error inicializando modal:', error)
-        this.error = error.message
-      }
-    },
-
-    async cargarMedicamentosVinculados() {
-      try {
-        this.cargandoVinculados = true
-        this.error = null
-        
-        console.log('📋 Cargando medicamentos vinculados...')
-        
-        const response = await serviciosService.getMedicamentosVinculados(this.servicio.id)
-        
-        this.medicamentosVinculados = response.data || []
-        
-        console.log('✅ Medicamentos vinculados cargados:', this.medicamentosVinculados.length)
-        
-      } catch (error) {
-        console.error('❌ Error cargando medicamentos vinculados:', error)
-        this.error = error.message
-        this.medicamentosVinculados = []
-      } finally {
-        this.cargandoVinculados = false
-      }
-    },
-
-    async cargarMedicamentosDisponibles() {
-      try {
-        this.cargandoDisponibles = true
-        
-        console.log('📋 Cargando medicamentos disponibles...')
-        
-        const response = await farmaciaService.getMedicamentos({
-          limit: 20,
-          page: 1
-        })
-        
-        this.medicamentosDisponibles = response.data?.medicamentos || []
-        
-        console.log('✅ Medicamentos disponibles cargados:', this.medicamentosDisponibles.length)
-        
-      } catch (error) {
-        console.error('❌ Error cargando medicamentos disponibles:', error)
-        this.medicamentosDisponibles = []
-      } finally {
-        this.cargandoDisponibles = false
-      }
-    },
-
-    async buscarMedicamentos() {
-      if (this.busquedaTimeout) {
-        clearTimeout(this.busquedaTimeout)
-      }
-
-      this.busquedaTimeout = setTimeout(async () => {
-        const query = this.busquedaMedicamento.trim()
-        
-        if (query.length < 2) {
-          this.resultadosBusqueda = []
-          this.mostrarResultados = false
-          return
-        }
-
-        try {
-          console.log('🔍 Buscando medicamentos:', query)
-          
-          const response = await farmaciaService.getMedicamentos({
-            search: query,
-            limit: 10,
-            page: 1
-          })
-          
-          this.resultadosBusqueda = response.data?.medicamentos || []
-          this.mostrarResultados = true
-          
-          console.log('✅ Resultados de búsqueda:', this.resultadosBusqueda.length)
-          
-        } catch (error) {
-          console.error('❌ Error buscando medicamentos:', error)
-          this.resultadosBusqueda = []
-          this.mostrarResultados = false
-        }
-      }, 300)
-    },
-
-    seleccionarMedicamento(medicamento) {
-      console.log('👆 Medicamento seleccionado:', medicamento.nombre)
+    async inicializar() {
+      console.log('🔧 DENTRO DE INICIALIZAR')
+      console.log('🔧 SERVICIO EN INICIALIZAR:', this.servicio)
+      console.log('🔧 SERVICIO ID EN INICIALIZAR:', this.servicio?.id)
       
-      // Verificar si ya está vinculado
-      const yaVinculado = this.medicamentosVinculados.find(m => m.id === medicamento.id)
-      if (yaVinculado) {
-        this.error = 'Este medicamento ya está vinculado al servicio'
-        return
-      }
-      
-      this.medicamentoSeleccionado = medicamento
-      this.busquedaMedicamento = medicamento.nombre
-      this.mostrarResultados = false
-      this.cantidadRequerida = 1
-      this.error = null
-    },
-
-    limpiarSeleccion() {
-      this.medicamentoSeleccionado = null
-      this.busquedaMedicamento = ''
-      this.mostrarResultados = false
-      this.cantidadRequerida = 1
-      this.error = null
-    },
-
-    async vincularMedicamento() {
-      if (!this.medicamentoSeleccionado || !this.cantidadRequerida) {
-        this.error = 'Selecciona un medicamento y especifica la cantidad'
-        return
-      }
-
-      try {
-        this.vinculandoMedicamento = true
-        this.error = null
-        
-        console.log('🔗 Vinculando medicamento:', {
-          servicio_id: this.servicio.id,
-          medicamento_id: this.medicamentoSeleccionado.id,
-          cantidad_requerida: this.cantidadRequerida
-        })
-        
-        await serviciosService.vincularMedicamento(this.servicio.id, {
-          medicamento_id: this.medicamentoSeleccionado.id,
-          cantidad_requerida: parseInt(this.cantidadRequerida)
-        })
-        
-        console.log('✅ Medicamento vinculado exitosamente')
-        
-        // Recargar lista y limpiar formulario
-        await this.cargarMedicamentosVinculados()
-        this.limpiarSeleccion()
-        
-        // Notificar al componente padre
-        this.$emit('actualizado')
-        
-      } catch (error) {
-        console.error('❌ Error vinculando medicamento:', error)
-        this.error = error.message
-      } finally {
-        this.vinculandoMedicamento = false
-      }
-    },
-
-    async desvincularMedicamento(medicamento) {
-      if (!confirm(`¿Desvincular "${medicamento.nombre}" de este servicio?`)) {
-        return
-      }
-
-      try {
-        this.eliminandoMedicamento = true
-        this.error = null
-        
-        console.log('🚫 Desvinculando medicamento:', medicamento.id)
-        
-        await serviciosService.desvincularMedicamento(this.servicio.id, medicamento.id)
-        
-        console.log('✅ Medicamento desvinculado exitosamente')
-        
-        // Recargar lista
-        await this.cargarMedicamentosVinculados()
-        
-        // Notificar al componente padre
-        this.$emit('actualizado')
-        
-      } catch (error) {
-        console.error('❌ Error desvinculando medicamento:', error)
-        this.error = error.message
-      } finally {
-        this.eliminandoMedicamento = false
-      }
-    },
-
-    async recargarMedicamentosVinculados() {
       await this.cargarMedicamentosVinculados()
     },
 
-    cerrarModal() {
-      this.$emit('cerrar')
+    async cargarMedicamentosVinculados() {
+      console.log('💊 ENTRANDO A CARGAR MEDICAMENTOS VINCULADOS')
+      
+      try {
+        this.cargando = true
+        
+        if (!this.servicio?.id) {
+          console.log('❌ SERVICIO NO VÁLIDO:', this.servicio)
+          throw new Error('Servicio no válido')
+        }
+        
+        console.log('📞 LLAMANDO AL SERVICIO CON ID:', this.servicio.id)
+        
+        const response = await serviciosService.getMedicamentosVinculados(this.servicio.id)
+        
+        console.log('📦 RESPUESTA RECIBIDA:', response)
+        
+        this.medicamentosVinculados = response.data || []
+        
+        console.log('✅ MEDICAMENTOS ASIGNADOS:', this.medicamentosVinculados.length)
+        
+      } catch (error) {
+        console.error('❌ ERROR EN CARGAR MEDICAMENTOS:', error)
+        this.medicamentosVinculados = []
+      } finally {
+        this.cargando = false
+      }
+    },
+    
+    limpiarDatos() {
+      this.medicamentosVinculados = []
+      this.medicamentosDisponibles = []
+      this.busquedaMedicamento = ''
+      this.cantidadNueva = 1
+      this.cambiosRealizados = false
+    },
+
+    buscarMedicamentos() {
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
+      }
+      
+      this.searchTimeout = setTimeout(async () => {
+        if (this.busquedaMedicamento.length < 3) {
+          this.medicamentosDisponibles = []
+          return
+        }
+        
+        try {
+          console.log('Buscando medicamentos:', this.busquedaMedicamento)
+          
+          const response = await farmaciaService.getMedicamentos({
+            search: this.busquedaMedicamento,
+            limit: 20,
+            activo: true
+          })
+          
+          const todosMedicamentos = response.data?.medicamentos || []
+          
+          // Filtrar medicamentos que ya están vinculados
+          const idsVinculados = this.medicamentosVinculados.map(m => m.id)
+          this.medicamentosDisponibles = todosMedicamentos.filter(
+            medicamento => !idsVinculados.includes(medicamento.id)
+          )
+          
+          console.log('Medicamentos disponibles:', this.medicamentosDisponibles.length)
+          
+        } catch (error) {
+          console.error('Error buscando medicamentos:', error)
+          this.medicamentosDisponibles = []
+        }
+      }, 500)
+    },
+    
+    async vincularMedicamento(medicamento) {
+      try {
+        this.vinculando = medicamento.id
+        
+        const cantidad = this.cantidadNueva || 1
+        
+        console.log('Vinculando medicamento:', {
+          servicio: this.servicio.id,
+          medicamento: medicamento.id,
+          cantidad
+        })
+        
+        await serviciosService.vincularMedicamento(this.servicio.id, {
+          medicamento_id: medicamento.id,
+          cantidad_requerida: cantidad
+        })
+        
+        // Agregar a la lista local
+        this.medicamentosVinculados.push({
+          ...medicamento,
+          cantidad_requerida: cantidad
+        })
+        
+        // Quitar de disponibles
+        this.medicamentosDisponibles = this.medicamentosDisponibles.filter(
+          m => m.id !== medicamento.id
+        )
+        
+        this.cambiosRealizados = true
+        
+        console.log('Medicamento vinculado exitosamente')
+        
+      } catch (error) {
+        console.error('Error vinculando medicamento:', error)
+        alert(`Error: ${error.message}`)
+      } finally {
+        this.vinculando = null
+      }
+    },
+    
+    async desvincularMedicamento(medicamento) {
+      if (!confirm(`¿Quitar "${medicamento.nombre}" de este servicio?`)) {
+        return
+      }
+      
+      try {
+        this.desvinculando = medicamento.id
+        
+        console.log('Desvinculando medicamento:', {
+          servicio: this.servicio.id,
+          medicamento: medicamento.id
+        })
+        
+        await serviciosService.desvincularMedicamento(this.servicio.id, medicamento.id)
+        
+        // Quitar de la lista local
+        this.medicamentosVinculados = this.medicamentosVinculados.filter(
+          m => m.id !== medicamento.id
+        )
+        
+        this.cambiosRealizados = true
+        
+        console.log('Medicamento desvinculado exitosamente')
+        
+      } catch (error) {
+        console.error('Error desvinculando medicamento:', error)
+        alert(`Error: ${error.message}`)
+      } finally {
+        this.desvinculando = null
+      }
+    },
+    
+    async cambiarCantidad(medicamento) {
+      const nuevaCantidad = prompt(
+        `Cantidad requerida de "${medicamento.nombre}":`,
+        medicamento.cantidad_requerida || 1
+      )
+      
+      if (!nuevaCantidad || nuevaCantidad <= 0) return
+      
+      try {
+        console.log('Cambiando cantidad:', {
+          medicamento: medicamento.id,
+          cantidad: nuevaCantidad
+        })
+        
+        // Desvincular y volver a vincular con nueva cantidad
+        await serviciosService.desvincularMedicamento(this.servicio.id, medicamento.id)
+        await serviciosService.vincularMedicamento(this.servicio.id, {
+          medicamento_id: medicamento.id,
+          cantidad_requerida: parseInt(nuevaCantidad)
+        })
+        
+        // Actualizar en lista local
+        const index = this.medicamentosVinculados.findIndex(m => m.id === medicamento.id)
+        if (index !== -1) {
+          this.medicamentosVinculados[index].cantidad_requerida = parseInt(nuevaCantidad)
+        }
+        
+        this.cambiosRealizados = true
+        
+        console.log('Cantidad actualizada exitosamente')
+        
+      } catch (error) {
+        console.error('Error cambiando cantidad:', error)
+        alert(`Error: ${error.message}`)
+      }
+    },
+    
+    guardarCambios() {
+      console.log('Cambios guardados en medicamentos vinculados')
+      this.$emit('updated')
+      this.$emit('close')
+    },
+    
+    formatPrice(precio) {
+      if (!precio) return 'Q 0.00'
+      return `Q ${parseFloat(precio).toFixed(2)}`
     }
   }
 }
 </script>
 
 <style scoped>
-.modal-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+.spinner {
+  @apply inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin;
 }
 
-.modal-content-large {
-  @apply bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto;
+.spinner-small {
+  @apply inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
 }
 
-.modal-header {
-  @apply flex justify-between items-start p-6 border-b border-gray-200;
-}
-
-.modal-body {
-  @apply p-6;
-}
-
-.modal-footer {
-  @apply flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50;
-}
-
-.modal-close-btn {
-  @apply text-gray-400 hover:text-gray-600 focus:outline-none;
-}
-
-.form-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
-}
-
-.input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+.input-base {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
 }
 
 .btn-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50;
 }
 
 .btn-secondary {
-  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50;
 }
 
-.btn-secondary-sm {
-  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+.btn-small {
+  @apply px-3 py-1 text-sm rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50;
 }
+
+.btn-icon {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors;
+}
+
+.btn-blue { @apply bg-blue-100 hover:bg-blue-200 text-blue-700; }
+.btn-red { @apply bg-red-100 hover:bg-red-200 text-red-700; }
 </style>

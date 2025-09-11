@@ -1,18 +1,28 @@
-<!-- frontend/src/views/ServiciosView.vue -->
 <template>
   <div class="servicios-module">
     <!-- Header con título y botón agregar -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">🏥 Módulo Servicios</h1>
-        <p class="text-gray-600 mt-1">Gestión de servicios médicos y precios</p>
+      <div class="flex items-center gap-4">
+        <!-- Botón regresar al Dashboard -->
+        <button
+          @click="$router.push('/')"
+          class="btn-secondary flex items-center space-x-2"
+          title="Regresar al Dashboard"
+        >
+          <span>←</span>
+          <span>Dashboard</span>
+        </button>
+        
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">🏥 Módulo Servicios</h1>
+          <p class="text-gray-600 mt-1">Gestión de servicios médicos y precios</p>
+        </div>
       </div>
       
       <!-- Botón Agregar Nuevo Servicio -->
       <button
         @click="abrirModalAgregar"
         class="btn-primary flex items-center space-x-2"
-        :disabled="cargando"
       >
         <span class="text-lg">➕</span>
         <span>Agregar Servicio</span>
@@ -78,157 +88,117 @@
       </div>
     </div>
 
-    <!-- Filtros avanzados -->
+    <!-- Filtros -->
     <div class="card p-4 sm:p-6 mb-6">
-      <div class="flex flex-col lg:flex-row gap-4">
-        <!-- Barra de búsqueda -->
-        <div class="flex-1">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <!-- Búsqueda principal -->
+        <div class="md:col-span-2">
           <div class="relative">
             <input
               v-model="filtros.search"
               @input="debounceSearch"
               type="text"
-              placeholder="Buscar servicios por nombre..."
-              class="input-field pl-10 pr-4"
+              placeholder="Buscar servicios..."
+              class="input-field w-full pl-10"
             />
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="text-gray-400">🔍</span>
-            </div>
-            <div v-if="filtros.search" 
-                 @click="limpiarBusqueda"
-                 class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-              <span class="text-gray-400 hover:text-gray-600">❌</span>
+          
+            <div 
+              v-if="filtros.search" 
+              @click="limpiarBusqueda"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+            >
+              <span class="text-gray-400 hover:text-gray-600">✖</span>
             </div>
           </div>
         </div>
 
-        <!-- Filtro Estado -->
-        <div class="w-full sm:w-40">
-          <select v-model="filtros.activo" @change="aplicarFiltros" class="input-field">
-            <option value="">Todos los estados</option>
+        <!-- Estado -->
+        <div>
+          <select v-model="filtros.activo" @change="aplicarFiltros" class="input-field w-full">
+            <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
           </select>
         </div>
 
-        <!-- Filtro Precio Mínimo -->
-        <div class="w-full sm:w-32">
+        <!-- Precio Mínimo -->
+        <div>
           <input
             v-model="filtros.precio_min"
             @input="debounceSearch"
             type="number"
             step="0.01"
-            min="0"
-            placeholder="Precio min"
-            class="input-field"
+            placeholder="Precio mín"
+            class="input-field w-full"
           />
         </div>
 
-        <!-- Filtro Precio Máximo -->
-        <div class="w-full sm:w-32">
+        <!-- Precio Máximo -->
+        <div>
           <input
             v-model="filtros.precio_max"
             @input="debounceSearch"
             type="number"
             step="0.01"
-            min="0"
-            placeholder="Precio max"
-            class="input-field"
+            placeholder="Precio máx"
+            class="input-field w-full"
           />
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="flex gap-2">
-          <button
-            @click="limpiarFiltros"
-            class="btn-secondary px-3 py-2 text-sm"
-            title="Limpiar filtros"
-          >
-            🧹
-          </button>
-          
-          <button
-            @click="exportarExcel"
-            class="btn-secondary px-3 py-2 text-sm"
-            :disabled="cargando"
-            title="Exportar Excel"
-          >
-            📊
-          </button>
         </div>
       </div>
 
-      <!-- Filtros activos -->
-      <div v-if="tienesFiltrosActivos" class="flex flex-wrap gap-2 mt-3">
-        <span class="text-xs text-gray-500">Filtros activos:</span>
-        
-        <span v-if="filtros.search" class="badge-filter">
+      <!-- Filtros aplicados -->
+      <div v-if="tienesFiltrosActivos" class="flex flex-wrap gap-2 mt-4">
+        <span class="text-sm text-gray-500">Filtros:</span>
+        <span v-if="filtros.search" class="filter-badge">
           🔍 "{{ filtros.search }}"
-          <button @click="filtros.search = ''; aplicarFiltros()" class="ml-1 text-red-500">×</button>
+          <button @click="filtros.search = ''; aplicarFiltros()" class="ml-1 text-red-500 hover:text-red-700">×</button>
         </span>
-        
-        <span v-if="filtros.activo === 'true'" class="badge-filter">
+        <span v-if="filtros.activo === 'true'" class="filter-badge">
           ✅ Activos
-          <button @click="filtros.activo = ''; aplicarFiltros()" class="ml-1 text-red-500">×</button>
+          <button @click="filtros.activo = ''; aplicarFiltros()" class="ml-1 text-red-500 hover:text-red-700">×</button>
         </span>
-        
-        <span v-if="filtros.activo === 'false'" class="badge-filter">
+        <span v-if="filtros.activo === 'false'" class="filter-badge">
           ❌ Inactivos
-          <button @click="filtros.activo = ''; aplicarFiltros()" class="ml-1 text-red-500">×</button>
+          <button @click="filtros.activo = ''; aplicarFiltros()" class="ml-1 text-red-500 hover:text-red-700">×</button>
         </span>
+      </div>
+
+      <!-- Controles de tabla -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+        <div class="text-sm text-gray-600">
+          {{ pagination.totalItems || 0 }} servicios encontrados
+        </div>
         
-        <span v-if="filtros.precio_min" class="badge-filter">
-          💰 Min: {{ formatearPrecio(filtros.precio_min) }}
-          <button @click="filtros.precio_min = ''; aplicarFiltros()" class="ml-1 text-red-500">×</button>
-        </span>
-        
-        <span v-if="filtros.precio_max" class="badge-filter">
-          💰 Max: {{ formatearPrecio(filtros.precio_max) }}
-          <button @click="filtros.precio_max = ''; aplicarFiltros()" class="ml-1 text-red-500">×</button>
-        </span>
+        <div class="flex items-center space-x-4">
+          <!-- Items por página -->
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">Items por página:</span>
+            <select v-model="filtros.limit" @change="aplicarFiltros" class="input-field text-sm py-1">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          
+          <!-- Exportar -->
+          <button
+            @click="exportarExcel"
+            class="btn-secondary text-sm"
+            :disabled="cargando"
+          >
+            📊 Exportar
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Tabla de servicios -->
+    <!-- Tabla -->
     <div class="card overflow-hidden">
-      <!-- Header de tabla con ordenamiento -->
-      <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h3 class="text-lg font-medium text-gray-900">Lista de Servicios</h3>
-            <p class="text-sm text-gray-600">
-              {{ pagination.totalItems || 0 }} servicios encontrados
-            </p>
-          </div>
-          
-          <!-- Ordenamiento -->
-          <div class="flex items-center gap-2 text-sm">
-            <span class="text-gray-500">Ordenar por:</span>
-            <select v-model="filtros.orderBy" @change="aplicarFiltros" class="input-field text-sm py-1">
-              <option value="fecha_creacion">Fecha creación</option>
-              <option value="nombre">Nombre</option>
-              <option value="precio_efectivo">Precio efectivo</option>
-              <option value="precio_tarjeta">Precio tarjeta</option>
-            </select>
-            
-            <button
-              @click="toggleOrderDir"
-              class="btn-secondary px-2 py-1 text-sm"
-              :title="filtros.orderDir === 'ASC' ? 'Ascendente' : 'Descendente'"
-            >
-              {{ filtros.orderDir === 'ASC' ? '⬆️' : '⬇️' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Estado de carga -->
       <div v-if="cargando" class="p-8 text-center">
-        <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-r-transparent rounded-full"></div>
+        <div class="spinner"></div>
         <p class="mt-2 text-gray-600">Cargando servicios...</p>
       </div>
 
-      <!-- Tabla responsive -->
       <div v-else-if="servicios.length > 0" class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -248,65 +218,78 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="servicio in servicios" :key="servicio.id" class="hover:bg-gray-50">
+              <!-- Información del servicio -->
               <td class="px-6 py-4">
                 <div>
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ servicio.nombre_servicio }}
+                  <p class="text-sm font-medium text-gray-900">{{ servicio.nombre || servicio.nombre_servicio || 'Sin nombre' }}</p>
+                </div>
+              </td>
+
+              <!-- Precios -->
+              <td class="px-6 py-4">
+                <div class="space-y-1">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-lg">💵</span>
+                    <span class="text-sm font-medium text-gray-900">{{ formatearPrecio(servicio.precio_efectivo) }}</span>
                   </div>
-                  <div v-if="servicio.descripcion" class="text-sm text-gray-500 truncate max-w-xs">
-                    {{ servicio.descripcion }}
+                  <div class="flex items-center space-x-2">
+                    <span class="text-lg">💳</span>
+                    <span class="text-sm text-gray-600">{{ formatearPrecio(servicio.precio_tarjeta) }}</span>
                   </div>
                 </div>
               </td>
-              
+
+              <!-- Comisión -->
               <td class="px-6 py-4">
-                <div class="text-sm">
-                  <div class="text-gray-900 font-medium">
-                    💵 {{ formatearPrecio(servicio.precio_efectivo) }}
-                  </div>
-                  <div class="text-gray-500">
-                    💳 {{ formatearPrecio(servicio.precio_tarjeta) }}
-                  </div>
+                <span class="text-sm font-medium text-gray-900">{{ servicio.porcentaje_comision || servicio.comision_venta || 0 }}%</span>
+              </td>
+
+              <!-- Medicamentos -->
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <button
+                    @click="verMedicamentosVinculados(servicio)"
+                    :class="servicio.total_medicamentos > 0 ? 'btn-purple' : 'btn-gray'"
+                    class="btn-icon"
+                  >
+                    💊
+                  </button>
+                  <span class="text-sm">{{ servicio.total_medicamentos || 0 }}</span>
                 </div>
               </td>
-              
+
+              <!-- Estado -->
               <td class="px-6 py-4">
-                <span class="text-sm text-gray-900">
-                  {{ servicio.porcentaje_comision }}%
-                </span>
-              </td>
-              
-              <td class="px-6 py-4">
-                <button
-                  @click="verMedicamentosVinculados(servicio)"
-                  class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full hover:bg-purple-200"
-                  :title="`Ver medicamentos vinculados`"
-                >
-                  💊 {{ servicio.total_medicamentos || 0 }}
-                </button>
-              </td>
-              
-              <td class="px-6 py-4">
-                <span
-                  :class="servicio.activo ? 'badge-success' : 'badge-error'"
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                <span 
+                  :class="servicio.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                  class="px-2 py-1 text-xs font-medium rounded-full"
                 >
                   {{ servicio.activo ? '✅ Activo' : '❌ Inactivo' }}
                 </span>
               </td>
-              
-              <td class="px-6 py-4 text-right text-sm font-medium">
-                <div class="flex justify-end gap-1">
+
+              <!-- Acciones -->
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <!-- Ver detalles -->
+                  <button
+                    @click="verDetallesServicio(servicio)"
+                    class="btn-icon btn-green"
+                    title="Ver detalles completos"
+                  >
+                    👁️
+                  </button>
+                  
                   <button
                     @click="editarServicio(servicio)"
-                    class="text-blue-600 hover:text-blue-900 p-1"
+                    class="btn-icon btn-blue"
                     title="Editar servicio"
                   >
                     ✏️
@@ -314,15 +297,23 @@
                   
                   <button
                     @click="verMedicamentosVinculados(servicio)"
-                    class="text-purple-600 hover:text-purple-900 p-1"
+                    class="btn-icon btn-purple"
                     title="Gestionar medicamentos"
                   >
                     💊
                   </button>
+
+                  <button
+                    @click="agregarAlCarrito(servicio)"
+                    class="btn-icon btn-orange"
+                    title="Agregar al carrito"
+                  >
+                    🛒
+                  </button>
                   
                   <button
                     @click="eliminarServicio(servicio)"
-                    class="text-red-600 hover:text-red-900 p-1"
+                    class="btn-icon btn-red"
                     title="Eliminar servicio"
                   >
                     🗑️
@@ -335,10 +326,10 @@
       </div>
 
       <!-- Estado vacío -->
-      <div v-else class="p-8 text-center">
+      <div v-else class="text-center py-12">
         <div class="text-6xl mb-4">🏥</div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">No hay servicios</h3>
-        <p class="text-gray-600 mb-4">
+        <p class="text-gray-600 mb-6">
           {{ tienesFiltrosActivos ? 'No se encontraron servicios con los filtros aplicados' : 'Comienza agregando tu primer servicio médico' }}
         </p>
         <button v-if="!tienesFiltrosActivos" @click="abrirModalAgregar" class="btn-primary">
@@ -348,68 +339,160 @@
           🧹 Limpiar Filtros
         </button>
       </div>
+    </div>
 
-      <!-- Paginación -->
-      <div v-if="servicios.length > 0 && pagination.totalPages > 1" class="px-6 py-4 border-t border-gray-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <!-- Info de paginación -->
-          <div class="text-sm text-gray-700">
-            Mostrando {{ ((pagination.currentPage - 1) * filtros.limit) + 1 }} - 
-            {{ Math.min(pagination.currentPage * filtros.limit, pagination.totalItems) }} 
-            de {{ pagination.totalItems }} servicios
+    <!-- Paginación -->
+    <div v-if="servicios.length > 0 && pagination.totalPages > 1" class="card p-4 mt-6">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="text-sm text-gray-700">
+          Página {{ pagination.currentPage }} de {{ pagination.totalPages }}
+          ({{ pagination.totalItems }} servicios total)
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <button
+            @click="irAPagina(pagination.currentPage - 1)"
+            :disabled="!pagination.hasPrevPage"
+            class="pagination-btn"
+          >
+            ◀ Anterior
+          </button>
+          
+          <button
+            @click="irAPagina(pagination.currentPage + 1)"
+            :disabled="!pagination.hasNextPage"
+            class="pagination-btn"
+          >
+            Siguiente ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Detalle Servicio -->
+    <div v-if="mostrarModalDetalles" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-3xl w-full max-h-screen overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-start mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">
+              👁️ Detalles del Servicio
+            </h3>
+            <button @click="cerrarModalDetalles" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           
-          <!-- Controles de paginación -->
-          <div class="flex items-center gap-2">
-            <!-- Items por página -->
-            <select v-model="filtros.limit" @change="aplicarFiltros" class="input-field text-sm py-1">
-              <option value="10">10 por página</option>
-              <option value="25">25 por página</option>
-              <option value="50">50 por página</option>
-            </select>
-            
-            <!-- Navegación -->
-            <div class="flex items-center gap-1">
-              <button
-                @click="irAPagina(1)"
-                :disabled="pagination.currentPage === 1"
-                class="btn-pagination"
-                title="Primera página"
-              >
-                ⏪
-              </button>
-              
-              <button
-                @click="irAPagina(pagination.currentPage - 1)"
-                :disabled="!pagination.hasPrevPage"
-                class="btn-pagination"
-                title="Página anterior"
-              >
-                ⬅️
-              </button>
-              
-              <span class="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded">
-                {{ pagination.currentPage }} / {{ pagination.totalPages }}
-              </span>
-              
-              <button
-                @click="irAPagina(pagination.currentPage + 1)"
-                :disabled="!pagination.hasNextPage"
-                class="btn-pagination"
-                title="Página siguiente"
-              >
-                ➡️
-              </button>
-              
-              <button
-                @click="irAPagina(pagination.totalPages)"
-                :disabled="pagination.currentPage === pagination.totalPages"
-                class="btn-pagination"
-                title="Última página"
-              >
-                ⏩
-              </button>
+          <div v-if="servicioParaDetalles" class="space-y-6">
+            <!-- Información básica -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-gray-900 mb-3">Información General</h4>
+                <div class="space-y-2 text-sm">
+                  <div><span class="text-gray-500">ID:</span> {{ servicioParaDetalles.id }}</div>
+                  <div><span class="text-gray-500">Nombre:</span> {{ servicioParaDetalles.nombre || servicioParaDetalles.nombre_servicio }}</div>
+                  <div class="flex items-center">
+                    <span class="text-gray-500 mr-2">Estado:</span>
+                    <span 
+                      :class="servicioParaDetalles.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                      class="px-2 py-1 text-xs font-medium rounded-full"
+                    >
+                      {{ servicioParaDetalles.activo ? '✅ Activo' : '❌ Inactivo' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-medium text-gray-900 mb-3">Precios y Configuración</h4>
+                <div class="space-y-2 text-sm">
+                  <div><span class="text-gray-500">💵 Precio Efectivo:</span> {{ formatearPrecio(servicioParaDetalles.precio_efectivo) }}</div>
+                  <div><span class="text-gray-500">💳 Precio Tarjeta:</span> {{ formatearPrecio(servicioParaDetalles.precio_tarjeta) }}</div>
+                  <div><span class="text-gray-500">💰 Monto Mínimo:</span> {{ formatearPrecio(servicioParaDetalles.monto_minimo) }}</div>
+                  <div><span class="text-gray-500">📈 Comisión:</span> {{ servicioParaDetalles.porcentaje_comision || servicioParaDetalles.comision_venta || 0 }}%</div>
+                </div>
+              </div>
             </div>
+
+            <!-- Medicamentos vinculados -->
+            <div v-if="servicioParaDetalles.requiere_medicamentos">
+              <h4 class="font-medium text-gray-900 mb-3">Medicamentos Requeridos</h4>
+              
+              <div v-if="detallesMedicamentos && detallesMedicamentos.length" class="space-y-3">
+                <div 
+                  v-for="medicamento in detallesMedicamentos" 
+                  :key="medicamento.id"
+                  class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4"
+                >
+                  <div class="flex items-center space-x-3">
+                    <div class="text-2xl">💊</div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">{{ medicamento.nombre }}</p>
+                      <p class="text-xs text-gray-600">
+                        {{ medicamento.presentacion_nombre }} - {{ medicamento.laboratorio_nombre }}
+                      </p>
+                      <p class="text-xs text-blue-600">
+                        Cantidad requerida: {{ medicamento.cantidad_requerida || 1 }}
+                      </p>
+                      <p class="text-xs text-green-600">
+                        Precio: {{ formatearPrecio(medicamento.precio_efectivo) }}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <!-- Mostrar extras del medicamento -->
+                  <div v-if="medicamento.requiere_extras" class="text-right">
+                    <p class="text-xs text-gray-500">Incluye extras:</p>
+                    <p class="text-xs text-orange-600">🧰 Materiales adicionales</p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="cargandoDetalles" class="text-center py-4">
+                <div class="spinner mr-2"></div>
+                <span class="text-sm text-gray-600">Cargando medicamentos...</span>
+              </div>
+
+              <div v-else class="text-center py-6 bg-gray-50 rounded-lg">
+                <p class="text-gray-600 text-sm">No hay medicamentos configurados</p>
+                <button 
+                  @click="abrirMedicamentosDesdeDetalle"
+                  class="mt-2 text-blue-600 hover:underline text-sm"
+                >
+                  Configurar medicamentos
+                </button>
+              </div>
+            </div>
+
+            <div v-else class="bg-gray-50 rounded-lg p-4">
+              <p class="text-gray-600 text-sm">Este servicio no requiere medicamentos específicos</p>
+            </div>
+
+            <!-- Fechas -->
+            <div class="text-xs text-gray-500 border-t pt-4">
+              <div><span class="font-medium">Creado:</span> {{ formatearFecha(servicioParaDetalles.fecha_creacion) }}</div>
+              <div v-if="servicioParaDetalles.fecha_actualizacion">
+                <span class="font-medium">Actualizado:</span> {{ formatearFecha(servicioParaDetalles.fecha_actualizacion) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex justify-end space-x-3 pt-6 border-t">
+            <button @click="cerrarModalDetalles" class="btn-secondary">
+              Cerrar
+            </button>
+            <button 
+              v-if="servicioParaDetalles.requiere_medicamentos"
+              @click="abrirMedicamentosDesdeDetalle"
+              class="btn-secondary"
+            >
+              💊 Gestionar Medicamentos
+            </button>
+            <button @click="editarDesdeDetalle" class="btn-primary">
+              ✏️ Editar Servicio
+            </button>
           </div>
         </div>
       </div>
@@ -417,7 +500,7 @@
 
     <!-- Modales -->
     <ServiciosModal
-      v-if="mostrarModal"
+      :visible="mostrarModal"
       :servicio="servicioSeleccionado"
       :modo="modoModal"
       @cerrar="cerrarModal"
@@ -425,10 +508,10 @@
     />
 
     <MedicamentosVinculadosModal
-      v-if="mostrarModalMedicamentos"
-      :servicio="servicioParaMedicamentos"
-      @cerrar="cerrarModalMedicamentos"
-      @actualizado="onMedicamentosActualizados"
+      :visible="mostrarModalMedicamentos && servicioParaMedicamentos"
+      :servicio="servicioParaMedicamentos || {}"
+      @close="cerrarModalMedicamentos"
+      @updated="onMedicamentosActualizados"
     />
   </div>
 </template>
@@ -460,8 +543,6 @@ export default {
         activo: '',
         precio_min: '',
         precio_max: '',
-        orderBy: 'fecha_creacion',
-        orderDir: 'DESC',
         page: 1,
         limit: 10
       },
@@ -469,11 +550,15 @@ export default {
       // Modales
       mostrarModal: false,
       mostrarModalMedicamentos: false,
+      mostrarModalDetalles: false,
       servicioSeleccionado: null,
       servicioParaMedicamentos: null,
-      modoModal: 'crear', // 'crear' | 'editar'
+      servicioParaDetalles: null,
+      detallesMedicamentos: [],
+      cargandoDetalles: false,
+      modoModal: 'crear',
       
-      // Debounce
+      // Timeouts
       searchTimeout: null
     }
   },
@@ -505,7 +590,6 @@ export default {
       try {
         console.log('🚀 Inicializando módulo servicios...')
         
-        // Cargar datos en paralelo
         await Promise.all([
           this.cargarServicios(),
           this.cargarEstadisticas()
@@ -526,45 +610,49 @@ export default {
         
         console.log('📊 Cargando servicios con filtros:', this.filtros)
         
-        // Crear parámetros limpios
         const params = {
           page: this.filtros.page,
-          limit: this.filtros.limit,
-          orderBy: this.filtros.orderBy,
-          orderDir: this.filtros.orderDir
+          limit: this.filtros.limit
         }
-        
-        // Agregar filtros solo si tienen valor
-        if (this.filtros.search && this.filtros.search.trim()) {
+
+        // Agregar filtros si tienen valor
+        if (this.filtros.search?.trim()) {
           params.search = this.filtros.search.trim()
         }
-        
-        if (this.filtros.activo !== null && this.filtros.activo !== '') {
+
+        if (this.filtros.activo !== '') {
           params.activo = this.filtros.activo
         }
-        
-        if (this.filtros.precio_min && this.filtros.precio_min !== '') {
+
+        if (this.filtros.precio_min) {
           params.precio_min = parseFloat(this.filtros.precio_min)
         }
-        
-        if (this.filtros.precio_max && this.filtros.precio_max !== '') {
+
+        if (this.filtros.precio_max) {
           params.precio_max = parseFloat(this.filtros.precio_max)
         }
-        
-        console.log('🧹 Parámetros enviados al API:', params)
-        
+
+        console.log('🔍Parámetros de búsqueda:', params)
+
         const response = await serviciosService.getServicios(params)
         
-        this.servicios = response.data || []
-        this.pagination = response.pagination || {}
-        
-        console.log('✅ Servicios cargados:', this.servicios.length)
-        console.log('📄 Paginación:', this.pagination)
-        
+        console.log('📋 Respuesta de servicios:', response)
+
+        if (response.success) {
+          this.servicios = response.data?.data || response.data || []
+          this.pagination = response.data?.pagination || response.pagination || {}
+
+          console.log(`✅ ${this.servicios.length} servicios cargados`)
+          console.log('📊 Paginación:', this.pagination)
+        } else {
+          throw new Error(response.message || 'Error cargando servicios')
+        }
+
       } catch (error) {
         console.error('❌ Error cargando servicios:', error)
-        this.error = error.message
+        this.error = error.message || 'Error cargando servicios'
         this.servicios = []
+        this.pagination = {}
       } finally {
         this.cargando = false
       }
@@ -576,14 +664,32 @@ export default {
         
         const response = await serviciosService.getStats()
         
-        this.stats = response || {}
+        console.log('📊 Estadísticas recibidas del backend:', response)
         
-        console.log('✅ Estadísticas cargadas:', this.stats)
+        this.stats = response.data || response || {}
+        
+        // Si no hay estadísticas del backend, calcular desde los servicios actuales
+        if (!this.stats.total_servicios && this.servicios.length > 0) {
+          this.stats = {
+            total_servicios: this.servicios.length,
+            servicios_activos: this.servicios.filter(s => s.activo).length,
+            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
+            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length
+          }
+          console.log('📊 Estadísticas calculadas localmente:', this.stats)
+        }
         
       } catch (error) {
         console.error('❌ Error cargando estadísticas:', error)
-        // No mostrar error, las estadísticas no son críticas
-        this.stats = {}
+        // Calcular estadísticas básicas desde servicios si falla
+        if (this.servicios.length > 0) {
+          this.stats = {
+            total_servicios: this.servicios.length,
+            servicios_activos: this.servicios.filter(s => s.activo).length,
+            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
+            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length
+          }
+        }
       }
     },
 
@@ -595,13 +701,14 @@ export default {
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout)
       }
-      
+
       this.searchTimeout = setTimeout(() => {
         this.aplicarFiltros()
       }, 500)
     },
 
     async aplicarFiltros() {
+      console.log('🔍 Aplicando filtros:', this.filtros)
       this.filtros.page = 1 // Reset a primera página
       await this.cargarServicios()
     },
@@ -611,31 +718,27 @@ export default {
       this.aplicarFiltros()
     },
 
-    async limpiarFiltros() {
+    limpiarFiltros() {
       this.filtros = {
-        ...this.filtros,
         search: '',
         activo: '',
         precio_min: '',
-        precio_max: ''
+        precio_max: '',
+        page: 1,
+        limit: this.filtros.limit
       }
-      await this.aplicarFiltros()
-    },
-
-    toggleOrderDir() {
-      this.filtros.orderDir = this.filtros.orderDir === 'ASC' ? 'DESC' : 'ASC'
       this.aplicarFiltros()
     },
 
-    async irAPagina(pagina) {
-      if (pagina >= 1 && pagina <= this.pagination.totalPages) {
-        this.filtros.page = pagina
+    async irAPagina(page) {
+      if (page >= 1 && page <= this.pagination.totalPages) {
+        this.filtros.page = page
         await this.cargarServicios()
       }
     },
 
     // =====================================
-    // GESTIÓN DE SERVICIOS (CRUD)
+    // MODAL CRUD SERVICIOS
     // =====================================
 
     abrirModalAgregar() {
@@ -651,36 +754,35 @@ export default {
     },
 
     async eliminarServicio(servicio) {
-      if (!confirm(`¿Estás seguro de eliminar el servicio "${servicio.nombre_servicio}"?`)) {
+      if (!confirm(`¿Eliminar el servicio "${servicio.nombre || servicio.nombre_servicio}"?\n\nEsta acción no se puede deshacer.`)) {
         return
       }
 
       try {
-        console.log('🗑️ Eliminando servicio:', servicio.id)
+        console.log('🗑️ Eliminando servicio:', servicio)
         
-        await serviciosService.eliminarServicio(servicio.id)
+        const response = await serviciosService.eliminarServicio(servicio.id)
         
-        console.log('✅ Servicio eliminado exitosamente')
-        
-        // Recargar datos
-        await Promise.all([
-          this.cargarServicios(),
-          this.cargarEstadisticas()
-        ])
-        
+        if (response.success) {
+          console.log('✅ Servicio eliminado exitosamente')
+          
+          // Recargar datos
+          await Promise.all([
+            this.cargarServicios(),
+            this.cargarEstadisticas()
+          ])
+          
+        } else {
+          throw new Error(response.message || 'Error eliminando servicio')
+        }
+
       } catch (error) {
         console.error('❌ Error eliminando servicio:', error)
         this.error = error.message
       }
     },
 
-    cerrarModal() {
-      this.mostrarModal = false
-      this.servicioSeleccionado = null
-      this.modoModal = 'crear'
-    },
-
-    async onServicioGuardado() {
+    async onServicioGuardado(resultado) {
       console.log('✅ Servicio guardado, recargando datos...')
       
       this.cerrarModal()
@@ -690,13 +792,85 @@ export default {
         this.cargarServicios(),
         this.cargarEstadisticas()
       ])
+      
+      // Si se creó un servicio nuevo y requiere medicamentos, abrir modal medicamentos
+      if (resultado?.abrirMedicamentos) {
+        // Buscar el servicio recién creado
+        const servicioNuevo = this.servicios.find(s => s.id === resultado.abrirMedicamentos.id)
+        if (servicioNuevo) {
+          setTimeout(() => {
+            this.verMedicamentosVinculados(servicioNuevo)
+          }, 500)
+        }
+      }
+    },
+
+    cerrarModal() {
+      this.mostrarModal = false
+      this.servicioSeleccionado = null
+      this.modoModal = 'crear'
     },
 
     // =====================================
-    // GESTIÓN DE MEDICAMENTOS VINCULADOS
+    // MODAL DETALLES SERVICIO
+    // =====================================
+
+    async verDetallesServicio(servicio) {
+      try {
+        console.log('👁️ Abriendo detalles de servicio:', servicio)
+        
+        this.servicioParaDetalles = servicio
+        this.mostrarModalDetalles = true
+        this.detallesMedicamentos = []
+        
+        // Si el servicio requiere medicamentos, cargar la lista
+        if (servicio.requiere_medicamentos) {
+          this.cargandoDetalles = true
+          
+          try {
+            const response = await serviciosService.getMedicamentosVinculados(servicio.id)
+            
+            if (response.success) {
+              this.detallesMedicamentos = response.data || []
+              console.log(`💊 ${this.detallesMedicamentos.length} medicamentos cargados para detalles`)
+            }
+          } catch (error) {
+            console.error('❌ Error cargando medicamentos para detalles:', error)
+          } finally {
+            this.cargandoDetalles = false
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ Error abriendo detalles:', error)
+        alert('Error cargando detalles del servicio')
+      }
+    },
+
+    cerrarModalDetalles() {
+      this.mostrarModalDetalles = false
+      this.servicioParaDetalles = null
+      this.detallesMedicamentos = []
+    },
+
+    abrirMedicamentosDesdeDetalle() {
+      // Cerrar modal detalles y abrir medicamentos
+      this.mostrarModalDetalles = false
+      this.verMedicamentosVinculados(this.servicioParaDetalles)
+    },
+
+    editarDesdeDetalle() {
+      // Cerrar modal detalles y abrir edición
+      this.mostrarModalDetalles = false
+      this.editarServicio(this.servicioParaDetalles)
+    },
+
+    // =====================================
+    // MEDICAMENTOS VINCULADOS
     // =====================================
 
     verMedicamentosVinculados(servicio) {
+      console.log('🎯 ABRIENDO MODAL MEDICAMENTOS PARA:', servicio)
       this.servicioParaMedicamentos = servicio
       this.mostrarModalMedicamentos = true
     },
@@ -707,10 +881,25 @@ export default {
     },
 
     async onMedicamentosActualizados() {
-      console.log('✅ Medicamentos actualizados, recargando datos...')
+      console.log('✅ Medicamentos actualizados, cerrando modal...')
       
-      // Recargar servicios para actualizar contadores
+      // Cerrar modal inmediatamente 
+      this.cerrarModalMedicamentos()
+      
+      // Recargar datos
       await this.cargarServicios()
+    },
+
+    // =====================================
+    // NUEVAS ACCIONES
+    // =====================================
+
+    agregarAlCarrito(servicio) {
+      console.log('🛒 Agregando al carrito:', servicio)
+      
+      if (confirm(`¿Agregar "${servicio.nombre || servicio.nombre_servicio}" al carrito?`)) {
+        alert('¡Servicio agregado al carrito!\n(Funcionalidad por implementar)')
+      }
     },
 
     // =====================================
@@ -718,16 +907,31 @@ export default {
     // =====================================
 
     formatearPrecio(precio) {
-      return serviciosService.formatearPrecio(precio)
+      if (!precio) return 'Q 0.00'
+      return `Q ${parseFloat(precio).toFixed(2)}`
+    },
+
+    formatearFecha(fecha) {
+      if (!fecha) return 'N/A'
+      try {
+        return new Date(fecha).toLocaleDateString('es-GT', {
+          year: 'numeric',
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      } catch {
+        return 'N/A'
+      }
     },
 
     async exportarExcel() {
       try {
-        console.log('📊 Exportando servicios a Excel...')
+        console.log('📊 Exportando servicios...')
         
-        // Usar filtros actuales para exportar
         const filtrosExport = { ...this.filtros }
-        delete filtrosExport.page // Exportar todos
+        delete filtrosExport.page
         delete filtrosExport.limit
         
         await serviciosService.exportarExcel(filtrosExport)
@@ -744,43 +948,49 @@ export default {
 </script>
 
 <style scoped>
-/* Componentes base ya definidos en style.css */
-.badge-filter {
-  @apply inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full;
+/* Usar los mismos estilos que farmacia */
+.servicios-module {
+  @apply space-y-6;
 }
 
-.badge-success {
-  @apply bg-green-100 text-green-800;
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
 }
 
-.badge-error {
-  @apply bg-red-100 text-red-800;
+.filter-badge {
+  @apply inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full;
 }
 
-.btn-pagination {
-  @apply px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed;
+.spinner {
+  @apply inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin;
 }
 
-/* Tabla responsive mejorada */
-@media (max-width: 640px) {
-  .table-responsive {
-    font-size: 0.875rem;
-  }
-  
-  .table-responsive th,
-  .table-responsive td {
-    padding: 0.5rem 0.75rem;
-  }
+.pagination-btn {
+  @apply px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-/* Animaciones suaves */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
+/* Botones de iconos */
+.btn-icon {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.btn-blue { @apply bg-blue-100 hover:bg-blue-200 text-blue-700; }
+.btn-green { @apply bg-green-100 hover:bg-green-200 text-green-700; }
+.btn-purple { @apply bg-purple-100 hover:bg-purple-200 text-purple-700; }
+.btn-orange { @apply bg-orange-100 hover:bg-orange-200 text-orange-700; }
+.btn-red { @apply bg-red-100 hover:bg-red-200 text-red-700; }
+.btn-gray { @apply bg-gray-100 hover:bg-gray-200 text-gray-600; }
+
+/* Botones principales */
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200;
 }
 </style>

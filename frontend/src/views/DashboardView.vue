@@ -631,6 +631,8 @@ export default {
     
     // Setup navegación móvil
     this.setupMobileNavigation()
+
+    await this.debugEstadisticas()
     
     console.log('🏠 Dashboard cargado exitosamente')
   },
@@ -640,74 +642,215 @@ export default {
       try {
         console.log('📊 Cargando estadísticas del dashboard...')
         
-        // Cargar estadísticas en paralelo
+        // Cargar estadísticas en paralelo con manejo de errores individual
         const [farmaciaStats, extrasStats, serviciosStats] = await Promise.allSettled([
           this.cargarEstadisticasFarmacia(),
           this.cargarEstadisticasExtras(),
-          this.cargarEstadisticasServicios() // ⭐ NUEVO
+          this.cargarEstadisticasServicios()
         ])
         
+        // Procesar resultados
         this.stats = {
-          farmacia: farmaciaStats.status === 'fulfilled' ? farmaciaStats.value : {},
-          extras: extrasStats.status === 'fulfilled' ? extrasStats.value : {},
-          servicios: serviciosStats.status === 'fulfilled' ? serviciosStats.value : {} // ⭐ NUEVO
+          farmacia: farmaciaStats.status === 'fulfilled' ? farmaciaStats.value : this.getDefaultFarmaciaStats(),
+          extras: extrasStats.status === 'fulfilled' ? extrasStats.value : this.getDefaultExtrasStats(),
+          servicios: serviciosStats.status === 'fulfilled' ? serviciosStats.value : this.getDefaultServiciosStats()
         }
         
-        console.log('✅ Estadísticas cargadas:', this.stats)
+        console.log('✅ Estadísticas finales cargadas:', this.stats)
         
       } catch (error) {
         console.error('❌ Error cargando estadísticas:', error)
+        // Usar valores por defecto
+        this.stats = {
+          farmacia: this.getDefaultFarmaciaStats(),
+          extras: this.getDefaultExtrasStats(),
+          servicios: this.getDefaultServiciosStats()
+        }
       }
     },
 
-    // ⭐ NUEVO MÉTODO
     async cargarEstadisticasServicios() {
       try {
+        console.log('🏥 Cargando estadísticas de servicios...')
         const serviciosService = (await import('@/services/serviciosService')).default
-        const stats = await serviciosService.getStats()
+        
+        // Llamar al método getStats del servicio
+        const response = await serviciosService.getStats()
+        console.log('📊 Respuesta raw de servicios stats:', response)
+        
+        // El backend puede devolver los datos en diferentes estructuras
+        // Puede ser: { data: {...} } o directamente {...}
+        const statsData = response.data || response || {}
+        console.log('📊 Stats data procesada:', statsData)
         
         return {
-          total_servicios: stats.total_servicios || 0,
-          servicios_activos: stats.servicios_activos || 0,
-          precio_promedio: stats.precio_promedio || 0,
-          con_medicamentos: stats.con_medicamentos || 0
+          total_servicios: statsData.total_servicios || statsData.total || 0,
+          servicios_activos: statsData.servicios_activos || statsData.activos || 0,
+          precio_promedio: statsData.precio_promedio || 0,
+          con_medicamentos: statsData.con_medicamentos || statsData.servicios_con_medicamentos || 0
         }
       } catch (error) {
-        console.error('❌ Error cargando estadísticas de servicios:', error)
-        return {}
+        console.error('❌ Error cargando estadísticas de servicios:', error.message)
+        // Intentar calcular estadísticas básicas desde el módulo servicios
+        return await this.calcularEstadisticasServiciosBasicas()
       }
     },
 
     async cargarEstadisticasFarmacia() {
       try {
+        console.log('💊 Cargando estadísticas de farmacia...')
         const farmaciaService = (await import('@/services/farmaciaService')).default
-        const stats = await farmaciaService.getStats()
         
-        return {
-          total_medicamentos: stats.total_medicamentos || 0,
-          stock_bajo: stats.stock_bajo || 0,
-          proximo_vencer: stats.proximo_vencer || 0
+        // Verificar si el método getEstadisticas existe (usa el nombre correcto)
+        if (typeof farmaciaService.getEstadisticas === 'function') {
+          const response = await farmaciaService.getEstadisticas()
+          console.log('📊 Respuesta de farmacia stats:', response)
+          
+          const statsData = response.data || response || {}
+          
+          return {
+            total_medicamentos: statsData.total_medicamentos || statsData.total || 0,
+            stock_bajo: statsData.stock_bajo || statsData.medicamentos_stock_bajo || 0,
+            proximo_vencer: statsData.proximo_vencer || statsData.medicamentos_por_vencer || 0
+          }
+        } else {
+          console.log('⚠️ farmaciaService.getEstadisticas no está disponible')
+          return await this.calcularEstadisticasFarmaciaBasicas()
         }
       } catch (error) {
-        console.error('❌ Error cargando estadísticas de farmacia:', error)
-        return {}
+        console.error('❌ Error cargando estadísticas de farmacia:', error.message)
+        return await this.calcularEstadisticasFarmaciaBasicas()
       }
     },
 
     async cargarEstadisticasExtras() {
       try {
+        console.log('🧰 Cargando estadísticas de extras...')
         const extrasService = (await import('@/services/extrasService')).default
-        const stats = await extrasService.getStats()
         
-        return {
-          total_extras: stats.total_extras || 0,
-          stock_bajo: stats.stock_bajo || 0
+        // Verificar si el método getStats existe
+        if (typeof extrasService.getStats === 'function') {
+          const response = await extrasService.getStats()
+          console.log('📊 Respuesta de extras stats:', response)
+          
+          const statsData = response.data || response || {}
+          
+          return {
+            total_extras: statsData.total_extras || statsData.total || 0,
+            stock_bajo: statsData.stock_bajo || statsData.extras_stock_bajo || 0
+          }
+        } else {
+          console.log('⚠️ extrasService.getStats no está disponible')
+          return await this.calcularEstadisticasExtrasBasicas()
         }
       } catch (error) {
-        console.error('❌ Error cargando estadísticas de extras:', error)
-        return {}
+        console.error('❌ Error cargando estadísticas de extras:', error.message)
+        return await this.calcularEstadisticasExtrasBasicas()
       }
     },
+
+
+    async calcularEstadisticasServiciosBasicas() {
+      try {
+        console.log('🔄 Calculando estadísticas de servicios básicas...')
+        const serviciosService = (await import('@/services/serviciosService')).default
+        
+        // Obtener servicios directamente
+        const response = await serviciosService.getServicios({ limit: 1000 })
+        const servicios = response.data || []
+        
+        const stats = {
+          total_servicios: servicios.length,
+          servicios_activos: servicios.filter(s => s.activo).length,
+          precio_promedio: servicios.length > 0 ? 
+            servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / servicios.length : 0,
+          con_medicamentos: servicios.filter(s => (s.total_medicamentos || 0) > 0).length
+        }
+        
+        console.log('📊 Estadísticas servicios calculadas:', stats)
+        return stats
+      } catch (error) {
+        console.error('❌ Error calculando estadísticas servicios básicas:', error)
+        return this.getDefaultServiciosStats()
+      }
+    },
+
+    async calcularEstadisticasFarmaciaBasicas() {
+      try {
+        console.log('🔄 Calculando estadísticas de farmacia básicas...')
+        const farmaciaService = (await import('@/services/farmaciaService')).default
+        
+        // Obtener medicamentos directamente
+        const response = await farmaciaService.getMedicamentos({ limit: 1000 })
+        const medicamentos = response.data?.medicamentos || []
+        
+        const stats = {
+          total_medicamentos: medicamentos.length,
+          stock_bajo: medicamentos.filter(m => (m.existencias || 0) < 10).length,
+          proximo_vencer: medicamentos.filter(m => {
+            if (!m.fecha_vencimiento) return false
+            const vencimiento = new Date(m.fecha_vencimiento)
+            const hoy = new Date()
+            const diasDiferencia = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24))
+            return diasDiferencia <= 30
+          }).length
+        }
+        
+        console.log('📊 Estadísticas farmacia calculadas:', stats)
+        return stats
+      } catch (error) {
+        console.error('❌ Error calculando estadísticas farmacia básicas:', error)
+        return this.getDefaultFarmaciaStats()
+      }
+    },
+
+    async calcularEstadisticasExtrasBasicas() {
+      try {
+        console.log('🔄 Calculando estadísticas de extras básicas...')
+        const extrasService = (await import('@/services/extrasService')).default
+        
+        // Obtener extras directamente
+        const response = await extrasService.getExtras({ limit: 1000 })
+        const extras = response.extras || []
+        
+        const stats = {
+          total_extras: extras.length,
+          stock_bajo: extras.filter(e => (e.existencias || 0) < (e.stock_minimo || 20)).length
+        }
+        
+        console.log('📊 Estadísticas extras calculadas:', stats)
+        return stats
+      } catch (error) {
+        console.error('❌ Error calculando estadísticas extras básicas:', error)
+        return this.getDefaultExtrasStats()
+      }
+    },
+
+    // VALORES POR DEFECTO - Agregar estos métodos nuevos:
+    getDefaultServiciosStats() {
+      return {
+        total_servicios: 0,
+        servicios_activos: 0,
+        precio_promedio: 0,
+        con_medicamentos: 0
+      }
+    },
+
+    getDefaultFarmaciaStats() {
+      return {
+        total_medicamentos: 0,
+        stock_bajo: 0,
+        proximo_vencer: 0
+      }
+    },
+
+    getDefaultExtrasStats() {
+      return {
+        total_extras: 0,
+        stock_bajo: 0
+      }
+    },
+
 
     // ⭐ NAVEGACIÓN MEJORADA
     navegarA(modulo) {
@@ -775,7 +918,40 @@ export default {
       if (window.innerWidth < 1024) {
         this.sidebarOpen = false
       }
-    }
+    },
+
+    async debugEstadisticas() {
+      console.log('🔍 === DEBUG DE ESTADÍSTICAS ===')
+      
+      // Test servicios
+      try {
+        const serviciosService = (await import('@/services/serviciosService')).default
+        const serviciosResponse = await serviciosService.getStats()
+        console.log('🏥 Servicios Stats Response:', serviciosResponse)
+      } catch (error) {
+        console.error('❌ Error servicios:', error.message)
+      }
+      
+      // Test farmacia
+      try {
+        const farmaciaService = (await import('@/services/farmaciaService')).default
+        const farmaciaResponse = await farmaciaService.getEstadisticas()
+        console.log('💊 Farmacia Stats Response:', farmaciaResponse)
+      } catch (error) {
+        console.error('❌ Error farmacia:', error.message)
+      }
+      
+      // Test extras
+      try {
+        const extrasService = (await import('@/services/extrasService')).default
+        const extrasResponse = await extrasService.getStats()
+        console.log('🧰 Extras Stats Response:', extrasResponse)
+      } catch (error) {
+        console.error('❌ Error extras:', error.message)
+      }
+      
+      console.log('🔍 === FIN DEBUG ===')
+    },
   }
 }
 </script>

@@ -205,25 +205,45 @@ const serviciosService = {
   // Exportar servicios a Excel
   async exportarExcel(filtros = {}) {
     try {
-      console.log('📊 Exportando servicios a Excel...')
+      console.log('📊 Exportando servicios...')
       
       const response = await api.get('/servicios/export/excel', {
-        params: filtros,
-        responseType: 'blob'
+        params: filtros
       })
       
-      // Crear enlace de descarga
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `servicios_${new Date().toISOString().split('T')[0]}.xlsx`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+      // Como tu backend devuelve JSON, convertiremos a CSV manualmente
+      if (response.data && response.data.data) {
+        const servicios = response.data.data
+        
+        // Crear CSV
+        const headers = ['Nombre', 'Descripcion', 'Precio Efectivo', 'Precio Tarjeta', 'Comision', 'Estado']
+        const csvContent = [
+          headers.join(','),
+          ...servicios.map(servicio => [
+            `"${servicio.nombre || servicio.nombre_servicio || 'Sin nombre'}"`,
+            `"${servicio.descripcion || 'Sin descripcion'}"`,
+            servicio.precio_efectivo || 0,
+            servicio.precio_tarjeta || 0,
+            servicio.porcentaje_comision || servicio.comision_venta || 0,
+            servicio.activo ? 'Activo' : 'Inactivo'
+          ].join(','))
+        ].join('\n')
+        
+        // Crear archivo para descarga
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `servicios_${new Date().toISOString().split('T')[0]}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        
+        console.log('✅ Servicios exportados como CSV exitosamente')
+        return true
+      }
       
-      console.log('✅ Servicios exportados exitosamente')
-      return true
     } catch (error) {
       console.error('❌ Error exportando servicios:', error.response?.data)
       throw new Error(error.response?.data?.message || 'Error exportando servicios')

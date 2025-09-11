@@ -1,435 +1,374 @@
-<!-- frontend/src/components/ServiciosModal.vue -->
 <template>
-  <div class="modal-overlay" @click="cerrarModal">
-    <div class="modal-content" @click.stop>
-      <!-- Header -->
-      <div class="modal-header">
-        <h3 class="text-lg font-medium text-gray-900">
-          {{ modo === 'crear' ? '➕ Agregar Nuevo Servicio' : '✏️ Editar Servicio' }}
-        </h3>
-        <button @click="cerrarModal" class="modal-close-btn">
-          ❌
-        </button>
-      </div>
-
-      <!-- Contenido del modal -->
-      <div class="modal-body">
-        <!-- Mensaje de error -->
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-          <div class="flex items-center">
-            <span class="text-red-600 mr-2">⚠️</span>
-            <span class="text-red-800">{{ error }}</span>
-          </div>
+  <div v-if="visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-6">
+          <h3 class="text-lg font-semibold text-gray-900">
+            {{ editando ? 'Editar Servicio' : 'Agregar Nuevo Servicio' }}
+          </h3>
+          <button @click="$emit('cerrar')" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-
-        <!-- Formulario -->
+        
         <form @submit.prevent="guardarServicio" class="space-y-6">
           <!-- Información básica -->
-          <div class="grid grid-cols-1 gap-6">
-            <!-- Nombre del servicio -->
-            <div>
-              <label class="form-label">
-                🏥 Nombre del Servicio *
-              </label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Servicio *</label>
               <input
-                v-model="formulario.nombre_servicio"
+                v-model="form.nombre_servicio"
                 type="text"
-                class="input-field"
-                :class="{ 'border-red-500': errores.nombre_servicio }"
-                placeholder="Ej: Consulta General, Ultrasonido, etc."
-                maxlength="100"
                 required
+                class="input-base"
+                placeholder="Ej: Hidrocolonterapia, Consulta General..."
               />
-              <div v-if="errores.nombre_servicio" class="text-red-500 text-sm mt-1">
-                {{ errores.nombre_servicio }}
-              </div>
             </div>
 
-            <!-- Descripción -->
             <div>
-              <label class="form-label">
-                📝 Descripción
-              </label>
-              <textarea
-                v-model="formulario.descripcion"
-                class="input-field"
-                rows="3"
-                placeholder="Descripción detallada del servicio (opcional)"
-                maxlength="255"
-              ></textarea>
-              <div class="text-xs text-gray-500 mt-1">
-                {{ formulario.descripcion?.length || 0 }}/255 caracteres
-              </div>
-            </div>
-          </div>
-
-          <!-- Precios -->
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-4">💰 Configuración de Precios</h4>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Precio en efectivo -->
-              <div>
-                <label class="form-label">
-                  💵 Precio Efectivo *
-                </label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Q</span>
-                  <input
-                    v-model="formulario.precio_efectivo"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="input-field pl-8"
-                    :class="{ 'border-red-500': errores.precio_efectivo }"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div v-if="errores.precio_efectivo" class="text-red-500 text-sm mt-1">
-                  {{ errores.precio_efectivo }}
-                </div>
-              </div>
-
-              <!-- Precio con tarjeta -->
-              <div>
-                <label class="form-label">
-                  💳 Precio Tarjeta *
-                </label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Q</span>
-                  <input
-                    v-model="formulario.precio_tarjeta"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="input-field pl-8"
-                    :class="{ 'border-red-500': errores.precio_tarjeta }"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div v-if="errores.precio_tarjeta" class="text-red-500 text-sm mt-1">
-                  {{ errores.precio_tarjeta }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Auto-calcular precio tarjeta -->
-            <div class="mt-4">
-              <label class="flex items-center">
-                <input
-                  v-model="autoCalcularTarjeta"
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">
-                  Calcular precio tarjeta automáticamente (+3% del efectivo)
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Configuración adicional -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Monto mínimo -->
-            <div>
-              <label class="form-label">
-                💎 Monto Mínimo
-              </label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Q</span>
-                <input
-                  v-model="formulario.monto_minimo"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  class="input-field pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-              <div class="text-xs text-gray-500 mt-1">
-                Monto mínimo requerido para este servicio
-              </div>
-            </div>
-
-            <!-- Porcentaje de comisión -->
-            <div>
-              <label class="form-label">
-                📊 Comisión (%)
-              </label>
-              <div class="relative">
-                <input
-                  v-model="formulario.porcentaje_comision"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  class="input-field pr-8"
-                  :class="{ 'border-red-500': errores.porcentaje_comision }"
-                  placeholder="0.00"
-                />
-                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
-              </div>
-              <div v-if="errores.porcentaje_comision" class="text-red-500 text-sm mt-1">
-                {{ errores.porcentaje_comision }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Configuración de medicamentos -->
-          <div class="bg-purple-50 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-4">💊 Medicamentos</h4>
-            
-            <div class="space-y-3">
-              <!-- Requiere medicamentos -->
-              <label class="flex items-center">
-                <input
-                  v-model="formulario.requiere_medicamentos"
-                  type="checkbox"
-                  class="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                <span class="ml-2 text-sm text-gray-700">
-                  Este servicio requiere medicamentos específicos
-                </span>
-              </label>
-
-              <!-- Descuento por medicamento -->
-              <div v-if="formulario.requiere_medicamentos">
-                <label class="form-label text-sm">
-                  🏷️ Descuento por Medicamento (%)
-                </label>
-                <div class="relative">
-                  <input
-                    v-model="formulario.descuento_medicamento"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    class="input-field pr-8 text-sm"
-                    placeholder="0.00"
-                  />
-                  <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                  Descuento aplicado cuando se incluyen medicamentos
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Estado del servicio -->
-          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 class="text-sm font-medium text-gray-900">Estado del Servicio</h4>
-              <p class="text-sm text-gray-600">
-                {{ formulario.activo ? 'Servicio activo y disponible' : 'Servicio inactivo (no visible)' }}
-              </p>
-            </div>
-            
-            <label class="relative inline-flex items-center cursor-pointer">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Precio Efectivo *</label>
               <input
-                v-model="formulario.activo"
-                type="checkbox"
-                class="sr-only peer"
+                v-model.number="form.precio_efectivo"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                class="input-base"
+                placeholder="0.00"
               />
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Precio Tarjeta *</label>
+              <input
+                v-model.number="form.precio_tarjeta"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                class="input-base"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <!-- Configuración financiera -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Monto Mínimo</label>
+              <input
+                v-model.number="form.monto_minimo"
+                type="number"
+                step="0.01"
+                min="0"
+                class="input-base"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Porcentaje Comisión (%)</label>
+              <input
+                v-model.number="form.porcentaje_comision"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                class="input-base"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <!-- Configuración de medicamentos y estado -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <!-- Checkbox requiere medicamentos -->
+              <div class="flex items-center">
+                <input
+                  v-model="form.requiere_medicamentos"
+                  type="checkbox"
+                  id="requiere_medicamentos"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label for="requiere_medicamentos" class="ml-2 text-sm text-gray-700">
+                  Requiere medicamentos específicos
+                </label>
               </div>
-            </label>
+
+              <!-- Botón gestionar medicamentos -->
+              <div v-if="form.requiere_medicamentos && editando">
+                <button
+                  type="button"
+                  @click="abrirModalMedicamentos"
+                  class="btn-secondary text-sm flex items-center space-x-2"
+                >
+                  <span>💊</span>
+                  <span>Gestionar Medicamentos</span>
+                </button>
+                <p class="text-xs text-gray-500 mt-1">
+                  {{ medicamentosVinculados.length }} medicamento(s) configurado(s)
+                </p>
+                <p class="text-xs text-blue-600 mt-1">
+                  Los extras se toman automáticamente de cada medicamento
+                </p>
+              </div>
+
+              <div v-else-if="form.requiere_medicamentos && !editando">
+                <p class="text-xs text-gray-500">
+                  Podrás gestionar los medicamentos después de crear el servicio
+                </p>
+                <p class="text-xs text-blue-600">
+                  Los extras se toman automáticamente de cada medicamento
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <!-- Estado activo -->
+              <div class="flex items-center">
+                <input
+                  v-model="form.activo"
+                  type="checkbox"
+                  id="activo"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label for="activo" class="ml-2 text-sm text-gray-700">
+                  Servicio activo
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              @click="$emit('cerrar')"
+              class="btn-secondary"
+              :disabled="guardando"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              :disabled="guardando"
+            >
+              <span v-if="guardando" class="spinner mr-2"></span>
+              {{ guardando 
+                 ? 'Guardando...' 
+                 : editando 
+                   ? 'Actualizar Servicio' 
+                   : 'Crear Servicio' 
+              }}
+            </button>
           </div>
         </form>
       </div>
-
-      <!-- Footer -->
-      <div class="modal-footer">
-        <button
-          @click="cerrarModal"
-          type="button"
-          class="btn-secondary"
-          :disabled="guardando"
-        >
-          Cancelar
-        </button>
-        
-        <button
-          @click="guardarServicio"
-          type="button"
-          class="btn-primary"
-          :disabled="guardando"
-        >
-          <span v-if="guardando" class="animate-spin inline-block w-4 h-4 border-2 border-white border-r-transparent rounded-full mr-2"></span>
-          {{ guardando ? 'Guardando...' : (modo === 'crear' ? 'Crear Servicio' : 'Actualizar Servicio') }}
-        </button>
-      </div>
     </div>
+
+    <!-- Modal Medicamentos Vinculados -->
+    <MedicamentosVinculadosModal
+      v-if="modalMedicamentos.visible"
+      :visible="modalMedicamentos.visible"
+      :servicio="servicio"
+      @close="cerrarModalMedicamentos"
+      @updated="recargarMedicamentos"
+    />
   </div>
 </template>
 
 <script>
 import serviciosService from '@/services/serviciosService'
+import MedicamentosVinculadosModal from '@/components/MedicamentosVinculadosModal.vue'
 
 export default {
   name: 'ServiciosModal',
   
+  components: {
+    MedicamentosVinculadosModal
+  },
+  
   props: {
+    visible: {
+      type: Boolean,
+      default: false
+    },
     servicio: {
       type: Object,
       default: null
     },
     modo: {
       type: String,
-      required: true,
-      validator: value => ['crear', 'editar'].includes(value)
+      default: 'crear' // 'crear' o 'editar'
     }
   },
-
+  
   emits: ['cerrar', 'guardado'],
-
+  
   data() {
     return {
-      formulario: {
+      guardando: false,
+      medicamentosVinculados: [],
+      modalMedicamentos: {
+        visible: false
+      },
+      form: {
         nombre_servicio: '',
-        descripcion: '',
         precio_efectivo: 0,
         precio_tarjeta: 0,
         monto_minimo: 0,
         porcentaje_comision: 0,
         requiere_medicamentos: false,
-        descuento_medicamento: 0,
         activo: true
-      },
-      
-      autoCalcularTarjeta: true,
-      guardando: false,
-      error: null,
-      errores: {}
+      }
     }
   },
-
+  
+  computed: {
+    editando() {
+      return this.modo === 'editar' && this.servicio
+    }
+  },
+  
   watch: {
-    // Auto-calcular precio tarjeta
-    'formulario.precio_efectivo'() {
-      if (this.autoCalcularTarjeta && this.formulario.precio_efectivo > 0) {
-        const efectivo = parseFloat(this.formulario.precio_efectivo) || 0
-        this.formulario.precio_tarjeta = (efectivo * 1.03).toFixed(2)
+    visible(newVal) {
+      if (newVal) {
+        this.inicializarFormulario()
       }
     },
-
-    autoCalcularTarjeta(nuevoValor) {
-      if (nuevoValor && this.formulario.precio_efectivo > 0) {
-        const efectivo = parseFloat(this.formulario.precio_efectivo) || 0
-        this.formulario.precio_tarjeta = (efectivo * 1.03).toFixed(2)
-      }
+    
+    servicio: {
+      handler(newVal) {
+        if (newVal && this.visible) {
+          this.inicializarFormulario()
+        }
+      },
+      deep: true
     }
   },
-
-  mounted() {
-    this.inicializarFormulario()
-  },
-
+  
   methods: {
     inicializarFormulario() {
-      if (this.servicio && this.modo === 'editar') {
-        console.log('✏️ Editando servicio:', this.servicio)
-        
-        this.formulario = {
-          nombre_servicio: this.servicio.nombre_servicio || '',
-          descripcion: this.servicio.descripcion || '',
-          precio_efectivo: this.servicio.precio_efectivo || 0,
-          precio_tarjeta: this.servicio.precio_tarjeta || 0,
-          monto_minimo: this.servicio.monto_minimo || 0,
-          porcentaje_comision: this.servicio.porcentaje_comision || 0,
-          requiere_medicamentos: !!this.servicio.requiere_medicamentos,
-          descuento_medicamento: this.servicio.descuento_medicamento || 0,
-          activo: this.servicio.activo !== false
+      if (this.editando && this.servicio) {
+        // Modo editar - cargar datos del servicio
+        this.form = {
+          nombre_servicio: this.servicio.nombre || this.servicio.nombre_servicio || '',
+          precio_efectivo: parseFloat(this.servicio.precio_efectivo) || 0,
+          precio_tarjeta: parseFloat(this.servicio.precio_tarjeta) || 0,
+          monto_minimo: parseFloat(this.servicio.monto_minimo) || 0,
+          porcentaje_comision: parseFloat(this.servicio.porcentaje_comision) || parseFloat(this.servicio.comision_venta) || 0,
+          requiere_medicamentos: Boolean(this.servicio.requiere_medicamentos),
+          activo: this.servicio.activo !== undefined ? Boolean(this.servicio.activo) : true
         }
         
-        // Desactivar auto-cálculo si los precios no siguen la regla del 3%
-        const esperado = (parseFloat(this.servicio.precio_efectivo) * 1.03).toFixed(2)
-        this.autoCalcularTarjeta = parseFloat(esperado) === parseFloat(this.servicio.precio_tarjeta)
-        
+        // Cargar medicamentos vinculados si los hay
+        if (this.form.requiere_medicamentos) {
+          this.cargarMedicamentosVinculados()
+        }
       } else {
-        console.log('➕ Creando nuevo servicio')
-        this.formulario = {
+        // Modo crear - formulario limpio
+        this.form = {
           nombre_servicio: '',
-          descripcion: '',
           precio_efectivo: 0,
           precio_tarjeta: 0,
           monto_minimo: 0,
           porcentaje_comision: 0,
           requiere_medicamentos: false,
-          descuento_medicamento: 0,
           activo: true
         }
-        this.autoCalcularTarjeta = true
+        this.medicamentosVinculados = []
       }
     },
-
-    validarFormulario() {
-      this.errores = {}
-      
-      const validacion = serviciosService.validarServicio(this.formulario)
-      
-      if (!validacion.esValido) {
-        validacion.errores.forEach(error => {
-          if (error.includes('nombre')) {
-            this.errores.nombre_servicio = error
-          } else if (error.includes('efectivo')) {
-            this.errores.precio_efectivo = error
-          } else if (error.includes('tarjeta')) {
-            this.errores.precio_tarjeta = error
-          } else if (error.includes('comisión')) {
-            this.errores.porcentaje_comision = error
-          }
-        })
+    
+    async cargarMedicamentosVinculados() {
+      try {
+        if (!this.servicio || !this.servicio.id) return
+        
+        const response = await serviciosService.getMedicamentosVinculados(this.servicio.id)
+        this.medicamentosVinculados = response.data || []
+        
+        console.log('Medicamentos vinculados cargados:', this.medicamentosVinculados.length)
+        
+      } catch (error) {
+        console.error('Error cargando medicamentos vinculados:', error)
+        this.medicamentosVinculados = []
       }
-      
-      return validacion.esValido
     },
-
+    
+    abrirModalMedicamentos() {
+      this.modalMedicamentos.visible = true
+    },
+    
+    cerrarModalMedicamentos() {
+      this.modalMedicamentos.visible = false
+    },
+    
+    async recargarMedicamentos() {
+      await this.cargarMedicamentosVinculados()
+    },
+    
     async guardarServicio() {
       try {
-        this.error = null
+        this.guardando = true
         
-        if (!this.validarFormulario()) {
-          this.error = 'Por favor corrige los errores en el formulario'
+        // Validaciones
+        if (!this.form.nombre_servicio?.trim()) {
+          alert('El nombre del servicio es obligatorio')
           return
         }
         
-        this.guardando = true
-        console.log(`💾 ${this.modo === 'crear' ? 'Creando' : 'Actualizando'} servicio:`, this.formulario)
-        
-        // Preparar datos para enviar
-        const datosServicio = {
-          ...this.formulario,
-          precio_efectivo: parseFloat(this.formulario.precio_efectivo),
-          precio_tarjeta: parseFloat(this.formulario.precio_tarjeta),
-          monto_minimo: parseFloat(this.formulario.monto_minimo) || 0,
-          porcentaje_comision: parseFloat(this.formulario.porcentaje_comision) || 0,
-          descuento_medicamento: parseFloat(this.formulario.descuento_medicamento) || 0
+        if (!this.form.precio_efectivo || this.form.precio_efectivo <= 0) {
+          alert('El precio en efectivo debe ser mayor a 0')
+          return
         }
         
-        if (this.modo === 'crear') {
-          await serviciosService.crearServicio(datosServicio)
-          console.log('✅ Servicio creado exitosamente')
+        if (!this.form.precio_tarjeta || this.form.precio_tarjeta <= 0) {
+          alert('El precio con tarjeta debe ser mayor a 0')
+          return
+        }
+        
+        const datos = {
+          nombre_servicio: this.form.nombre_servicio.trim(),
+          precio_efectivo: parseFloat(this.form.precio_efectivo),
+          precio_tarjeta: parseFloat(this.form.precio_tarjeta),
+          monto_minimo: parseFloat(this.form.monto_minimo) || 0,
+          comision_venta: parseFloat(this.form.porcentaje_comision) || 0,
+          requiere_medicamentos: Boolean(this.form.requiere_medicamentos),
+          activo: Boolean(this.form.activo)
+        }
+        
+        console.log('Guardando servicio:', datos)
+        
+        let response
+        if (this.editando) {
+          response = await serviciosService.actualizarServicio(this.servicio.id, datos)
+          alert('Servicio actualizado exitosamente')
         } else {
-          await serviciosService.actualizarServicio(this.servicio.id, datosServicio)
-          console.log('✅ Servicio actualizado exitosamente')
+          response = await serviciosService.crearServicio(datos)
+          alert('Servicio creado exitosamente')
+          
+          // Si requiere medicamentos y es nuevo, preguntar si quiere configurarlos
+          if (datos.requiere_medicamentos && response.data?.id) {
+            const configurarMedicamentos = confirm('¿Deseas configurar los medicamentos requeridos para este servicio ahora?')
+            if (configurarMedicamentos) {
+              // Emitir guardado y cerrar modal
+              this.$emit('guardado', { abrirMedicamentos: response.data })
+              return
+            }
+          }
         }
         
         this.$emit('guardado')
         
       } catch (error) {
-        console.error('❌ Error guardando servicio:', error)
-        this.error = error.message
+        console.error('Error guardando servicio:', error)
+        alert(`Error: ${error.message}`)
       } finally {
         this.guardando = false
-      }
-    },
-
-    cerrarModal() {
-      if (!this.guardando) {
-        this.$emit('cerrar')
       }
     }
   }
@@ -437,44 +376,19 @@ export default {
 </script>
 
 <style scoped>
-/* Los estilos de modal ya están definidos en style.css */
-.form-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin;
 }
 
-.input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
-}
-
-.modal-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
-}
-
-.modal-content {
-  @apply bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto;
-}
-
-.modal-header {
-  @apply flex justify-between items-center p-6 border-b border-gray-200;
-}
-
-.modal-body {
-  @apply p-6;
-}
-
-.modal-footer {
-  @apply flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50;
-}
-
-.modal-close-btn {
-  @apply text-gray-400 hover:text-gray-600 focus:outline-none;
+.input-base {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
 }
 
 .btn-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50;
 }
 
 .btn-secondary {
-  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50;
 }
 </style>
