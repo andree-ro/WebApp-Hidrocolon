@@ -456,18 +456,21 @@ class Servicio {
         try {
             connection = await this.getConnection();
             
+            console.log('DEBUG: Buscando medicamentos para servicio:', servicioId);
+            
+            // Query simplificada sin JOIN problemático
             const query = `
-                SELECT m.*, sm.cantidad_requerida,
-                    p.nombre as presentacion_nombre,
-                    l.nombre as laboratorio_nombre
+                SELECT m.*, sm.cantidad_requerida
                 FROM servicios_medicamentos sm
                 JOIN medicamentos m ON sm.medicamento_id = m.id
-                LEFT JOIN presentaciones p ON m.presentacion_id = p.id
-                LEFT JOIN laboratorios l ON m.laboratorio_id = l.id
                 WHERE sm.servicio_id = ?
             `;
             
             const [rows] = await connection.execute(query, [servicioId]);
+            
+            console.log('DEBUG: Medicamentos encontrados:', rows.length);
+            console.log('DEBUG: Datos:', rows);
+            
             return rows;
             
         } catch (error) {
