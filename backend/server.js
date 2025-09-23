@@ -26,7 +26,8 @@ const detectThreats = (req, body) => {
 const authRoutes = require('./src/routes/auth');
 const farmaciaRoutes = require('./src/routes/farmacia');
 const extrasRoutes = require('./src/routes/extras');
-const serviciosRoutes = require('./src/routes/servicios'); // NUEVA RUTA SERVICIOS
+const serviciosRoutes = require('./src/routes/servicios');
+const pacientesRoutes = require('./src/routes/pacientes');
 
 // ============================================================================
 // 🚀 CONFIGURACIÓN DEL SERVIDOR
@@ -359,8 +360,8 @@ console.log('📋 Módulos pendientes: pacientes, carrito, financiero, usuarios,
 // TODO: Descomentar cuando se implementen los módulos
 
 // Pacientes
-// const pacientesRoutes = require('./src/routes/pacientes');
-// app.use('/api/pacientes', pacientesRoutes);
+
+app.use('/api/pacientes', pacientesRoutes);
 
 // Carrito
 // const carritoRoutes = require('./src/routes/carrito');
