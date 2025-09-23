@@ -47,25 +47,26 @@ router.get('/', async (req, res) => {
             page = 1,
             limit = 10,
             search = '',
-            filtro = 'todos' // todos, cumpleanos_mes, citas_manana
+            filtro = 'todos'
         } = req.query;
 
-        // Query base sin parámetros dinámicos para evitar errores
+        // Query según la estructura EXACTA de migrate.js
         let query = `
             SELECT 
                 p.id,
-                p.nombres as nombre,
-                p.apellidos as apellido,
+                p.nombres,
+                p.apellidos,
                 CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                 p.telefono,
                 p.dpi,
                 p.fecha_primer_cita,
                 p.proxima_cita,
-                p.fecha_nacimiento as cumpleanos,
+                p.fecha_nacimiento,
+                p.activo,
                 p.fecha_creacion,
                 p.fecha_actualizacion
             FROM pacientes p
-            WHERE p.activo = true
+            WHERE p.activo = 1
         `;
 
         let params = [];
@@ -100,7 +101,7 @@ router.get('/', async (req, res) => {
         const [pacientes] = await connection.execute(query, params);
 
         // Query para contar sin LIMIT/OFFSET
-        let countQuery = `SELECT COUNT(*) as total FROM pacientes p WHERE p.activo = true`;
+        let countQuery = `SELECT COUNT(*) as total FROM pacientes p WHERE p.activo = 1`;
         let countParams = [];
         
         if (search && search.trim()) {
