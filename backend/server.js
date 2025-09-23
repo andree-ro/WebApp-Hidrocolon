@@ -384,6 +384,97 @@ app.use('/api/pacientes', pacientesRoutes);
 // ============================================================================
 
 if (NODE_ENV === 'development') {
+    app.post('/debug/seed-pacientes-now', async (req, res) => {
+        try {
+            console.log('🏥 Iniciando seeder de pacientes...');
+            
+            const mysql = require('mysql2/promise');
+            const connection = await mysql.createConnection({
+                host: process.env.DB_HOST,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_NAME,
+                port: process.env.DB_PORT || 3306
+            });
+
+            // Verificar cuántos pacientes hay antes
+            const [existingCount] = await connection.execute('SELECT COUNT(*) as count FROM pacientes WHERE activo = 1');
+            console.log(`📊 Pacientes existentes antes: ${existingCount[0].count}`);
+
+            // Insertar datos de pacientes (Guatemala)
+            await connection.execute(`
+                INSERT IGNORE INTO pacientes (nombres, apellidos, telefono, dpi, fecha_primer_cita, proxima_cita, fecha_nacimiento, activo) VALUES 
+                ('Juan Carlos', 'Pérez López', '5551-2345', '1234567890101', '2024-01-15', '2024-09-25', '1985-03-15', 1),
+                ('María Elena', 'González Morales', '5552-6789', '9876543210987', '2024-02-01', '2024-09-23', '1990-08-20', 1),
+                ('Carlos Roberto', 'López Díaz', '5553-1122', '1122334455667', '2024-03-10', '2024-09-24', '1988-12-10', 1),
+                ('Ana Sofía', 'Rodríguez Castillo', '5554-3344', '2233445566778', '2024-01-20', '2024-09-26', '1992-05-25', 1),
+                ('José Miguel', 'Hernández Valle', '5555-5566', '3344556677889', '2024-02-15', NULL, '1975-11-08', 1),
+                ('Carmen Lucia', 'Martínez Cruz', '5556-7788', '4455667788990', '2024-03-05', '2024-09-27', '1983-07-14', 1),
+                ('Diego Fernando', 'Morales Sánchez', '5557-9900', NULL, '2024-01-30', '2024-09-25', '2005-02-18', 1),
+                ('Lucía Patricia', 'Vásquez Torres', '5558-1234', '5566778899001', '2024-02-20', NULL, '1995-09-12', 1),
+                ('Roberto Antonio', 'Jiménez Flores', '5559-5678', '6677889900112', '2024-03-15', '2024-09-28', '1979-04-03', 1),
+                ('Isabella María', 'Castro Mendoza', '5550-9876', NULL, '2024-01-25', '2024-09-23', '2008-10-30', 1),
+                ('Alejandro José', 'Ramírez Aguilar', '5551-5432', '7788990011223', '2024-02-10', '2024-09-29', '1987-06-17', 1),
+                ('Sofía Andrea', 'Ruiz Herrera', '5552-1098', '8899001122334', '2024-03-01', NULL, '1993-01-22', 1),
+                ('Andrés Felipe', 'Molina García', '5553-6789', '9900112233445', '2024-01-18', '2024-09-24', '1981-08-09', 1),
+                ('Gabriela Fernanda', 'Delgado Vargas', '5554-2468', '0011223344556', '2024-02-25', '2024-09-30', '1989-12-05', 1),
+                ('Fernando Javier', 'Guerrero Montes', '5555-1357', '1123334455667', '2024-03-08', NULL, '1977-03-28', 1),
+                ('Valeria Alejandra', 'Campos Rivas', '5556-2468', '2234445566778', '2024-01-12', '2024-09-25', '1994-04-11', 1),
+                ('Sebastián David', 'Ortega Maldonado', '5557-1357', '3345556677889', '2024-02-18', '2024-09-26', '1986-09-07', 1),
+                ('Camila Fernanda', 'Salazar Peña', '5558-3579', NULL, '2024-03-12', '2024-09-27', '2007-06-15', 1),
+                ('Ricardo Emilio', 'Fuentes Navarro', '5559-4680', '4456667778990', '2024-01-08', NULL, '1982-12-23', 1),
+                ('Daniela Cristina', 'Méndez Cabrera', '5550-5791', '5567778889001', '2024-02-22', '2024-09-28', '1991-01-18', 1)
+            `);
+
+            // Verificar cuántos pacientes hay después
+            const [finalCount] = await connection.execute('SELECT COUNT(*) as count FROM pacientes WHERE activo = 1');
+            
+            // Calcular estadísticas útiles
+            const [stats] = await connection.execute(`
+                SELECT 
+                    COUNT(*) as total_pacientes,
+                    COUNT(CASE WHEN MONTH(fecha_nacimiento) = MONTH(NOW()) THEN 1 END) as cumpleanos_mes,
+                    COUNT(CASE WHEN DATE(proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY)) THEN 1 END) as citas_manana,
+                    COUNT(CASE WHEN dpi IS NULL THEN 1 END) as menores_sin_dpi,
+                    COUNT(CASE WHEN proxima_cita IS NULL THEN 1 END) as sin_proxima_cita
+                FROM pacientes 
+                WHERE activo = 1
+            `);
+
+            await connection.end();
+
+            console.log(`✅ Seeder completado. Total pacientes: ${finalCount[0].count}`);
+
+            res.json({
+                success: true,
+                message: 'Datos de pacientes insertados correctamente',
+                data: {
+                    pacientes_antes: existingCount[0].count,
+                    pacientes_despues: finalCount[0].count,
+                    pacientes_insertados: finalCount[0].count - existingCount[0].count,
+                    estadisticas: {
+                        total: stats[0].total_pacientes,
+                        cumpleanos_este_mes: stats[0].cumpleanos_mes,
+                        citas_manana: stats[0].citas_manana,
+                        menores_sin_dpi: stats[0].menores_sin_dpi,
+                        pendientes_cita: stats[0].sin_proxima_cita
+                    },
+                    ready_for_testing: true
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error en seeder de pacientes:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error insertando datos de pacientes',
+                error: error.message
+            });
+        }
+    });
+
+    console.log('🌱 Endpoint seeder temporal agregado: POST /debug/seed-pacientes-now');
+
     // Endpoint para testing de conexión a BD
     app.get('/debug/db', async (req, res) => {
         try {
