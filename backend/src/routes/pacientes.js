@@ -1,5 +1,6 @@
 // ============================================================================
 // 🏥 RUTAS DEL MÓDULO PACIENTES - Sistema Hidrocolon
+// SOLUCIÓN FINAL BASADA EN PROBLEMAS RESUELTOS DE FARMACIA
 // ============================================================================
 
 const express = require('express');
@@ -23,7 +24,9 @@ async function getConnection() {
             database: process.env.DB_NAME,
             port: process.env.DB_PORT || 3306,
             charset: 'utf8mb4',
-            timezone: 'Z'
+            timezone: 'Z',
+            acquireTimeout: 60000,
+            timeout: 60000
         });
     } catch (error) {
         console.error('❌ Error conectando a la base de datos:', error.message);
@@ -35,7 +38,7 @@ async function getConnection() {
 // 📋 CRUD BÁSICO PACIENTES
 // ============================================================================
 
-// GET - Listar pacientes con filtros
+// GET - Listar pacientes con filtros - VERSIÓN CORREGIDA
 router.get('/', async (req, res) => {
     let connection;
     try {
@@ -43,15 +46,41 @@ router.get('/', async (req, res) => {
         
         connection = await getConnection();
         
-        const {
-            page = 1,
-            limit = 10,
-            search = '',
-            filtro = 'todos'
-        } = req.query;
+        // VALIDACIÓN ESTRICTA como en servicios.js
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+        const search = (req.query.search || '').toString().trim();
+        const filtro = (req.query.filtro || 'todos').toString();
 
-        // Query según la estructura EXACTA de migrate.js
-        let query = `
+        console.log('📋 Parámetros validados:', { page, limit, search, filtro });
+
+        // QUERY BASE SIN PARÁMETROS DINÁMICOS
+        let whereConditions = ['p.activo = 1'];
+        let queryParams = [];
+
+        // Agregar condiciones de búsqueda
+        if (search.length > 0) {
+            whereConditions.push(`(
+                p.nombres LIKE ? OR 
+                p.apellidos LIKE ? OR 
+                p.telefono LIKE ? OR 
+                p.dpi LIKE ?
+            )`);
+            const searchTerm = `%${search}%`;
+            queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+
+        // Agregar filtros especiales
+        if (filtro === 'cumpleanos_mes') {
+            whereConditions.push('MONTH(p.fecha_nacimiento) = MONTH(NOW())');
+        } else if (filtro === 'citas_manana') {
+            whereConditions.push('DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))');
+        }
+
+        // CONSTRUIR QUERY PRINCIPAL SIN LIMIT DINÁMICO
+        const whereClause = whereConditions.join(' AND ');
+        
+        const mainQuery = `
             SELECT 
                 p.id,
                 p.nombres,
@@ -66,75 +95,34 @@ router.get('/', async (req, res) => {
                 p.fecha_creacion,
                 p.fecha_actualizacion
             FROM pacientes p
-            WHERE p.activo = 1
+            WHERE ${whereClause}
+            ORDER BY p.nombres ASC, p.apellidos ASC
         `;
 
-        let params = [];
+        console.log('📋 Query principal:', mainQuery);
+        console.log('📋 Parámetros query:', queryParams);
 
-        // Agregar filtros solo si es necesario
-        if (search && search.trim()) {
-            query += ` AND (
-                p.nombres LIKE ? OR 
-                p.apellidos LIKE ? OR 
-                p.telefono LIKE ? OR 
-                p.dpi LIKE ?
-            )`;
-            const searchTerm = `%${search.trim()}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
-
-        if (filtro === 'cumpleanos_mes') {
-            query += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
-        } else if (filtro === 'citas_manana') {
-            query += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
-        }
-
-        // Agregar orden y paginación - FIX: Convertir explícitamente a números
-        query += ` ORDER BY p.nombres ASC, p.apellidos ASC LIMIT ? OFFSET ?`;
+        // EJECUTAR QUERY PRINCIPAL
+        const [allRows] = await connection.execute(mainQuery, queryParams);
         
-        const offset = (Number(page) - 1) * Number(limit);
-        params.push(Number(limit), Number(offset));
-        
-        console.log('📋 Query final:', query);
-        console.log('📋 Params:', params);
-        
-        const [pacientes] = await connection.execute(query, params);
+        // APLICAR PAGINACIÓN MANUALMENTE (SOLUCIÓN COMPROBADA)
+        const offset = (page - 1) * limit;
+        const pacientes = allRows.slice(offset, offset + limit);
+        const total = allRows.length;
 
-        // Query para contar sin LIMIT/OFFSET
-        let countQuery = `SELECT COUNT(*) as total FROM pacientes p WHERE p.activo = 1`;
-        let countParams = [];
-        
-        if (search && search.trim()) {
-            countQuery += ` AND (
-                p.nombres LIKE ? OR 
-                p.apellidos LIKE ? OR 
-                p.telefono LIKE ? OR 
-                p.dpi LIKE ?
-            )`;
-            const searchTerm = `%${search.trim()}%`;
-            countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
-
-        if (filtro === 'cumpleanos_mes') {
-            countQuery += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
-        } else if (filtro === 'citas_manana') {
-            countQuery += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
-        }
-        
-        const [countResult] = await connection.execute(countQuery, countParams);
-        const total = countResult[0].total;
-
-        console.log(`✅ ${pacientes.length} pacientes encontrados de ${total} total`);
+        console.log(`✅ Query exitoso: ${pacientes.length} pacientes de ${total} total`);
 
         res.json({
             success: true,
             message: 'Pacientes obtenidos correctamente',
             data: pacientes,
             pagination: {
-                current_page: Number(page),
-                per_page: Number(limit),
-                total,
-                total_pages: Math.ceil(total / Number(limit))
+                current_page: page,
+                per_page: limit,
+                total: total,
+                total_pages: Math.ceil(total / limit),
+                has_next: offset + limit < total,
+                has_prev: page > 1
             }
         });
 
@@ -174,7 +162,7 @@ router.get('/:id', async (req, res) => {
                 p.fecha_creacion,
                 p.fecha_actualizacion
             FROM pacientes p
-            WHERE p.id = ? AND p.activo = true
+            WHERE p.id = ? AND p.activo = 1
         `;
 
         const [rows] = await connection.execute(query, [id]);
@@ -237,7 +225,7 @@ router.post('/', async (req, res) => {
                 nombres, apellidos, telefono, dpi, 
                 fecha_primer_cita, proxima_cita, fecha_nacimiento,
                 activo, fecha_creacion, fecha_actualizacion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, true, NOW(), NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
         `;
 
         const [result] = await connection.execute(query, [
@@ -308,7 +296,7 @@ router.put('/:id', async (req, res) => {
         } = req.body;
 
         // Verificar que el paciente existe
-        const checkQuery = `SELECT id FROM pacientes WHERE id = ? AND activo = true`;
+        const checkQuery = `SELECT id FROM pacientes WHERE id = ? AND activo = 1`;
         const [existing] = await connection.execute(checkQuery, [id]);
 
         if (existing.length === 0) {
@@ -323,7 +311,7 @@ router.put('/:id', async (req, res) => {
             SET nombres = ?, apellidos = ?, telefono = ?, dpi = ?,
                 fecha_primer_cita = ?, proxima_cita = ?, fecha_nacimiento = ?,
                 fecha_actualizacion = NOW()
-            WHERE id = ? AND activo = true
+            WHERE id = ? AND activo = 1
         `;
 
         await connection.execute(query, [
@@ -343,7 +331,7 @@ router.put('/:id', async (req, res) => {
             success: true,
             message: 'Paciente actualizado correctamente',
             data: {
-                id: Number(id),
+                id: parseInt(id),
                 nombre,
                 apellido,
                 telefono,
@@ -376,7 +364,7 @@ router.delete('/:id', async (req, res) => {
         connection = await getConnection();
 
         // Verificar que el paciente existe
-        const checkQuery = `SELECT id, nombres, apellidos FROM pacientes WHERE id = ? AND activo = true`;
+        const checkQuery = `SELECT id, nombres, apellidos FROM pacientes WHERE id = ? AND activo = 1`;
         const [existing] = await connection.execute(checkQuery, [id]);
 
         if (existing.length === 0) {
@@ -388,7 +376,7 @@ router.delete('/:id', async (req, res) => {
 
         const query = `
             UPDATE pacientes 
-            SET activo = false, fecha_actualizacion = NOW()
+            SET activo = 0, fecha_actualizacion = NOW()
             WHERE id = ?
         `;
 
@@ -426,21 +414,21 @@ router.get('/stats/general', async (req, res) => {
         connection = await getConnection();
 
         const queries = {
-            total: `SELECT COUNT(*) as total FROM pacientes WHERE activo = true`,
+            total: `SELECT COUNT(*) as total FROM pacientes WHERE activo = 1`,
             cumpleanos_mes: `
                 SELECT COUNT(*) as total 
                 FROM pacientes 
-                WHERE activo = true AND MONTH(fecha_nacimiento) = MONTH(NOW())
+                WHERE activo = 1 AND MONTH(fecha_nacimiento) = MONTH(NOW())
             `,
             citas_manana: `
                 SELECT COUNT(*) as total 
                 FROM pacientes 
-                WHERE activo = true AND DATE(proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))
+                WHERE activo = 1 AND DATE(proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))
             `,
             sin_proxima_cita: `
                 SELECT COUNT(*) as total 
                 FROM pacientes 
-                WHERE activo = true AND (proxima_cita IS NULL OR proxima_cita < NOW())
+                WHERE activo = 1 AND (proxima_cita IS NULL OR proxima_cita < NOW())
             `
         };
 
@@ -496,7 +484,7 @@ router.get('/export/excel', async (req, res) => {
                 DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') as cumpleanos,
                 DATE_FORMAT(p.fecha_creacion, '%d/%m/%Y') as fecha_registro
             FROM pacientes p
-            WHERE p.activo = true
+            WHERE p.activo = 1
             ORDER BY p.nombres ASC, p.apellidos ASC
         `;
 
