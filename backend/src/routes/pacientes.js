@@ -89,12 +89,11 @@ router.get('/', async (req, res) => {
             query += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
         }
 
-        // Agregar orden y paginación
+        // Agregar orden y paginación - FIX: Convertir explícitamente a números
         query += ` ORDER BY p.nombres ASC, p.apellidos ASC LIMIT ? OFFSET ?`;
         
-        const offset = (page - 1) * limit;
+        const offset = (Number(page) - 1) * Number(limit);
         params.push(Number(limit), Number(offset));
-
         
         console.log('📋 Query final:', query);
         console.log('📋 Params:', params);
@@ -132,10 +131,10 @@ router.get('/', async (req, res) => {
             message: 'Pacientes obtenidos correctamente',
             data: pacientes,
             pagination: {
-                current_page: parseInt(page),
-                per_page: parseInt(limit),
+                current_page: Number(page),
+                per_page: Number(limit),
                 total,
-                total_pages: Math.ceil(total / limit)
+                total_pages: Math.ceil(total / Number(limit))
             }
         });
 
@@ -344,7 +343,7 @@ router.put('/:id', async (req, res) => {
             success: true,
             message: 'Paciente actualizado correctamente',
             data: {
-                id: parseInt(id),
+                id: Number(id),
                 nombre,
                 apellido,
                 telefono,
