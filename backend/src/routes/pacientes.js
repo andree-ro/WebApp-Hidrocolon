@@ -93,7 +93,8 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY p.nombres ASC, p.apellidos ASC LIMIT ? OFFSET ?`;
         
         const offset = (page - 1) * limit;
-        params.push(parseInt(limit), parseInt(offset));
+        params.push(Number(limit), Number(offset));
+
         
         console.log('📋 Query final:', query);
         console.log('📋 Params:', params);
