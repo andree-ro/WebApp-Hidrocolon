@@ -56,8 +56,8 @@ router.get('/', async (req, res) => {
         // Filtro de búsqueda
         if (search) {
             whereClause += ` AND (
-                p.nombre LIKE ? OR 
-                p.apellido LIKE ? OR 
+                p.nombres LIKE ? OR 
+                p.apellidos LIKE ? OR 
                 p.telefono LIKE ? OR 
                 p.dpi LIKE ?
             )`;
@@ -67,7 +67,7 @@ router.get('/', async (req, res) => {
 
         // Filtros especiales
         if (filtro === 'cumpleanos_mes') {
-            whereClause += ` AND MONTH(p.cumpleanos) = MONTH(NOW())`;
+            whereClause += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
         } else if (filtro === 'citas_manana') {
             whereClause += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
         }
@@ -78,19 +78,19 @@ router.get('/', async (req, res) => {
         const query = `
             SELECT 
                 p.id,
-                p.nombre,
-                p.apellido,
-                CONCAT(p.nombre, ' ', p.apellido) as nombre_completo,
+                p.nombres as nombre,
+                p.apellidos as apellido,
+                CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                 p.telefono,
                 p.dpi,
                 p.fecha_primer_cita,
                 p.proxima_cita,
-                p.cumpleanos,
+                p.fecha_nacimiento as cumpleanos,
                 p.fecha_creacion,
                 p.fecha_actualizacion
             FROM pacientes p
             ${whereClause}
-            ORDER BY p.nombre ASC, p.apellido ASC
+            ORDER BY p.nombres ASC, p.apellidos ASC
             LIMIT ? OFFSET ?
         `;
         
@@ -146,14 +146,14 @@ router.get('/:id', async (req, res) => {
         const query = `
             SELECT 
                 p.id,
-                p.nombre,
-                p.apellido,
-                CONCAT(p.nombre, ' ', p.apellido) as nombre_completo,
+                p.nombres as nombre,
+                p.apellidos as apellido,
+                CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                 p.telefono,
                 p.dpi,
                 p.fecha_primer_cita,
                 p.proxima_cita,
-                p.cumpleanos,
+                p.fecha_nacimiento as cumpleanos,
                 p.activo,
                 p.fecha_creacion,
                 p.fecha_actualizacion
@@ -218,8 +218,8 @@ router.post('/', async (req, res) => {
 
         const query = `
             INSERT INTO pacientes (
-                nombre, apellido, telefono, dpi, 
-                fecha_primer_cita, proxima_cita, cumpleanos,
+                nombres, apellidos, telefono, dpi, 
+                fecha_primer_cita, proxima_cita, fecha_nacimiento,
                 activo, fecha_creacion, fecha_actualizacion
             ) VALUES (?, ?, ?, ?, ?, ?, ?, true, NOW(), NOW())
         `;
