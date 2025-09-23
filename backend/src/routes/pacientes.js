@@ -4,11 +4,32 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const mysql = require('mysql2/promise');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authMiddleware.authenticate());
+
+// ============================================================================
+// 🔧 FUNCIÓN AUXILIAR PARA CONEXIÓN BD
+// ============================================================================
+
+async function getConnection() {
+    try {
+        return await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306,
+            charset: 'utf8mb4',
+            timezone: 'Z'
+        });
+    } catch (error) {
+        console.error('❌ Error conectando a la base de datos:', error.message);
+        throw new Error('Error de conexión a la base de datos');
+    }
+}
 
 // ============================================================================
 // 📋 CRUD BÁSICO PACIENTES
@@ -16,8 +37,11 @@ router.use(authMiddleware.authenticate());
 
 // GET - Listar pacientes con filtros
 router.get('/', async (req, res) => {
+    let connection;
     try {
         console.log('🔍 GET /api/pacientes - Listar pacientes');
+        
+        connection = await getConnection();
         
         const {
             page = 1,
@@ -72,7 +96,7 @@ router.get('/', async (req, res) => {
         
         params.push(parseInt(limit), parseInt(offset));
         
-        const [pacientes] = await db.execute(query, params);
+        const [pacientes] = await connection.execute(query, params);
 
         // Contar total para paginación
         const countQuery = `
@@ -81,7 +105,7 @@ router.get('/', async (req, res) => {
             ${whereClause}
         `;
         const countParams = params.slice(0, -2); // Quitar limit y offset
-        const [countResult] = await db.execute(countQuery, countParams);
+        const [countResult] = await connection.execute(countQuery, countParams);
         const total = countResult[0].total;
 
         console.log(`✅ ${pacientes.length} pacientes encontrados`);
@@ -105,14 +129,19 @@ router.get('/', async (req, res) => {
             message: 'Error obteniendo pacientes',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
 // GET - Obtener paciente específico
 router.get('/:id', async (req, res) => {
+    let connection;
     try {
         const { id } = req.params;
         console.log(`🔍 GET /api/pacientes/${id} - Buscar paciente específico`);
+
+        connection = await getConnection();
 
         const query = `
             SELECT 
@@ -132,7 +161,7 @@ router.get('/:id', async (req, res) => {
             WHERE p.id = ? AND p.activo = true
         `;
 
-        const [rows] = await db.execute(query, [id]);
+        const [rows] = await connection.execute(query, [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({
@@ -156,13 +185,18 @@ router.get('/:id', async (req, res) => {
             message: 'Error obteniendo paciente',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
 // POST - Crear nuevo paciente
 router.post('/', async (req, res) => {
+    let connection;
     try {
         console.log('📝 POST /api/pacientes - Crear nuevo paciente');
+        
+        connection = await getConnection();
         
         const {
             nombre,
@@ -190,7 +224,7 @@ router.post('/', async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, true, NOW(), NOW())
         `;
 
-        const [result] = await db.execute(query, [
+        const [result] = await connection.execute(query, [
             nombre.trim(),
             apellido.trim(),
             telefono.trim(),
@@ -233,14 +267,19 @@ router.post('/', async (req, res) => {
             message: 'Error creando paciente',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
 // PUT - Actualizar paciente
 router.put('/:id', async (req, res) => {
+    let connection;
     try {
         const { id } = req.params;
         console.log(`📝 PUT /api/pacientes/${id} - Actualizar paciente`);
+
+        connection = await getConnection();
 
         const {
             nombre,
@@ -254,7 +293,7 @@ router.put('/:id', async (req, res) => {
 
         // Verificar que el paciente existe
         const checkQuery = `SELECT id FROM pacientes WHERE id = ? AND activo = true`;
-        const [existing] = await db.execute(checkQuery, [id]);
+        const [existing] = await connection.execute(checkQuery, [id]);
 
         if (existing.length === 0) {
             return res.status(404).json({
@@ -271,7 +310,7 @@ router.put('/:id', async (req, res) => {
             WHERE id = ? AND activo = true
         `;
 
-        await db.execute(query, [
+        await connection.execute(query, [
             nombre?.trim(),
             apellido?.trim(),
             telefono?.trim(),
@@ -306,18 +345,23 @@ router.put('/:id', async (req, res) => {
             message: 'Error actualizando paciente',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
 // DELETE - Eliminar paciente (soft delete)
 router.delete('/:id', async (req, res) => {
+    let connection;
     try {
         const { id } = req.params;
         console.log(`🗑️ DELETE /api/pacientes/${id} - Eliminar paciente`);
 
+        connection = await getConnection();
+
         // Verificar que el paciente existe
         const checkQuery = `SELECT id, nombre, apellido FROM pacientes WHERE id = ? AND activo = true`;
-        const [existing] = await db.execute(checkQuery, [id]);
+        const [existing] = await connection.execute(checkQuery, [id]);
 
         if (existing.length === 0) {
             return res.status(404).json({
@@ -332,7 +376,7 @@ router.delete('/:id', async (req, res) => {
             WHERE id = ?
         `;
 
-        await db.execute(query, [id]);
+        await connection.execute(query, [id]);
 
         console.log(`✅ Paciente ${id} eliminado (soft delete)`);
 
@@ -348,6 +392,8 @@ router.delete('/:id', async (req, res) => {
             message: 'Error eliminando paciente',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
@@ -357,8 +403,11 @@ router.delete('/:id', async (req, res) => {
 
 // GET - Estadísticas de pacientes
 router.get('/stats/general', async (req, res) => {
+    let connection;
     try {
         console.log('📊 GET /api/pacientes/stats/general - Estadísticas');
+
+        connection = await getConnection();
 
         const queries = {
             total: `SELECT COUNT(*) as total FROM pacientes WHERE activo = true`,
@@ -382,7 +431,7 @@ router.get('/stats/general', async (req, res) => {
         const stats = {};
         
         for (const [key, query] of Object.entries(queries)) {
-            const [result] = await db.execute(query);
+            const [result] = await connection.execute(query);
             stats[key] = result[0].total;
         }
 
@@ -401,13 +450,18 @@ router.get('/stats/general', async (req, res) => {
             message: 'Error obteniendo estadísticas',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
 // GET - Exportar pacientes (preparar datos para Excel)
 router.get('/export/excel', async (req, res) => {
+    let connection;
     try {
         console.log('📊 GET /api/pacientes/export/excel - Preparar datos para exportación');
+
+        connection = await getConnection();
 
         const query = `
             SELECT 
@@ -430,7 +484,7 @@ router.get('/export/excel', async (req, res) => {
             ORDER BY p.nombre ASC, p.apellido ASC
         `;
 
-        const [pacientes] = await db.execute(query);
+        const [pacientes] = await connection.execute(query);
 
         console.log(`✅ ${pacientes.length} pacientes preparados para exportación`);
 
@@ -452,6 +506,8 @@ router.get('/export/excel', async (req, res) => {
             message: 'Error preparando datos para exportación',
             error: error.message
         });
+    } finally {
+        if (connection) await connection.end();
     }
 });
 
