@@ -50,32 +50,8 @@ router.get('/', async (req, res) => {
             filtro = 'todos' // todos, cumpleanos_mes, citas_manana
         } = req.query;
 
-        let whereClause = 'WHERE p.activo = true';
-        let params = [];
-
-        // Filtro de búsqueda
-        if (search) {
-            whereClause += ` AND (
-                p.nombres LIKE ? OR 
-                p.apellidos LIKE ? OR 
-                p.telefono LIKE ? OR 
-                p.dpi LIKE ?
-            )`;
-            const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
-
-        // Filtros especiales
-        if (filtro === 'cumpleanos_mes') {
-            whereClause += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
-        } else if (filtro === 'citas_manana') {
-            whereClause += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
-        }
-
-        // Paginación
-        const offset = (page - 1) * limit;
-
-        const query = `
+        // Query base sin parámetros dinámicos para evitar errores
+        let query = `
             SELECT 
                 p.id,
                 p.nombres as nombre,
@@ -89,26 +65,65 @@ router.get('/', async (req, res) => {
                 p.fecha_creacion,
                 p.fecha_actualizacion
             FROM pacientes p
-            ${whereClause}
-            ORDER BY p.nombres ASC, p.apellidos ASC
-            LIMIT ? OFFSET ?
+            WHERE p.activo = true
         `;
+
+        let params = [];
+
+        // Agregar filtros solo si es necesario
+        if (search && search.trim()) {
+            query += ` AND (
+                p.nombres LIKE ? OR 
+                p.apellidos LIKE ? OR 
+                p.telefono LIKE ? OR 
+                p.dpi LIKE ?
+            )`;
+            const searchTerm = `%${search.trim()}%`;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+
+        if (filtro === 'cumpleanos_mes') {
+            query += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
+        } else if (filtro === 'citas_manana') {
+            query += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
+        }
+
+        // Agregar orden y paginación
+        query += ` ORDER BY p.nombres ASC, p.apellidos ASC LIMIT ? OFFSET ?`;
         
+        const offset = (page - 1) * limit;
         params.push(parseInt(limit), parseInt(offset));
+        
+        console.log('📋 Query final:', query);
+        console.log('📋 Params:', params);
         
         const [pacientes] = await connection.execute(query, params);
 
-        // Contar total para paginación
-        const countQuery = `
-            SELECT COUNT(*) as total 
-            FROM pacientes p 
-            ${whereClause}
-        `;
-        const countParams = params.slice(0, -2); // Quitar limit y offset
+        // Query para contar sin LIMIT/OFFSET
+        let countQuery = `SELECT COUNT(*) as total FROM pacientes p WHERE p.activo = true`;
+        let countParams = [];
+        
+        if (search && search.trim()) {
+            countQuery += ` AND (
+                p.nombres LIKE ? OR 
+                p.apellidos LIKE ? OR 
+                p.telefono LIKE ? OR 
+                p.dpi LIKE ?
+            )`;
+            const searchTerm = `%${search.trim()}%`;
+            countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+
+        if (filtro === 'cumpleanos_mes') {
+            countQuery += ` AND MONTH(p.fecha_nacimiento) = MONTH(NOW())`;
+        } else if (filtro === 'citas_manana') {
+            countQuery += ` AND DATE(p.proxima_cita) = DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`;
+        }
+        
         const [countResult] = await connection.execute(countQuery, countParams);
         const total = countResult[0].total;
 
-        console.log(`✅ ${pacientes.length} pacientes encontrados`);
+        console.log(`✅ ${pacientes.length} pacientes encontrados de ${total} total`);
 
         res.json({
             success: true,
@@ -304,8 +319,8 @@ router.put('/:id', async (req, res) => {
 
         const query = `
             UPDATE pacientes 
-            SET nombre = ?, apellido = ?, telefono = ?, dpi = ?,
-                fecha_primer_cita = ?, proxima_cita = ?, cumpleanos = ?,
+            SET nombres = ?, apellidos = ?, telefono = ?, dpi = ?,
+                fecha_primer_cita = ?, proxima_cita = ?, fecha_nacimiento = ?,
                 fecha_actualizacion = NOW()
             WHERE id = ? AND activo = true
         `;
@@ -360,7 +375,7 @@ router.delete('/:id', async (req, res) => {
         connection = await getConnection();
 
         // Verificar que el paciente existe
-        const checkQuery = `SELECT id, nombre, apellido FROM pacientes WHERE id = ? AND activo = true`;
+        const checkQuery = `SELECT id, nombres, apellidos FROM pacientes WHERE id = ? AND activo = true`;
         const [existing] = await connection.execute(checkQuery, [id]);
 
         if (existing.length === 0) {
@@ -414,7 +429,7 @@ router.get('/stats/general', async (req, res) => {
             cumpleanos_mes: `
                 SELECT COUNT(*) as total 
                 FROM pacientes 
-                WHERE activo = true AND MONTH(cumpleanos) = MONTH(NOW())
+                WHERE activo = true AND MONTH(fecha_nacimiento) = MONTH(NOW())
             `,
             citas_manana: `
                 SELECT COUNT(*) as total 
@@ -466,9 +481,9 @@ router.get('/export/excel', async (req, res) => {
         const query = `
             SELECT 
                 p.id,
-                p.nombre,
-                p.apellido,
-                CONCAT(p.nombre, ' ', p.apellido) as nombre_completo,
+                p.nombres as nombre,
+                p.apellidos as apellido,
+                CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                 p.telefono,
                 COALESCE(p.dpi, 'No registrado') as dpi,
                 DATE_FORMAT(p.fecha_primer_cita, '%d/%m/%Y') as fecha_primer_cita,
@@ -477,11 +492,11 @@ router.get('/export/excel', async (req, res) => {
                     THEN DATE_FORMAT(p.proxima_cita, '%d/%m/%Y %H:%i')
                     ELSE 'Sin cita programada'
                 END as proxima_cita,
-                DATE_FORMAT(p.cumpleanos, '%d/%m/%Y') as cumpleanos,
+                DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') as cumpleanos,
                 DATE_FORMAT(p.fecha_creacion, '%d/%m/%Y') as fecha_registro
             FROM pacientes p
             WHERE p.activo = true
-            ORDER BY p.nombre ASC, p.apellido ASC
+            ORDER BY p.nombres ASC, p.apellidos ASC
         `;
 
         const [pacientes] = await connection.execute(query);
