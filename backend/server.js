@@ -384,7 +384,7 @@ app.use('/api/pacientes', pacientesRoutes);
 // ============================================================================
 
 if (NODE_ENV === 'development') {
-    app.post('/debug/seed-pacientes-now', async (req, res) => {
+    app.get('/debug/seed-pacientes-now', async (req, res) => {
         try {
             console.log('🏥 Iniciando seeder de pacientes...');
             
