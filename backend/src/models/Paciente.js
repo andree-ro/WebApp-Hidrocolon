@@ -78,38 +78,37 @@ class Paciente {
                 queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
             }
 
-            // 🔧 FILTROS ESPECIALES CORREGIDOS
             if (filtro === 'cumpleanos_mes') {
-                // ✅ Este funciona bien - agregar validación de año
+                // Este funciona bien
                 whereConditions.push('MONTH(p.fecha_nacimiento) = MONTH(NOW()) AND YEAR(p.fecha_nacimiento) <= YEAR(NOW())');
             } 
             else if (filtro === 'citas_manana') {
-                // 🔧 CORREGIDO: Problema con timezone y formato de fecha
-                console.log('🔍 DEBUG - Aplicando filtro citas_manana');
+                // CORREGIDO: Usar timezone local Guatemala (-6)
+                console.log('DEBUG - Aplicando filtro citas_manana con timezone GT');
                 
-                // Usar DATE() para comparar solo fechas, no horas
-                whereConditions.push('DATE(p.proxima_cita) = DATE(NOW() + INTERVAL 1 DAY)');
-                // También asegurarse que no sea null
+                // Guatemala está en UTC-6, ajustar fechas
+                whereConditions.push('DATE(p.proxima_cita) = DATE(DATE_ADD(CONVERT_TZ(NOW(), "+00:00", "-06:00"), INTERVAL 1 DAY))');
                 whereConditions.push('p.proxima_cita IS NOT NULL');
             } 
             else if (filtro === 'sin_proxima_cita') {
-                // 🔧 CORREGIDO: Lógica incorrecta 
-                console.log('🔍 DEBUG - Aplicando filtro sin_proxima_cita');
+                // CORREGIDO: Usar timezone local Guatemala
+                console.log('DEBUG - Aplicando filtro sin_proxima_cita con timezone GT');
                 
-                // Pacientes SIN próxima cita válida (null o en el pasado)
-                whereConditions.push('(p.proxima_cita IS NULL OR DATE(p.proxima_cita) < DATE(NOW()))');
+                // Pacientes SIN próxima cita válida (null o en el pasado según hora Guatemala)
+                whereConditions.push('(p.proxima_cita IS NULL OR DATE(p.proxima_cita) < DATE(CONVERT_TZ(NOW(), "+00:00", "-06:00")))');
             } 
             else if (filtro === 'menores_edad') {
-                // ✅ Este funciona bien
+                // Este funciona bien
                 whereConditions.push('p.dpi IS NULL');
             }
             else if (filtro === 'citas_hoy') {
-                // 🧪 FILTRO EXTRA PARA DEBUG
-                console.log('🔍 DEBUG - Aplicando filtro citas_hoy');
-                whereConditions.push('DATE(p.proxima_cita) = DATE(NOW())');
+                // CORREGIDO: Usar timezone local Guatemala
+                console.log('DEBUG - Aplicando filtro citas_hoy con timezone GT');
+                
+                // Comparar con fecha actual de Guatemala
+                whereConditions.push('DATE(p.proxima_cita) = DATE(CONVERT_TZ(NOW(), "+00:00", "-06:00"))');
                 whereConditions.push('p.proxima_cita IS NOT NULL');
             }
-
             // Construir query principal
             const whereClause = whereConditions.join(' AND ');
             const mainQuery = `
@@ -353,17 +352,17 @@ class Paciente {
         try {
             connection = await this.getConnection();
 
-            const query = `
-                SELECT 
-                    COUNT(*) as total,
-                    COUNT(CASE WHEN MONTH(fecha_nacimiento) = MONTH(NOW()) AND YEAR(fecha_nacimiento) <= YEAR(NOW()) THEN 1 END) as cumpleanos_mes,
-                    COUNT(CASE WHEN DATE(proxima_cita) = DATE(NOW() + INTERVAL 1 DAY) AND proxima_cita IS NOT NULL THEN 1 END) as citas_manana,
-                    COUNT(CASE WHEN dpi IS NULL THEN 1 END) as menores_sin_dpi,
-                    COUNT(CASE WHEN proxima_cita IS NULL OR DATE(proxima_cita) < DATE(NOW()) THEN 1 END) as sin_proxima_cita,
-                    COUNT(CASE WHEN DATE(proxima_cita) = DATE(NOW()) AND proxima_cita IS NOT NULL THEN 1 END) as citas_hoy
-                FROM pacientes 
-                WHERE activo = 1
-            `;
+        const query = `
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN MONTH(fecha_nacimiento) = MONTH(NOW()) AND YEAR(fecha_nacimiento) <= YEAR(NOW()) THEN 1 END) as cumpleanos_mes,
+                COUNT(CASE WHEN DATE(proxima_cita) = DATE(DATE_ADD(CONVERT_TZ(NOW(), "+00:00", "-06:00"), INTERVAL 1 DAY)) AND proxima_cita IS NOT NULL THEN 1 END) as citas_manana,
+                COUNT(CASE WHEN dpi IS NULL THEN 1 END) as menores_sin_dpi,
+                COUNT(CASE WHEN proxima_cita IS NULL OR DATE(proxima_cita) < DATE(CONVERT_TZ(NOW(), "+00:00", "-06:00")) THEN 1 END) as sin_proxima_cita,
+                COUNT(CASE WHEN DATE(proxima_cita) = DATE(CONVERT_TZ(NOW(), "+00:00", "-06:00")) AND proxima_cita IS NOT NULL THEN 1 END) as citas_hoy
+            FROM pacientes 
+            WHERE activo = 1
+        `;
 
             const [result] = await connection.execute(query);
             const stats = result[0];
