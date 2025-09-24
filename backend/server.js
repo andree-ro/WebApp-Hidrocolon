@@ -383,30 +383,33 @@ app.use('/api/pacientes', pacientesRoutes);
 // 🧪 RUTAS DE DESARROLLO
 // ============================================================================
 
+app.get('/debug/pacientes', async (req, res) => {
+    try {
+        const Paciente = require('./src/models/Paciente');
+        const stats = await Paciente.getStats();
+        const pacientes = await Paciente.findAll({ limit: 3 });
+            
+        res.json({
+            success: true,
+            message: 'Módulo pacientes funcionando',
+            data: {
+                stats,
+                sample_pacientes: pacientes.data
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error en módulo pacientes',
+            error: error.message
+        });
+    }
+});
+
+
 if (NODE_ENV === 'development') {
 
-    app.get('/debug/pacientes', async (req, res) => {
-        try {
-            const Paciente = require('./src/models/Paciente');
-            const stats = await Paciente.getStats();
-            const pacientes = await Paciente.findAll({ limit: 3 });
-            
-            res.json({
-                success: true,
-                message: 'Módulo pacientes funcionando',
-                data: {
-                    stats,
-                    sample_pacientes: pacientes.data
-                }
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Error en módulo pacientes',
-                error: error.message
-            });
-        }
-    });
+
 
 
     // Endpoint para testing de conexión a BD
