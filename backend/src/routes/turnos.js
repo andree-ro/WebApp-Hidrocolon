@@ -24,7 +24,7 @@ router.get('/actual',
             
             console.log(`🔍 Buscando turno actual para usuario ${usuario_id}`);
             
-            const [turnos] = await db.query(
+            const [turnos] = await db.execute(
                 `SELECT * FROM turnos 
                  WHERE usuario_id = ? 
                  AND estado = 'abierto'
@@ -259,7 +259,7 @@ router.get('/',
             const total = countResult[0].total;
             
             // Obtener turnos
-            const [turnos] = await db.query(
+            const [turnos] = await db.execute(
                 `SELECT * FROM turnos 
                  WHERE ${whereClause}
                  ORDER BY fecha_apertura DESC
@@ -299,7 +299,7 @@ router.get('/:id',
             const turno_id = req.params.id;
             const usuario_id = req.user.id;
             
-            const [turnos] = await db.query(
+            const [turnos] = await db.execute(
                 `SELECT t.*, u.nombres, u.apellidos
                  FROM turnos t
                  LEFT JOIN usuarios u ON t.usuario_id = u.id
