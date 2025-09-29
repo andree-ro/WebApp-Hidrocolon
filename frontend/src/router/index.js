@@ -1,11 +1,11 @@
 // frontend/src/router/index.js
-// Router limpio del Sistema Hidrocolon - Solo archivos existentes
+// Router del Sistema Hidrocolon - ACTUALIZADO CON PACIENTES
 
 import { createRouter, createWebHistory } from 'vue-router'
 import authService from '@/services/authService'
 
 // =====================================
-// IMPORTAR COMPONENTES EXISTENTES ÚNICAMENTE
+// IMPORTAR COMPONENTES EXISTENTES + PACIENTES
 // =====================================
 
 // Vistas principales existentes
@@ -14,9 +14,11 @@ import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
+// NUEVO: Agregar PacientesView
+import PacientesView from '@/views/PacientesView.vue'
 
 // =====================================
-// DEFINIR RUTAS - SOLO EXISTENTES
+// DEFINIR RUTAS - INCLUYENDO PACIENTES
 // =====================================
 
 const routes = [
@@ -88,7 +90,20 @@ const routes = [
     }
   },
 
-  // Página 404 simple - sin importar archivo inexistente
+  // NUEVO: Módulo Pacientes
+  {
+    path: '/pacientes',
+    name: 'Pacientes',
+    component: PacientesView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Pacientes - Sistema Hidrocolon',
+      breadcrumb: 'Gestión de Pacientes',
+      description: 'Administra información de pacientes, citas y seguimiento médico'
+    }
+  },
+
+  // Página 404 simple
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -182,7 +197,7 @@ router.beforeEach(async (to, from, next) => {
 
 // Guard posterior a la navegación
 router.afterEach((to, from) => {
-  console.log(`📍 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
+  console.log(`🎯 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
 })
 
 // Guard de error
@@ -193,7 +208,7 @@ router.onError((error) => {
 export default router
 
 // ==========================================
-// UTILIDADES DE NAVEGACIÓN - SOLO RUTAS EXISTENTES
+// UTILIDADES DE NAVEGACIÓN - INCLUYENDO PACIENTES
 // ==========================================
 
 export const navegarA = {
@@ -201,6 +216,7 @@ export const navegarA = {
   farmacia: () => router.push({ name: 'Farmacia' }),
   extras: () => router.push({ name: 'Extras' }),
   servicios: () => router.push({ name: 'Servicios' }),
+  pacientes: () => router.push({ name: 'Pacientes' }), // NUEVO
   login: (redirect) => router.push({ 
     name: 'Login', 
     query: redirect ? { redirect } : {} 
@@ -239,7 +255,7 @@ export const obtenerBreadcrumbs = (route) => {
 }
 
 // ==========================================
-// MENÚ SOLO CON MÓDULOS EXISTENTES
+// MENÚ CON PACIENTES AGREGADO
 // ==========================================
 
 export const menuItems = [
@@ -274,6 +290,15 @@ export const menuItems = [
     title: 'Servicios Médicos',
     description: 'Gestión de servicios y precios',
     active: true
+  },
+  // NUEVO: Agregar Pacientes al menú
+  {
+    name: 'Pacientes',
+    path: '/pacientes',
+    icon: 'users',
+    title: 'Gestión de Pacientes',
+    description: 'Administra pacientes, citas y seguimiento',
+    active: true
   }
 ]
 
@@ -305,6 +330,7 @@ export const debugRouter = () => {
   console.log('- Ruta actual:', router.currentRoute.value)
   console.log('- Usuario autenticado:', authService.isAuthenticated())
   console.log('- Datos de usuario:', authService.getUser())
+  console.log('- Módulos disponibles: Dashboard, Farmacia, Extras, Servicios, Pacientes')
 }
 
 // Exportar debug globalmente para console
