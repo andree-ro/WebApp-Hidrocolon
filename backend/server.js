@@ -48,6 +48,14 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 
+// ============================================================================
+// 🔧 VARIABLES DE ENTORNO (DECLARAR PRIMERO)
+// ============================================================================
+const NODE_ENV = process.env.NODE_ENV || 'production';
+const PORT = process.env.PORT || 8080;
+
+console.log(`🔧 Configurando seguridad para ambiente: ${NODE_ENV}`);
+
 // Función simple para detectar amenazas
 const detectThreats = (req, body) => {
     const threats = ['<script>', 'union select', '../'];
@@ -73,10 +81,6 @@ const turnosRoutes = require('./src/routes/turnos');
 // ============================================================================
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-const NODE_ENV = process.env.NODE_ENV || 'production';
-
-console.log(`🔧 Configurando seguridad para ambiente: ${NODE_ENV}`);
 
 // ============================================================================
 // 🛡️ CONFIGURACIÓN DE SEGURIDAD
