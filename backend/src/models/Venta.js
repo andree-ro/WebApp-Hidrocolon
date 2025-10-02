@@ -267,7 +267,6 @@ class Venta {
     // ============================================================================
     // LISTAR VENTAS CON FILTROS Y PAGINACIÓN
     // ============================================================================
-
     static async findAll(options = {}) {
         try {
             const page = parseInt(options.page) || 1;
@@ -310,14 +309,15 @@ class Venta {
             const whereClause = whereConditions.join(' AND ');
 
             // Contar total de registros
-            const countQuery = `SELECT COUNT(*) as total FROM ventas v WHERE ${whereClause}`;
-            console.log('📊 Count query:', countQuery);
-            console.log('📊 Count params:', queryParams);
-            
-            const [countResult] = await pool.execute(countQuery, queryParams);
+            const [countResult] = await pool.execute(
+                `SELECT COUNT(*) as total FROM ventas v WHERE ${whereClause}`,
+                queryParams
+            );
+
             const total = countResult[0].total;
 
             // Obtener ventas con paginación
+            // IMPORTANTE: LIMIT y OFFSET se concatenan directamente (no como parámetros)
             const selectQuery = `
                 SELECT v.*,
                     u.nombres as vendedor_nombres,
@@ -329,16 +329,9 @@ class Venta {
                 LEFT JOIN pacientes p ON v.paciente_id = p.id
                 WHERE ${whereClause}
                 ORDER BY v.fecha_creacion DESC
-                LIMIT ? OFFSET ?`;
+                LIMIT ${limit} OFFSET ${offset}`;
             
-            // IMPORTANTE: Asegurar que limit y offset sean enteros
-            const selectParams = [...queryParams, limit, offset];
-            
-            console.log('📋 Select query:', selectQuery);
-            console.log('📋 Select params:', selectParams);
-            console.log('📋 Tipos:', selectParams.map(p => typeof p));
-            
-            const [ventas] = await pool.execute(selectQuery, selectParams);
+            const [ventas] = await pool.execute(selectQuery, queryParams);
 
             return {
                 ventas,
