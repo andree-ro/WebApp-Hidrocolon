@@ -410,24 +410,34 @@ class Venta {
             // 2. Revertir inventario
             for (const item of venta.detalle) {
                 if (item.tipo_producto === 'medicamento') {
+                    // Primero obtener stock actual para el movimiento
+                    const [medicamentoActual] = await connection.query(
+                        'SELECT existencias FROM medicamentos WHERE id = ?',
+                        [item.producto_id]
+                    );
+                    
+                    const stockAnterior = medicamentoActual[0].existencias;
+                    const stockNuevo = stockAnterior + item.cantidad;
+                    
+                    // Actualizar stock
                     await connection.query(
                         `UPDATE medicamentos 
-                         SET existencias = existencias + ? 
-                         WHERE id = ?`,
+                        SET existencias = existencias + ? 
+                        WHERE id = ?`,
                         [item.cantidad, item.producto_id]
                     );
 
-                    // Registrar movimiento
+                    // Registrar movimiento con todos los valores correctos
                     await connection.query(
                         `INSERT INTO movimientos_inventario 
-                         (tipo_producto, producto_id, tipo_movimiento, cantidad_anterior, 
-                          cantidad_movimiento, cantidad_nueva, motivo, usuario_id)
-                         VALUES ('medicamento', ?, 'entrada', ?, ?, ?, ?)`,
+                        (tipo_producto, producto_id, tipo_movimiento, cantidad_anterior, 
+                        cantidad_movimiento, cantidad_nueva, motivo, usuario_id)
+                        VALUES ('medicamento', ?, 'entrada', ?, ?, ?, ?, ?)`,
                         [
                             item.producto_id,
-                            0, // cantidad_anterior (placeholder)
+                            stockAnterior,
                             item.cantidad,
-                            0, // cantidad_nueva (placeholder)
+                            stockNuevo,
                             `Anulación venta ${venta.numero_factura}: ${motivo}`,
                             usuario_id
                         ]
@@ -458,7 +468,7 @@ class Venta {
 
             // Revertir comisiones
             const totalComisiones = venta.detalle.reduce(
-                (sum, item) => sum + (item.monto_comision || 0), 
+                (sum, item) => sum + (parseFloat(item.monto_comision) || 0), 
                 0
             );
             updateFields.push('total_comisiones = total_comisiones - ?');
@@ -475,8 +485,8 @@ class Venta {
             // 4. Marcar venta como anulada (agregar campo en observaciones)
             await connection.query(
                 `UPDATE ventas 
-                 SET observaciones = CONCAT(COALESCE(observaciones, ''), ' | ANULADA: ', ?)
-                 WHERE id = ?`,
+                SET observaciones = CONCAT(COALESCE(observaciones, ''), ' | ANULADA: ', ?)
+                WHERE id = ?`,
                 [motivo, id]
             );
 
