@@ -1,7 +1,7 @@
 // backend/src/models/DetalleVenta.js
 // Modelo para gestión de detalle de ventas del Sistema Hidrocolon
 
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 class DetalleVenta {
     // ============================================================================
@@ -9,7 +9,7 @@ class DetalleVenta {
     // ============================================================================
     static async findByVentaId(venta_id) {
         try {
-            const [detalle] = await db.query(
+            const [detalle] = await pool.execute(
                 `SELECT * FROM detalle_ventas 
                  WHERE venta_id = ?
                  ORDER BY id ASC`,
@@ -47,7 +47,7 @@ class DetalleVenta {
             const whereClause = whereConditions.join(' AND ');
             queryParams.push(limit);
 
-            const [productos] = await db.query(
+            const [productos] = await pool.execute(
                 `SELECT 
                     dv.producto_id,
                     dv.producto_nombre,
@@ -96,7 +96,7 @@ class DetalleVenta {
             const whereClause = whereConditions.join(' AND ');
 
             // Contar total
-            const [countResult] = await db.query(
+            const [countResult] = await pool.execute(
                 `SELECT COUNT(*) as total 
                  FROM detalle_ventas dv
                  INNER JOIN ventas v ON dv.venta_id = v.id
@@ -107,7 +107,7 @@ class DetalleVenta {
             const total = countResult[0].total;
 
             // Obtener ventas
-            const [ventas] = await db.query(
+            const [ventas] = await pool.execute(
                 `SELECT 
                     v.id,
                     v.numero_factura,
@@ -170,7 +170,7 @@ class DetalleVenta {
 
             const whereClause = whereConditions.join(' AND ');
 
-            const [comisiones] = await db.query(
+            const [comisiones] = await pool.execute(
                 `SELECT 
                     v.usuario_vendedor_id,
                     u.nombres as vendedor_nombres,
@@ -216,7 +216,7 @@ class DetalleVenta {
 
             const whereClause = whereConditions.join(' AND ');
 
-            const [resumen] = await db.query(
+            const [resumen] = await pool.execute(
                 `SELECT 
                     dv.tipo_producto,
                     COUNT(DISTINCT dv.producto_id) as productos_unicos,
@@ -248,7 +248,7 @@ class DetalleVenta {
             const offset = (page - 1) * limit;
 
             // Contar total
-            const [countResult] = await db.query(
+            const [countResult] = await pool.execute(
                 `SELECT COUNT(DISTINCT v.id) as total 
                  FROM ventas v
                  WHERE v.paciente_id = ?`,
@@ -258,7 +258,7 @@ class DetalleVenta {
             const total = countResult[0].total;
 
             // Obtener ventas del paciente con detalle
-            const [ventas] = await db.query(
+            const [ventas] = await pool.execute(
                 `SELECT 
                     v.id,
                     v.numero_factura,
@@ -279,7 +279,7 @@ class DetalleVenta {
             );
 
             // Obtener estadísticas del paciente
-            const [stats] = await db.query(
+            const [stats] = await pool.execute(
                 `SELECT 
                     COUNT(DISTINCT v.id) as total_compras,
                     SUM(v.total) as total_gastado,
@@ -291,7 +291,7 @@ class DetalleVenta {
             );
 
             // Productos más comprados por el paciente
-            const [productos_favoritos] = await db.query(
+            const [productos_favoritos] = await pool.execute(
                 `SELECT 
                     dv.producto_nombre,
                     dv.tipo_producto,

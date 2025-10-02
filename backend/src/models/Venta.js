@@ -1,14 +1,14 @@
 // backend/src/models/Venta.js
 // Modelo para gestión de ventas del Sistema Hidrocolon
 
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 class Venta {
     // ============================================================================
     // CREAR NUEVA VENTA
     // ============================================================================
     static async create(ventaData) {
-        const connection = await db.getConnection();
+        const connection = await pool.getConnection()()();
         
         try {
             await connection.beginTransaction();
@@ -226,7 +226,7 @@ class Venta {
     static async findById(id) {
         try {
             // Obtener cabecera de la venta
-            const [ventas] = await db.query(
+            const [ventas] = await pool.execute(
                 `SELECT v.*, 
                         u.nombres as vendedor_nombres,
                         u.apellidos as vendedor_apellidos,
@@ -244,7 +244,7 @@ class Venta {
             }
 
             // Obtener detalle de productos
-            const [detalle] = await db.query(
+            const [detalle] = await pool.execute(
                 `SELECT * FROM detalle_ventas WHERE venta_id = ?`,
                 [id]
             );
@@ -304,7 +304,7 @@ class Venta {
             const whereClause = whereConditions.join(' AND ');
 
             // Contar total de registros
-            const [countResult] = await db.query(
+            const [countResult] = await pool.execute(
                 `SELECT COUNT(*) as total FROM ventas v WHERE ${whereClause}`,
                 queryParams
             );
@@ -312,7 +312,7 @@ class Venta {
             const total = countResult[0].total;
 
             // Obtener ventas con paginación
-            const [ventas] = await db.query(
+            const [ventas] = await pool.execute(
                 `SELECT v.*,
                         u.nombres as vendedor_nombres,
                         u.apellidos as vendedor_apellidos,
@@ -362,7 +362,7 @@ class Venta {
 
             const whereClause = whereConditions.join(' AND ');
 
-            const [stats] = await db.query(
+            const [stats] = await pool.execute(
                 `SELECT 
                     COUNT(*) as total_ventas,
                     SUM(total) as monto_total,
@@ -387,7 +387,7 @@ class Venta {
     // ANULAR VENTA (Soft delete con reversa de inventario)
     // ============================================================================
     static async anular(id, usuario_id, motivo) {
-        const connection = await db.getConnection();
+        const connection = await pool.getConnection()();
         
         try {
             await connection.beginTransaction();
