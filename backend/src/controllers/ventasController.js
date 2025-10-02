@@ -129,7 +129,7 @@ const crearVenta = async (req, res) => {
         // Validar montos según método de pago
         if (metodo_pago === 'efectivo') {
             const efectivo = parseFloat(efectivo_recibido || 0);
-            if (efectivo < total) {
+            if (efectivo < total) {  // ✅ BIEN - usa total
                 return res.status(400).json({
                     success: false,
                     message: `Efectivo insuficiente. Total: Q${total.toFixed(2)}, Recibido: Q${efectivo.toFixed(2)}`
