@@ -6,8 +6,8 @@ class ComprobanteGenerator {
         return new Promise((resolve, reject) => {
             try {
                 const doc = new PDFDocument({ 
-                    size: 'LETTER',
-                    margins: { top: 50, bottom: 50, left: 50, right: 50 }
+                    size: [5.5 * 72, 8.5 * 72], // Media carta en puntos (5.5" x 8.5")
+                    margins: { top: 30, bottom: 30, left: 30, right: 30 }
                 });
 
                 const chunks = [];
@@ -101,11 +101,10 @@ class ComprobanteGenerator {
                 doc.moveDown(0.5);
 
                 // Encabezado de tabla
-                const tableTop = doc.y;
-                const col1 = 50;   // Cantidad
-                const col2 = 100;  // Descripción
-                const col3 = 350;  // Precio Unit.
-                const col4 = 450;  // Total
+                const col1 = 30;   // Cantidad
+                const col2 = 70;   // Descripción
+                const col3 = 260;  // Precio Unit.
+                const col4 = 330;  // Total
 
                 doc.fontSize(9)
                    .font('Helvetica-Bold')
@@ -130,7 +129,7 @@ class ComprobanteGenerator {
                     }
 
                     doc.text(item.cantidad.toString(), col1, yPosition)
-                       .text(item.producto_nombre, col2, yPosition, { width: 240 })
+                       .text(item.producto_nombre, col2, yPosition, { width: 180 })
                        .text(`Q ${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
                        .text(`Q ${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
 
