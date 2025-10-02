@@ -45,8 +45,8 @@ class DetalleVenta {
             }
 
             const whereClause = whereConditions.join(' AND ');
-            queryParams.push(limit);
 
+            // CORREGIDO: LIMIT se concatena directamente
             const [productos] = await pool.execute(
                 `SELECT 
                     dv.producto_id,
@@ -61,7 +61,7 @@ class DetalleVenta {
                  WHERE ${whereClause}
                  GROUP BY dv.producto_id, dv.producto_nombre, dv.tipo_producto
                  ORDER BY total_vendido DESC
-                 LIMIT ?`,
+                 LIMIT ${limit}`,
                 queryParams
             );
 
@@ -106,7 +106,7 @@ class DetalleVenta {
 
             const total = countResult[0].total;
 
-            // Obtener ventas
+            // CORREGIDO: LIMIT y OFFSET se concatenan directamente
             const [ventas] = await pool.execute(
                 `SELECT 
                     v.id,
@@ -123,8 +123,8 @@ class DetalleVenta {
                  LEFT JOIN usuarios u ON v.usuario_vendedor_id = u.id
                  WHERE ${whereClause}
                  ORDER BY v.fecha_creacion DESC
-                 LIMIT ? OFFSET ?`,
-                [...queryParams, limit, offset]
+                 LIMIT ${limit} OFFSET ${offset}`,
+                queryParams
             );
 
             return {
@@ -257,7 +257,7 @@ class DetalleVenta {
 
             const total = countResult[0].total;
 
-            // Obtener ventas del paciente con detalle
+            // CORREGIDO: LIMIT y OFFSET se concatenan directamente
             const [ventas] = await pool.execute(
                 `SELECT 
                     v.id,
@@ -274,8 +274,8 @@ class DetalleVenta {
                  WHERE v.paciente_id = ?
                  GROUP BY v.id
                  ORDER BY v.fecha_creacion DESC
-                 LIMIT ? OFFSET ?`,
-                [paciente_id, limit, offset]
+                 LIMIT ${limit} OFFSET ${offset}`,
+                [paciente_id]
             );
 
             // Obtener estadísticas del paciente
@@ -290,7 +290,7 @@ class DetalleVenta {
                 [paciente_id]
             );
 
-            // Productos más comprados por el paciente
+            // Productos más comprados por el paciente - CORREGIDO
             const [productos_favoritos] = await pool.execute(
                 `SELECT 
                     dv.producto_nombre,
