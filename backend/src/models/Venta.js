@@ -267,6 +267,7 @@ class Venta {
     // ============================================================================
     // LISTAR VENTAS CON FILTROS Y PAGINACIÓN
     // ============================================================================
+
     static async findAll(options = {}) {
         try {
             const page = parseInt(options.page) || 1;
@@ -291,13 +292,13 @@ class Venta {
             // Filtro por turno
             if (options.turno_id) {
                 whereConditions.push('v.turno_id = ?');
-                queryParams.push(options.turno_id);
+                queryParams.push(parseInt(options.turno_id));
             }
 
             // Filtro por vendedor
             if (options.vendedor_id) {
                 whereConditions.push('v.usuario_vendedor_id = ?');
-                queryParams.push(options.vendedor_id);
+                queryParams.push(parseInt(options.vendedor_id));
             }
 
             // Filtro por número de factura
@@ -309,28 +310,35 @@ class Venta {
             const whereClause = whereConditions.join(' AND ');
 
             // Contar total de registros
-            const [countResult] = await pool.execute(
-                `SELECT COUNT(*) as total FROM ventas v WHERE ${whereClause}`,
-                queryParams
-            );
-
+            const countQuery = `SELECT COUNT(*) as total FROM ventas v WHERE ${whereClause}`;
+            console.log('📊 Count query:', countQuery);
+            console.log('📊 Count params:', queryParams);
+            
+            const [countResult] = await pool.execute(countQuery, queryParams);
             const total = countResult[0].total;
 
             // Obtener ventas con paginación
-            const [ventas] = await pool.execute(
-                `SELECT v.*,
-                        u.nombres as vendedor_nombres,
-                        u.apellidos as vendedor_apellidos,
-                        p.nombres as paciente_nombres,
-                        p.apellidos as paciente_apellidos
-                 FROM ventas v
-                 LEFT JOIN usuarios u ON v.usuario_vendedor_id = u.id
-                 LEFT JOIN pacientes p ON v.paciente_id = p.id
-                 WHERE ${whereClause}
-                 ORDER BY v.fecha_creacion DESC
-                 LIMIT ? OFFSET ?`,
-                [...queryParams, limit, offset]
-            );
+            const selectQuery = `
+                SELECT v.*,
+                    u.nombres as vendedor_nombres,
+                    u.apellidos as vendedor_apellidos,
+                    p.nombres as paciente_nombres,
+                    p.apellidos as paciente_apellidos
+                FROM ventas v
+                LEFT JOIN usuarios u ON v.usuario_vendedor_id = u.id
+                LEFT JOIN pacientes p ON v.paciente_id = p.id
+                WHERE ${whereClause}
+                ORDER BY v.fecha_creacion DESC
+                LIMIT ? OFFSET ?`;
+            
+            // IMPORTANTE: Asegurar que limit y offset sean enteros
+            const selectParams = [...queryParams, limit, offset];
+            
+            console.log('📋 Select query:', selectQuery);
+            console.log('📋 Select params:', selectParams);
+            console.log('📋 Tipos:', selectParams.map(p => typeof p));
+            
+            const [ventas] = await pool.execute(selectQuery, selectParams);
 
             return {
                 ventas,
@@ -343,6 +351,7 @@ class Venta {
             };
 
         } catch (error) {
+            console.error('❌ Error en findAll:', error);
             throw error;
         }
     }
