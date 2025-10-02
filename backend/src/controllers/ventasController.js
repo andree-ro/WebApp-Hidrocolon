@@ -482,6 +482,46 @@ const obtenerResumenPorTipo = async (req, res) => {
     }
 };
 
+// ============================================================================
+// GENERAR COMPROBANTE PDF
+// ============================================================================
+const generarComprobante = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`📄 Generando comprobante para venta ID: ${id}`);
+        
+        // Obtener venta completa
+        const venta = await Venta.findById(id);
+        
+        if (!venta) {
+            return res.status(404).json({
+                success: false,
+                message: 'Venta no encontrada'
+            });
+        }
+
+        // Generar PDF
+        const ComprobanteGenerator = require('../utils/pdfGenerator');
+        const pdfBuffer = await ComprobanteGenerator.generar(venta);
+
+        // Configurar headers para descarga
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Comprobante-${venta.numero_factura}.pdf`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('❌ Error generando comprobante:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al generar comprobante',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     crearVenta,
     obtenerVenta,
@@ -491,5 +531,6 @@ module.exports = {
     obtenerProductosMasVendidos,
     obtenerComisiones,
     obtenerHistorialPaciente,
-    obtenerResumenPorTipo
+    obtenerResumenPorTipo,
+    generarComprobante
 };

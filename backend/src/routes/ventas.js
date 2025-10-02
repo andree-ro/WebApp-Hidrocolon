@@ -67,6 +67,12 @@ router.get('/',
     ventasController.listarVentas
 );
 
+// GET /api/ventas/:id/comprobante - Generar comprobante PDF (ANTES DE /:id)
+router.get('/:id/comprobante',
+    simpleAuth,
+    ventasController.generarComprobante
+);
+
 // GET /api/ventas/:id - Obtener venta específica
 router.get('/:id',
     simpleAuth,
@@ -83,6 +89,7 @@ console.log('✅ Rutas de ventas configuradas:');
 console.log('   POST   /api/ventas - Crear venta (requiere turno abierto)');
 console.log('   GET    /api/ventas - Listar ventas');
 console.log('   GET    /api/ventas/:id - Obtener venta');
+console.log('   GET    /api/ventas/:id/comprobante - Generar comprobante PDF');
 console.log('   DELETE /api/ventas/:id/anular - Anular venta');
 console.log('   GET    /api/ventas/stats - Estadísticas');
 console.log('   GET    /api/ventas/productos-mas-vendidos');
