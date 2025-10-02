@@ -8,9 +8,10 @@ class Venta {
     // CREAR NUEVA VENTA
     // ============================================================================
     static async create(ventaData) {
-        const connection = await pool.getConnection()()();
+        let connection;
         
         try {
+            connection = await pool.getConnection();
             await connection.beginTransaction();
 
             // 1. Generar número de factura automático
@@ -156,10 +157,14 @@ class Venta {
             };
 
         } catch (error) {
-            await connection.rollback();
+            if (connection) {
+                await connection.rollback();
+            }
             throw error;
         } finally {
-            connection.release();
+            if (connection) {
+                connection.release();
+            }
         }
     }
 
@@ -387,9 +392,10 @@ class Venta {
     // ANULAR VENTA (Soft delete con reversa de inventario)
     // ============================================================================
     static async anular(id, usuario_id, motivo) {
-        const connection = await pool.getConnection()();
+        let connection;
         
         try {
+            connection = await pool.getConnection();
             await connection.beginTransaction();
 
             // 1. Obtener venta y su detalle
@@ -412,11 +418,14 @@ class Venta {
                     // Registrar movimiento
                     await connection.query(
                         `INSERT INTO movimientos_inventario 
-                         (medicamento_id, tipo_movimiento, cantidad, motivo, usuario_id)
-                         VALUES (?, 'entrada', ?, ?, ?)`,
+                         (tipo_producto, producto_id, tipo_movimiento, cantidad_anterior, 
+                          cantidad_movimiento, cantidad_nueva, motivo, usuario_id)
+                         VALUES ('medicamento', ?, 'entrada', ?, ?, ?, ?)`,
                         [
                             item.producto_id,
+                            0, // cantidad_anterior (placeholder)
                             item.cantidad,
+                            0, // cantidad_nueva (placeholder)
                             `Anulación venta ${venta.numero_factura}: ${motivo}`,
                             usuario_id
                         ]
@@ -477,10 +486,14 @@ class Venta {
             };
 
         } catch (error) {
-            await connection.rollback();
+            if (connection) {
+                await connection.rollback();
+            }
             throw error;
         } finally {
-            connection.release();
+            if (connection) {
+                connection.release();
+            }
         }
     }
 }
