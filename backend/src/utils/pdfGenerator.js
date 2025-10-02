@@ -6,8 +6,8 @@ class ComprobanteGenerator {
         return new Promise((resolve, reject) => {
             try {
                 const doc = new PDFDocument({ 
-                    size: [5.5 * 72, 8.5 * 72], // Media carta en puntos (5.5" x 8.5")
-                    margins: { top: 30, bottom: 30, left: 30, right: 30 }
+                    size: [8.5 * 72, 5.5 * 72], // Media carta horizontal: 8.5" ancho x 5.5" alto
+                    margins: { top: 30, bottom: 30, left: 40, right: 40 }
                 });
 
                 const chunks = [];
@@ -19,191 +19,181 @@ class ComprobanteGenerator {
                 // ============================================
                 // ENCABEZADO
                 // ============================================
-                doc.fontSize(18)
+                doc.fontSize(16)
                    .font('Helvetica-Bold')
                    .text('HIDROCOLON', { align: 'center' });
                 
-                doc.moveDown(0.3);
+                doc.moveDown(0.2);
                 
-                doc.fontSize(14)
+                doc.fontSize(12)
                    .font('Helvetica')
                    .text('COMPROBANTE DE VENTA', { align: 'center' });
                 
-                doc.moveDown(0.8);
+                doc.moveDown(0.5);
 
                 // ============================================
-                // INFORMACIÓN DE LA VENTA
+                // INFORMACIÓN DE LA VENTA (2 COLUMNAS)
                 // ============================================
                 const startY = doc.y;
                 
-                doc.fontSize(9)
+                // Columna izquierda
+                doc.fontSize(8)
                    .font('Helvetica-Bold')
-                   .text('Número de Factura:', 30, startY);
+                   .text('Número de Factura:', 40, startY);
                 doc.font('Helvetica')
-                   .text(venta.numero_factura, 140, startY);
+                   .text(venta.numero_factura, 130, startY);
 
                 doc.font('Helvetica-Bold')
-                   .text('Fecha:', 30, startY + 12);
+                   .text('Fecha:', 40, startY + 12);
                 doc.font('Helvetica')
                    .text(new Date(venta.fecha_creacion).toLocaleString('es-GT', {
                        dateStyle: 'medium',
                        timeStyle: 'short'
-                   }), 140, startY + 12);
+                   }), 130, startY + 12);
+
+                // Columna derecha
+                doc.font('Helvetica-Bold')
+                   .text('Vendedor:', 350, startY);
+                doc.font('Helvetica')
+                   .text(`${venta.vendedor_nombres} ${venta.vendedor_apellidos}`, 420, startY);
 
                 doc.font('Helvetica-Bold')
-                   .text('Vendedor:', 30, startY + 24);
+                   .text('Método de Pago:', 350, startY + 12);
                 doc.font('Helvetica')
-                   .text(`${venta.vendedor_nombres} ${venta.vendedor_apellidos}`, 140, startY + 24);
+                   .text(venta.metodo_pago.toUpperCase(), 420, startY + 12);
 
-                doc.font('Helvetica-Bold')
-                   .text('Método de Pago:', 30, startY + 36);
-                doc.font('Helvetica')
-                   .text(venta.metodo_pago.toUpperCase(), 140, startY + 36);
-
-                doc.moveDown(2.5);
+                doc.moveDown(1.8);
 
                 // ============================================
                 // DATOS DEL CLIENTE
                 // ============================================
-                doc.fontSize(10)
-                   .font('Helvetica-Bold')
-                   .text('DATOS DEL CLIENTE', { underline: true });
-                
-                doc.moveDown(0.3);
-                
                 doc.fontSize(9)
                    .font('Helvetica-Bold')
-                   .text('Cliente:', 30);
-                doc.font('Helvetica')
-                   .text(venta.cliente_nombre, 80);
-
-                doc.font('Helvetica-Bold')
-                   .text('NIT:', 30);
-                doc.font('Helvetica')
-                   .text(venta.cliente_nit, 80);
+                   .text('Cliente: ', { continued: true })
+                   .font('Helvetica')
+                   .text(venta.cliente_nombre, { continued: true })
+                   .font('Helvetica-Bold')
+                   .text(' | NIT: ', { continued: true })
+                   .font('Helvetica')
+                   .text(venta.cliente_nit);
 
                 if (venta.cliente_telefono) {
                     doc.font('Helvetica-Bold')
-                       .text('Teléfono:', 30);
-                    doc.font('Helvetica')
-                       .text(venta.cliente_telefono, 80);
+                       .text(' | Tel: ', { continued: true })
+                       .font('Helvetica')
+                       .text(venta.cliente_telefono);
                 }
 
-                doc.moveDown(1);
+                doc.moveDown(0.8);
 
                 // ============================================
                 // TABLA DE PRODUCTOS
                 // ============================================
-                doc.fontSize(10)
-                   .font('Helvetica-Bold')
-                   .text('DETALLE DE PRODUCTOS', { underline: true });
-                
-                doc.moveDown(0.3);
+                const tableTop = doc.y;
+                const col1 = 40;   // Cantidad
+                const col2 = 80;   // Descripción
+                const col3 = 450;  // Precio Unit.
+                const col4 = 530;  // Total
 
                 // Encabezado de tabla
-                const tableTop = doc.y;
-                const col1 = 30;   // Cantidad
-                const col2 = 70;   // Descripción
-                const col3 = 260;  // Precio Unit.
-                const col4 = 330;  // Total
-
                 doc.fontSize(8)
                    .font('Helvetica-Bold')
                    .text('Cant.', col1, tableTop)
                    .text('Descripción', col2, tableTop)
-                   .text('P.Unit.', col3, tableTop)
+                   .text('Precio Unit.', col3, tableTop)
                    .text('Total', col4, tableTop);
 
                 // Línea separadora
-                doc.moveTo(30, tableTop + 12)
-                   .lineTo(370, tableTop + 12)
+                doc.moveTo(40, tableTop + 12)
+                   .lineTo(580, tableTop + 12)
                    .stroke();
 
                 // Productos
                 let yPosition = tableTop + 18;
-                doc.font('Helvetica');
+                doc.font('Helvetica')
+                   .fontSize(8);
 
                 for (const item of venta.detalle) {
-                    if (yPosition > 550) {
+                    if (yPosition > 320) {
                         doc.addPage();
                         yPosition = 50;
                     }
 
                     doc.text(item.cantidad.toString(), col1, yPosition)
-                       .text(item.producto_nombre, col2, yPosition, { width: 180 })
-                       .text(`Q${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
-                       .text(`Q${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
+                       .text(item.producto_nombre, col2, yPosition, { width: 360 })
+                       .text(`Q ${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
+                       .text(`Q ${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
 
-                    yPosition += 15;
+                    yPosition += 14;
                 }
 
                 // Línea antes de totales
-                doc.moveTo(30, yPosition + 3)
-                   .lineTo(370, yPosition + 3)
+                doc.moveTo(40, yPosition + 3)
+                   .lineTo(580, yPosition + 3)
                    .stroke();
 
-                yPosition += 12;
+                yPosition += 10;
 
                 // ============================================
                 // TOTALES
                 // ============================================
-                doc.fontSize(9)
+                doc.fontSize(8)
                    .font('Helvetica-Bold');
 
-                doc.text('SUBTOTAL:', 240, yPosition)
+                doc.text('SUBTOTAL:', 450, yPosition)
                    .font('Helvetica')
-                   .text(`Q${parseFloat(venta.subtotal).toFixed(2)}`, 330, yPosition);
+                   .text(`Q ${parseFloat(venta.subtotal).toFixed(2)}`, 530, yPosition);
 
                 if (parseFloat(venta.descuento) > 0) {
                     yPosition += 12;
                     doc.font('Helvetica-Bold')
-                       .text('DESCUENTO:', 240, yPosition)
+                       .text('DESCUENTO:', 450, yPosition)
                        .font('Helvetica')
-                       .text(`Q${parseFloat(venta.descuento).toFixed(2)}`, 330, yPosition);
+                       .text(`Q ${parseFloat(venta.descuento).toFixed(2)}`, 530, yPosition);
                 }
 
                 yPosition += 12;
-                doc.fontSize(10)
+                doc.fontSize(9)
                    .font('Helvetica-Bold')
-                   .text('TOTAL:', 240, yPosition)
-                   .text(`Q${parseFloat(venta.total).toFixed(2)}`, 330, yPosition);
+                   .text('TOTAL:', 450, yPosition)
+                   .text(`Q ${parseFloat(venta.total).toFixed(2)}`, 530, yPosition);
 
                 // ============================================
                 // DETALLES DE PAGO
                 // ============================================
                 if (venta.metodo_pago === 'efectivo') {
-                    yPosition += 15;
-                    doc.fontSize(8)
+                    yPosition += 14;
+                    doc.fontSize(7)
                        .font('Helvetica')
-                       .text('Efectivo recibido:', 240, yPosition)
-                       .text(`Q${parseFloat(venta.efectivo_recibido).toFixed(2)}`, 330, yPosition);
+                       .text('Efectivo recibido:', 450, yPosition)
+                       .text(`Q ${parseFloat(venta.efectivo_recibido).toFixed(2)}`, 530, yPosition);
                     
                     yPosition += 10;
-                    doc.text('Cambio:', 240, yPosition)
-                       .text(`Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`, 330, yPosition);
+                    doc.text('Cambio:', 450, yPosition)
+                       .text(`Q ${parseFloat(venta.efectivo_cambio).toFixed(2)}`, 530, yPosition);
                 }
 
                 if (venta.metodo_pago === 'mixto') {
-                    yPosition += 15;
-                    doc.fontSize(8)
+                    yPosition += 14;
+                    doc.fontSize(7)
                        .font('Helvetica');
                     
                     if (parseFloat(venta.tarjeta_monto) > 0) {
-                        doc.text('Tarjeta:', 240, yPosition)
-                           .text(`Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`, 330, yPosition);
+                        doc.text('Tarjeta:', 450, yPosition)
+                           .text(`Q ${parseFloat(venta.tarjeta_monto).toFixed(2)}`, 530, yPosition);
                         yPosition += 10;
                     }
                     
                     if (parseFloat(venta.transferencia_monto) > 0) {
-                        doc.text('Transferencia:', 240, yPosition)
-                           .text(`Q${parseFloat(venta.transferencia_monto).toFixed(2)}`, 330, yPosition);
+                        doc.text('Transferencia:', 450, yPosition)
+                           .text(`Q ${parseFloat(venta.transferencia_monto).toFixed(2)}`, 530, yPosition);
                         yPosition += 10;
                     }
                     
                     const efectivo = parseFloat(venta.total) - parseFloat(venta.tarjeta_monto) - parseFloat(venta.transferencia_monto);
                     if (efectivo > 0) {
-                        doc.text('Efectivo:', 240, yPosition)
-                           .text(`Q${efectivo.toFixed(2)}`, 330, yPosition);
+                        doc.text('Efectivo:', 450, yPosition)
+                           .text(`Q ${efectivo.toFixed(2)}`, 530, yPosition);
                     }
                 }
 
@@ -212,7 +202,7 @@ class ComprobanteGenerator {
                 // ============================================
                 doc.fontSize(7)
                    .font('Helvetica')
-                   .text('Gracias por su compra', 30, 580, { align: 'center', width: 340 });
+                   .text('Gracias por su compra', 40, 360, { align: 'center', width: 532 });
 
                 doc.end();
 
