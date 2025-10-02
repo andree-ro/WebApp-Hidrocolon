@@ -89,7 +89,7 @@ router.post('/',
             }
             
             // Crear turno
-            const [result] = await db.query(
+            const [result] = await db.execute(
                 `INSERT INTO turnos (
                     usuario_id,
                     efectivo_inicial,
@@ -103,7 +103,7 @@ router.post('/',
             const turno_id = result.insertId;
             
             // Obtener el turno creado
-            const [turno] = await db.query(
+            const [turno] = await db.execute(
                 'SELECT * FROM turnos WHERE id = ?',
                 [turno_id]
             );
@@ -169,7 +169,7 @@ router.put('/:id/cerrar',
             const diferencia = efectivo - efectivo_esperado;
             
             // Actualizar turno
-            await db.query(
+            await db.execute(
                 `UPDATE turnos 
                  SET efectivo_final = ?,
                      estado = 'cerrado',
@@ -188,7 +188,7 @@ router.put('/:id/cerrar',
             );
             
             // Obtener turno actualizado
-            const [turnoActualizado] = await db.query(
+            const [turnoActualizado] = await db.execute(
                 'SELECT * FROM turnos WHERE id = ?',
                 [turno_id]
             );
@@ -251,7 +251,7 @@ router.get('/',
             const whereClause = whereConditions.join(' AND ');
             
             // Contar total
-            const [countResult] = await db.query(
+            const [countResult] = await db.execute(
                 `SELECT COUNT(*) as total FROM turnos WHERE ${whereClause}`,
                 queryParams
             );
@@ -315,7 +315,7 @@ router.get('/:id',
             }
             
             // Obtener ventas del turno
-            const [ventas] = await db.query(
+            const [ventas] = await db.execute(
                 `SELECT COUNT(*) as num_ventas,
                         SUM(total) as total_ventas
                  FROM ventas

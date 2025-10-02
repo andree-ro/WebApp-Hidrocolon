@@ -76,7 +76,7 @@ const crearVenta = async (req, res) => {
         // Validar stock disponible para medicamentos
         for (const item of detalle) {
             if (item.tipo_producto === 'medicamento') {
-                const [medicamentos] = await db.query(
+                const [medicamentos] = await db.execute(
                     'SELECT existencias, nombre FROM medicamentos WHERE id = ?',
                     [item.producto_id]
                 );
