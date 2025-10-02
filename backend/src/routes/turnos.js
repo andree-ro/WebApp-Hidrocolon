@@ -3,7 +3,7 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 // Importar middlewares
 const authMiddleware = require('../middleware/authMiddleware');
@@ -24,7 +24,7 @@ router.get('/actual',
             
             console.log(`🔍 Buscando turno actual para usuario ${usuario_id}`);
             
-            const [turnos] = await db.execute(
+            const [turnos] = await pool.execute(
                 `SELECT * FROM turnos 
                  WHERE usuario_id = ? 
                  AND estado = 'abierto'
@@ -89,7 +89,7 @@ router.post('/',
             }
             
             // Crear turno
-            const [result] = await db.execute(
+            const [result] = await pool.execute(
                 `INSERT INTO turnos (
                     usuario_id,
                     efectivo_inicial,
@@ -103,7 +103,7 @@ router.post('/',
             const turno_id = result.insertId;
             
             // Obtener el turno creado
-            const [turno] = await db.execute(
+            const [turno] = await pool.execute(
                 'SELECT * FROM turnos WHERE id = ?',
                 [turno_id]
             );
@@ -169,7 +169,7 @@ router.put('/:id/cerrar',
             const diferencia = efectivo - efectivo_esperado;
             
             // Actualizar turno
-            await db.execute(
+            await pool.execute(
                 `UPDATE turnos 
                  SET efectivo_final = ?,
                      estado = 'cerrado',
@@ -188,7 +188,7 @@ router.put('/:id/cerrar',
             );
             
             // Obtener turno actualizado
-            const [turnoActualizado] = await db.execute(
+            const [turnoActualizado] = await pool.execute(
                 'SELECT * FROM turnos WHERE id = ?',
                 [turno_id]
             );
@@ -251,7 +251,7 @@ router.get('/',
             const whereClause = whereConditions.join(' AND ');
             
             // Contar total
-            const [countResult] = await db.execute(
+            const [countResult] = await pool.execute(
                 `SELECT COUNT(*) as total FROM turnos WHERE ${whereClause}`,
                 queryParams
             );
@@ -259,7 +259,7 @@ router.get('/',
             const total = countResult[0].total;
             
             // Obtener turnos
-            const [turnos] = await db.execute(
+            const [turnos] = await pool.execute(
                 `SELECT * FROM turnos 
                  WHERE ${whereClause}
                  ORDER BY fecha_apertura DESC
@@ -299,7 +299,7 @@ router.get('/:id',
             const turno_id = req.params.id;
             const usuario_id = req.user.id;
             
-            const [turnos] = await db.execute(
+            const [turnos] = await pool.execute(
                 `SELECT t.*, u.nombres, u.apellidos
                  FROM turnos t
                  LEFT JOIN usuarios u ON t.usuario_id = u.id
@@ -315,7 +315,7 @@ router.get('/:id',
             }
             
             // Obtener ventas del turno
-            const [ventas] = await db.execute(
+            const [ventas] = await pool.execute(
                 `SELECT COUNT(*) as num_ventas,
                         SUM(total) as total_ventas
                  FROM ventas

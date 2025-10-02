@@ -3,7 +3,7 @@
 
 const Venta = require('../models/Venta');
 const DetalleVenta = require('../models/DetalleVenta');
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 // ============================================================================
 // CREAR NUEVA VENTA
@@ -76,7 +76,7 @@ const crearVenta = async (req, res) => {
         // Validar stock disponible para medicamentos
         for (const item of detalle) {
             if (item.tipo_producto === 'medicamento') {
-                const [medicamentos] = await db.execute(
+                const [medicamentos] = await pool.execute(
                     'SELECT existencias, nombre FROM medicamentos WHERE id = ?',
                     [item.producto_id]
                 );

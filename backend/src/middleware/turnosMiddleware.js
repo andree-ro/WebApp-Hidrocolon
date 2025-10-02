@@ -1,7 +1,7 @@
 // backend/src/middleware/turnosMiddleware.js
 // Middleware para validar que exista un turno abierto antes de realizar ventas
 
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 // ============================================================================
 // VALIDAR TURNO ABIERTO
@@ -13,7 +13,7 @@ const validarTurnoAbierto = async (req, res, next) => {
         console.log(`🔍 Validando turno abierto para usuario ${usuario_id}`);
         
         // Buscar turno abierto del usuario para el día actual
-        const [turnos] = await db.query(
+        const [turnos] = await pool.execute(
             `SELECT 
                 id, 
                 usuario_id,
@@ -66,7 +66,7 @@ const validarNoTurnoAbierto = async (req, res, next) => {
         console.log(`🔍 Validando que NO exista turno abierto para usuario ${usuario_id}`);
         
         // Buscar si hay algún turno abierto
-        const [turnos] = await db.query(
+        const [turnos] = await pool.execute(
             `SELECT id, fecha_apertura 
              FROM turnos 
              WHERE usuario_id = ? 
@@ -109,7 +109,7 @@ const validarTurnoParaCierre = async (req, res, next) => {
         
         console.log(`🔍 Validando turno ${turno_id} para cierre por usuario ${usuario_id}`);
         
-        const [turnos] = await db.query(
+        const [turnos] = await pool.execute(
             `SELECT * FROM turnos 
              WHERE id = ? 
              AND usuario_id = ?
