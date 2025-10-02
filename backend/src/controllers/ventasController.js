@@ -123,7 +123,7 @@ const crearVenta = async (req, res) => {
             subtotal += precio_total;
         }
 
-        const descuento = 0; // Por ahora sin descuentos
+        const descuento = parseFloat(req.body.descuento || 0);
         const total = subtotal - descuento;
 
         // Validar montos según método de pago
