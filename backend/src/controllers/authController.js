@@ -454,10 +454,12 @@ class AuthController {
 
             // 4. Buscar todos los usuarios administradores activos
             const [admins] = await connection.query(
-                `SELECT id, usuario, password_hash, nombres, apellidos 
-                FROM usuarios 
-                WHERE rol_nombre = ? 
-                AND activo = 1`,
+                `SELECT u.id, u.usuario, u.password_hash, u.nombres, u.apellidos 
+                FROM usuarios u
+                INNER JOIN roles r ON u.rol_id = r.id
+                WHERE r.nombre = ? 
+                AND u.activo = 1
+                AND r.activo = 1`,
                 ['administrador']
             );
 
