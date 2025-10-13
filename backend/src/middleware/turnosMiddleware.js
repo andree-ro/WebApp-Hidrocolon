@@ -1,5 +1,6 @@
 // backend/src/middleware/turnosMiddleware.js
 // Middleware para validar que exista un turno abierto antes de realizar ventas
+// ⚠️ VERSIÓN TEMPORAL SIN VALIDACIÓN DE FECHA (solo para testing)
 
 const { pool } = require('../config/database');
 
@@ -8,11 +9,12 @@ const { pool } = require('../config/database');
 // ============================================================================
 const validarTurnoAbierto = async (req, res, next) => {
     try {
-        const usuario_id = req.user.id; // Viene del middleware de autenticación
+        const usuario_id = req.user.id;
         
         console.log(`🔍 Validando turno abierto para usuario ${usuario_id}`);
         
-        // Buscar turno abierto del usuario para el día actual
+        // ⚠️ FIX TEMPORAL: Eliminar validación de fecha para testing
+        // Buscar turno abierto del usuario (sin importar la fecha)
         const [turnos] = await pool.execute(
             `SELECT 
                 id, 
@@ -23,7 +25,8 @@ const validarTurnoAbierto = async (req, res, next) => {
              FROM turnos 
              WHERE usuario_id = ? 
              AND estado = 'abierto' 
-             AND DATE(fecha_apertura) = CURDATE()
+             -- ⚠️ COMENTADO TEMPORALMENTE: AND DATE(fecha_apertura) = CURDATE()
+             ORDER BY fecha_apertura DESC
              LIMIT 1`,
             [usuario_id]
         );
@@ -40,6 +43,7 @@ const validarTurnoAbierto = async (req, res, next) => {
         
         const turno = turnos[0];
         console.log(`✅ Turno encontrado: ID ${turno.id}, Apertura: ${turno.fecha_apertura}`);
+        console.log(`⚠️  MODO TESTING: No se valida que el turno sea de hoy`);
         
         // Adjuntar información del turno al request para usarla en el controller
         req.turno = turno;
@@ -69,7 +73,7 @@ const validarNoTurnoAbierto = async (req, res, next) => {
         const [turnos] = await pool.execute(
             `SELECT id, fecha_apertura 
              FROM turnos 
-             WHERE usuario_id = ? 
+             WHERE usuario_id = ?
              AND estado = 'abierto'
              LIMIT 1`,
             [usuario_id]
