@@ -135,7 +135,7 @@ console.log('✅ Slow down configurado');
 
 const generalRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: NODE_ENV === 'development' ? 2000 : 1000,
+    max: NODE_ENV === 'development' ? 50000 : 1000, // 🔥 50k en dev
     message: {
         success: false,
         message: 'Demasiadas requests. Intente de nuevo más tarde',
@@ -156,8 +156,8 @@ app.use(generalRateLimit);
 console.log('✅ Rate limiting general configurado');
 
 const apiRateLimit = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: NODE_ENV === 'development' ? 300 : 100,
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: NODE_ENV === 'development' ? 50000 : 200, // 🔥 50k en dev, 200 en prod
     message: {
         success: false,
         message: 'Límite de API excedido',
@@ -166,6 +166,7 @@ const apiRateLimit = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
+        console.warn(`⚠️ Rate limit API alcanzado - IP: ${req.ip}`);
         res.status(429).json({
             success: false,
             message: 'Límite de API excedido',
