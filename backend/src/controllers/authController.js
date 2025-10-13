@@ -419,6 +419,8 @@ class AuthController {
     }
 
     async verificarPassword(req, res) {
+        let connection = null;
+        
         try {
             const { password } = req.body;
             
@@ -438,13 +440,25 @@ class AuthController {
                 });
             }
 
-            // 3. Buscar todos los usuarios administradores activos
-            const pool = require('../config/database');
-            const [admins] = await pool.query(
+            // 3. Crear conexión a la BD (usando el mismo patrón que User.js)
+            const mysql = require('mysql2/promise');
+            connection = await mysql.createConnection({
+                host: process.env.DB_HOST,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_NAME,
+                port: process.env.DB_PORT || 3306,
+                charset: 'utf8mb4',
+                timezone: 'Z'
+            });
+
+            // 4. Buscar todos los usuarios administradores activos
+            const [admins] = await connection.query(
                 `SELECT id, usuario, password_hash, nombres, apellidos 
                 FROM usuarios 
-                WHERE rol_nombre = 'administrador' 
-                AND activo = 1`
+                WHERE rol_nombre = ? 
+                AND activo = 1`,
+                ['administrador']
             );
 
             if (admins.length === 0) {
@@ -455,7 +469,7 @@ class AuthController {
                 });
             }
 
-            // 4. Verificar la contraseña contra CUALQUIER administrador
+            // 5. Verificar la contraseña contra CUALQUIER administrador
             let passwordValida = false;
             let adminAutenticado = null;
 
@@ -468,13 +482,12 @@ class AuthController {
                         usuario: admin.usuario,
                         nombre_completo: `${admin.nombres} ${admin.apellidos}`
                     };
-                    break; // Salir del loop al encontrar match
+                    break;
                 }
             }
 
-            // 5. Responder según el resultado
+            // 6. Responder según el resultado
             if (passwordValida) {
-                // Log de auditoría
                 console.log(`✅ Contraseña de admin verificada exitosamente`);
                 console.log(`   👤 Solicitante: ${req.user.usuario} (${req.user.rol_nombre})`);
                 console.log(`   🔑 Autenticó con credenciales de: ${adminAutenticado.usuario}`);
@@ -489,7 +502,6 @@ class AuthController {
                     }
                 });
             } else {
-                // Log de intento fallido
                 console.warn(`⚠️ Intento fallido de verificación de contraseña admin`);
                 console.warn(`   👤 Usuario: ${req.user.usuario}`);
                 console.warn(`   📍 IP: ${req.ip}`);
@@ -502,11 +514,21 @@ class AuthController {
 
         } catch (error) {
             console.error(`❌ Error verificando contraseña: ${error.message} - IP: ${req.ip}`);
+            console.error('Stack:', error.stack);
             
             return res.status(500).json({
                 success: false,
                 message: 'Error interno al verificar contraseña'
             });
+        } finally {
+            // 7. IMPORTANTE: Cerrar la conexión
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (error) {
+                    console.error('Error cerrando conexión:', error.message);
+                }
+            }
         }
     }
 }
