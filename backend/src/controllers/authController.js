@@ -417,6 +417,98 @@ class AuthController {
             Promise.resolve(fn(req, res, next)).catch(next);
         };
     }
+
+    async verificarPassword(req, res) {
+        try {
+            const { password } = req.body;
+            
+            // 1. Validar que venga la contraseña
+            if (!password || password.trim().length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Contraseña es requerida'
+                });
+            }
+
+            // 2. Verificar que el usuario esté autenticado (viene del middleware)
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'No autenticado'
+                });
+            }
+
+            // 3. Buscar todos los usuarios administradores activos
+            const pool = require('../config/database');
+            const [admins] = await pool.query(
+                `SELECT id, usuario, password_hash, nombres, apellidos 
+                FROM usuarios 
+                WHERE rol_nombre = 'administrador' 
+                AND activo = 1`
+            );
+
+            if (admins.length === 0) {
+                console.error('❌ No hay administradores activos en el sistema');
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error del sistema: No hay administradores disponibles'
+                });
+            }
+
+            // 4. Verificar la contraseña contra CUALQUIER administrador
+            let passwordValida = false;
+            let adminAutenticado = null;
+
+            for (const admin of admins) {
+                const esValida = await bcrypt.compare(password, admin.password_hash);
+                if (esValida) {
+                    passwordValida = true;
+                    adminAutenticado = {
+                        id: admin.id,
+                        usuario: admin.usuario,
+                        nombre_completo: `${admin.nombres} ${admin.apellidos}`
+                    };
+                    break; // Salir del loop al encontrar match
+                }
+            }
+
+            // 5. Responder según el resultado
+            if (passwordValida) {
+                // Log de auditoría
+                console.log(`✅ Contraseña de admin verificada exitosamente`);
+                console.log(`   👤 Solicitante: ${req.user.usuario} (${req.user.rol_nombre})`);
+                console.log(`   🔑 Autenticó con credenciales de: ${adminAutenticado.usuario}`);
+                console.log(`   📍 IP: ${req.ip}`);
+                
+                return res.status(200).json({
+                    success: true,
+                    message: 'Contraseña de administrador verificada',
+                    data: {
+                        admin_verificado: adminAutenticado.nombre_completo,
+                        usuario_actual: req.user.usuario
+                    }
+                });
+            } else {
+                // Log de intento fallido
+                console.warn(`⚠️ Intento fallido de verificación de contraseña admin`);
+                console.warn(`   👤 Usuario: ${req.user.usuario}`);
+                console.warn(`   📍 IP: ${req.ip}`);
+                
+                return res.status(401).json({
+                    success: false,
+                    message: 'Contraseña incorrecta'
+                });
+            }
+
+        } catch (error) {
+            console.error(`❌ Error verificando contraseña: ${error.message} - IP: ${req.ip}`);
+            
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno al verificar contraseña'
+            });
+        }
+    }
 }
 
 // Exportar instancia única del controlador

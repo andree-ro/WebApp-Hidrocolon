@@ -123,6 +123,18 @@ router.post('/refresh',
     authController.refresh
 );
 
+/**
+ * @route   POST /api/auth/verificar-password
+ * @desc    Verificar si una contraseña pertenece a un administrador
+ * @access  Private (requiere autenticación)
+ * @body    { password: string }
+ */
+router.post(
+    '/verificar-password',
+    authMiddleware.authenticate(), // Requiere estar autenticado
+    authController.verificarPassword
+);
+
 // ============================================================================
 // 🔒 RUTAS PROTEGIDAS (Requieren autenticación)
 // ============================================================================
