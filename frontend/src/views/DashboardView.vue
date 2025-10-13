@@ -302,11 +302,18 @@
                 </div>
               </button>
 
-              <!-- Nueva Venta (próximamente) -->
-              <button class="quick-action-btn bg-gray-50 border-gray-200 cursor-not-allowed opacity-50">
+              <!-- Nueva Venta (ACTIVO) -->
+              <button 
+                @click="navegarA('carrito')"
+                class="quick-action-btn bg-gradient-to-br from-orange-500 to-orange-600 border-orange-400 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
                 <span class="text-2xl mb-2 block">🛒</span>
-                <span class="text-xs sm:text-sm font-medium text-gray-500">Nueva Venta</span>
-                <div class="text-xs text-gray-400 mt-1">Próximamente</div>
+                <span class="text-xs sm:text-sm font-medium">Nueva Venta</span>
+                <div class="text-xs mt-1 opacity-90">Sistema de ventas</div>
+                <!-- Badge NUEVO -->
+                <div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                  ¡Nuevo!
+                </div>
               </button>
             </div>
           </div>
@@ -423,27 +430,31 @@
                 </div>
               </router-link>
 
-              <!-- Carrito (próximamente) -->
-              <div class="module-card opacity-60 cursor-not-allowed">
+              <!-- Carrito/Ventas (ACTIVO) -->
+              <router-link to="/carrito" class="module-card group">
                 <div class="module-header">
-                  <div class="module-icon bg-gray-100">
+                  <div class="module-icon bg-orange-100 group-hover:bg-orange-200">
                     🛒
                   </div>
                   <div class="flex-1">
-                    <h4 class="module-title text-gray-500">Sistema de Ventas</h4>
-                    <p class="module-description text-gray-400">Carrito y facturación</p>
+                    <h4 class="module-title">Sistema de Ventas</h4>
+                    <p class="module-description">Carrito y facturación</p>
                   </div>
-                  <div class="module-status bg-gray-100 text-gray-600">
-                    ⏳ Próximo
+                  <div class="module-status bg-green-100 text-green-800">
+                    ✅ Activo
                   </div>
                 </div>
                 <div class="module-stats">
                   <div class="stat-item">
-                    <span class="stat-value text-gray-400">--</span>
-                    <span class="stat-label text-gray-400">En desarrollo</span>
+                    <span class="stat-value">{{ stats.ventas?.total_hoy || 0 }}</span>
+                    <span class="stat-label">Ventas hoy</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-value text-green-600">Q{{ stats.ventas?.monto_hoy || '0.00' }}</span>
+                    <span class="stat-label">Monto vendido</span>
                   </div>
                 </div>
-              </div>
+              </router-link>
 
               <!-- Financiero (próximamente) -->
               <div class="module-card opacity-60 cursor-not-allowed">
@@ -884,7 +895,7 @@ export default {
           break
         case 'carrito':
           // Por implementar
-          console.log('🛒 Módulo carrito en desarrollo')
+          this.$router.push('/carrito')
           break
         case 'financiero':
           // Por implementar
