@@ -1,11 +1,11 @@
 // frontend/src/router/index.js
-// Router limpio del Sistema Hidrocolon - Solo archivos existentes
+// Router del Sistema Hidrocolon - ACTUALIZADO CON PACIENTES Y CARRITO
 
 import { createRouter, createWebHistory } from 'vue-router'
 import authService from '@/services/authService'
 
 // =====================================
-// IMPORTAR COMPONENTES EXISTENTES ÚNICAMENTE
+// IMPORTAR COMPONENTES EXISTENTES + PACIENTES
 // =====================================
 
 // Vistas principales existentes
@@ -14,9 +14,10 @@ import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
+import PacientesView from '@/views/PacientesView.vue'
 
 // =====================================
-// DEFINIR RUTAS - SOLO EXISTENTES
+// DEFINIR RUTAS - INCLUYENDO PACIENTES Y CARRITO
 // =====================================
 
 const routes = [
@@ -88,7 +89,33 @@ const routes = [
     }
   },
 
-  // Página 404 simple - sin importar archivo inexistente
+  // Módulo Pacientes
+  {
+    path: '/pacientes',
+    name: 'Pacientes',
+    component: PacientesView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Pacientes - Sistema Hidrocolon',
+      breadcrumb: 'Gestión de Pacientes',
+      description: 'Administra información de pacientes, citas y seguimiento médico'
+    }
+  },
+
+  // Módulo Carrito/Ventas
+  {
+    path: '/carrito',
+    name: 'Carrito',
+    component: () => import('../views/CarritoView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Sistema de Ventas - Sistema Hidrocolon',
+      breadcrumb: 'Carrito',
+      description: 'Gestión de ventas y facturación'
+    }
+  },
+
+  // Página 404 simple
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -136,64 +163,97 @@ const router = createRouter({
 })
 
 // =====================================
-// GUARDS DE NAVEGACIÓN
+// GUARDS DE NAVEGACIÓN - CON LOGS DETALLADOS
 // =====================================
 
 // Guard global - verificar autenticación
 router.beforeEach(async (to, from, next) => {
-  console.log(`🧭 Navegando a: ${to.name} (${to.path})`)
+  console.log('═══════════════════════════════════════════════════════')
+  console.log(`🧭 NAVEGANDO A: ${to.name} (${to.path})`)
+  console.log(`📍 DESDE: ${from.name || 'inicial'} (${from.path})`)
+  console.log('═══════════════════════════════════════════════════════')
   
   // Actualizar título de la página
   if (to.meta.title) {
     document.title = to.meta.title
   }
 
-  // Verificar autenticación
+  // ========== PASO 1: VERIFICAR SI REQUIERE AUTENTICACIÓN ==========
+  console.log(`🔐 ¿Requiere auth? ${to.meta.requiresAuth}`)
+  
   if (to.meta.requiresAuth) {
-    if (!authService.isAuthenticated()) {
-      console.log('🔒 Redirigiendo a login - usuario no autenticado')
+    console.log('🔒 ✅ Ruta requiere autenticación, verificando...')
+    
+    const isAuth = authService.isAuthenticated()
+    console.log('🔑 authService.isAuthenticated():', isAuth)
+    
+    if (!isAuth) {
+      console.log('❌ Usuario NO autenticado')
+      console.log('🔄 Redirigiendo a Login...')
       next({
         name: 'Login',
         query: { redirect: to.fullPath }
       })
       return
     }
+    
+    console.log('✅ Usuario AUTENTICADO correctamente')
 
-    // Verificar permisos de administrador si es necesario
+    // ========== PASO 2: VERIFICAR PERMISOS DE ADMIN (SI APLICA) ==========
     if (to.meta.adminOnly) {
+      console.log('👑 Ruta requiere permisos de administrador')
       const user = authService.getUser()
+      console.log('👤 Usuario actual:', user)
+      console.log('🎭 Rol del usuario:', user?.rol_nombre)
+      
       if (!user || user.rol_nombre !== 'administrador') {
-        console.log('⛔ Acceso denegado - se requieren permisos de administrador')
+        console.log('⛔ ACCESO DENEGADO - No es administrador')
+        console.log('🔄 Redirigiendo a Dashboard...')
         next({ name: 'Dashboard' })
         return
       }
+      console.log('✅ Usuario ES administrador')
+    } else {
+      console.log('ℹ️ Ruta NO requiere permisos especiales')
+    }
+  } else {
+    console.log('ℹ️ Ruta pública, no requiere autenticación')
+  }
+  
+  // ========== PASO 3: EVITAR IR A LOGIN SI YA ESTÁ AUTENTICADO ==========
+  if (to.name === 'Login') {
+    console.log('🚪 Destino es Login, verificando si ya está autenticado...')
+    if (authService.isAuthenticated()) {
+      console.log('✅ Usuario YA autenticado')
+      console.log('🔄 Redirigiendo a Dashboard en lugar de Login...')
+      next({ name: 'Dashboard' })
+      return
+    } else {
+      console.log('ℹ️ Usuario no autenticado, permitir acceso a Login')
     }
   }
   
-  // Si ya está autenticado y va a login, redirigir a dashboard
-  if (to.name === 'Login' && authService.isAuthenticated()) {
-    console.log('✅ Usuario ya autenticado, redirigiendo a dashboard')
-    next({ name: 'Dashboard' })
-    return
-  }
-  
+  // ========== PASO 4: PERMITIR NAVEGACIÓN ==========
+  console.log('✅✅✅ NAVEGACIÓN PERMITIDA A:', to.name)
+  console.log('═══════════════════════════════════════════════════════')
   next()
 })
 
 // Guard posterior a la navegación
 router.afterEach((to, from) => {
-  console.log(`📍 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
+  console.log(`🎯 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
 })
 
 // Guard de error
 router.onError((error) => {
-  console.error('❌ Error en router:', error)
+  console.error('❌❌❌ ERROR EN ROUTER:', error)
+  console.error('Stack trace:', error.stack)
 })
 
 export default router
 
 // ==========================================
-// UTILIDADES DE NAVEGACIÓN - SOLO RUTAS EXISTENTES
+// UTILIDADES DE NAVEGACIÓN - INCLUYENDO PACIENTES Y CARRITO
 // ==========================================
 
 export const navegarA = {
@@ -201,6 +261,8 @@ export const navegarA = {
   farmacia: () => router.push({ name: 'Farmacia' }),
   extras: () => router.push({ name: 'Extras' }),
   servicios: () => router.push({ name: 'Servicios' }),
+  pacientes: () => router.push({ name: 'Pacientes' }),
+  carrito: () => router.push({ name: 'Carrito' }),
   login: (redirect) => router.push({ 
     name: 'Login', 
     query: redirect ? { redirect } : {} 
@@ -239,7 +301,7 @@ export const obtenerBreadcrumbs = (route) => {
 }
 
 // ==========================================
-// MENÚ SOLO CON MÓDULOS EXISTENTES
+// MENÚ CON PACIENTES Y CARRITO AGREGADOS
 // ==========================================
 
 export const menuItems = [
@@ -274,6 +336,22 @@ export const menuItems = [
     title: 'Servicios Médicos',
     description: 'Gestión de servicios y precios',
     active: true
+  },
+  {
+    name: 'Pacientes',
+    path: '/pacientes',
+    icon: 'users',
+    title: 'Gestión de Pacientes',
+    description: 'Administra pacientes, citas y seguimiento',
+    active: true
+  },
+  {
+    name: 'Carrito',
+    path: '/carrito',
+    icon: 'shopping-cart',
+    title: 'Sistema de Ventas',
+    description: 'Gestión de ventas y facturación',
+    active: true
   }
 ]
 
@@ -305,6 +383,7 @@ export const debugRouter = () => {
   console.log('- Ruta actual:', router.currentRoute.value)
   console.log('- Usuario autenticado:', authService.isAuthenticated())
   console.log('- Datos de usuario:', authService.getUser())
+  console.log('- Módulos disponibles: Dashboard, Farmacia, Extras, Servicios, Pacientes, Carrito')
 }
 
 // Exportar debug globalmente para console
