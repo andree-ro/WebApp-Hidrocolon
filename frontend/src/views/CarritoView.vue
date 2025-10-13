@@ -620,42 +620,80 @@ async function aplicarDescuentoConPassword() {
     return
   }
   
-  // Si intenta poner un descuento mayor a 0
-  if (descuentoTemporal.value > 0) {
+  // Si intenta REDUCIR el descuento (ej: de 10% a 5%), permitir sin contraseña
+  if (descuentoTemporal.value < carritoStore.descuentoGlobal) {
+    carritoStore.setDescuento(descuentoTemporal.value)
+    console.log('✅ Descuento reducido sin contraseña:', descuentoTemporal.value)
+    return
+  }
+  
+  // Si intenta AUMENTAR el descuento (ej: de 0% a 10%), SIEMPRE pedir contraseña
+  if (descuentoTemporal.value > carritoStore.descuentoGlobal) {
     const usuario = authService.getUser()
     console.log('👤 Usuario actual:', usuario)
+    console.log('📊 Descuento actual:', carritoStore.descuentoGlobal, '% → Nuevo:', descuentoTemporal.value, '%')
     
-    // Si NO es administrador, pedir contraseña
-    if (usuario.rol_nombre !== 'administrador') {
-      const password = prompt('🔒 Se requiere contraseña de administrador para aplicar descuentos:')
-      
-      if (!password) {
-        descuentoTemporal.value = carritoStore.descuentoGlobal
-        alert('❌ Descuento cancelado')
-        return
-      }
-      
-      // TODO: Validar contraseña contra el backend
-      // Por ahora, verificamos que tenga al menos 4 caracteres
-      if (password.trim().length < 4) {
-        descuentoTemporal.value = carritoStore.descuentoGlobal
-        alert('❌ Contraseña inválida')
-        return
-      }
-      
-      // Aquí deberías hacer una llamada al backend para validar:
-      // const validacion = await authService.verificarPassword(password)
-      // if (!validacion.success) { ... }
-      
-      console.log('✅ Contraseña aceptada (modo testing)')
-    } else {
-      console.log('✅ Usuario es administrador, no requiere contraseña')
+    // 🔐 IMPORTANTE: Pedir contraseña SIEMPRE (incluso si es admin)
+    const password = prompt(
+      '🔐 Se requiere contraseña de ADMINISTRADOR para aplicar/aumentar descuentos:\n\n' +
+      (usuario.rol_nombre === 'administrador' 
+        ? '(Ingresa TU contraseña de admin para confirmar)' 
+        : '(Ingresa la contraseña de cualquier administrador)')
+    )
+    
+    // Si el usuario cancela el prompt
+    if (password === null) {
+      descuentoTemporal.value = carritoStore.descuentoGlobal
+      console.log('❌ Usuario canceló ingreso de contraseña')
+      alert('❌ Descuento cancelado')
+      return
     }
     
-    carritoStore.setDescuento(descuentoTemporal.value)
-    alert(`✅ Descuento de ${descuentoTemporal.value}% aplicado`)
-  } else {
-    carritoStore.setDescuento(0)
+    // Si el usuario ingresa una contraseña vacía
+    if (password.trim().length === 0) {
+      descuentoTemporal.value = carritoStore.descuentoGlobal
+      alert('❌ Contraseña no puede estar vacía')
+      return
+    }
+    
+    // Guardar descuento anterior para revertir en caso de error
+    const descuentoAnterior = carritoStore.descuentoGlobal
+    console.log('🔄 Verificando contraseña con el servidor...')
+    
+    try {
+      // ✅ Verificar contraseña contra el backend
+      const validacion = await authService.verificarPasswordAdmin(password)
+      
+      if (validacion.success) {
+        // ✅ Contraseña válida - aplicar descuento
+        carritoStore.setDescuento(descuentoTemporal.value)
+        console.log('✅ Descuento aplicado:', descuentoTemporal.value, '%')
+        console.log('👤 Autorizado por:', validacion.data?.admin_verificado || 'Administrador')
+        
+        alert(
+          `✅ Descuento del ${descuentoTemporal.value}% aplicado correctamente\n\n` +
+          `Autorizado por: ${validacion.data?.admin_verificado || 'Administrador'}`
+        )
+      } else {
+        // ❌ Contraseña incorrecta - revertir descuento
+        descuentoTemporal.value = descuentoAnterior
+        console.error('❌ Contraseña incorrecta')
+        
+        alert(
+          `❌ ${validacion.message || 'Contraseña incorrecta'}\n\n` +
+          'El descuento NO fue aplicado.'
+        )
+      }
+    } catch (error) {
+      // ❌ Error de conexión u otro error
+      descuentoTemporal.value = descuentoAnterior
+      console.error('❌ Error verificando contraseña:', error)
+      
+      alert(
+        '❌ Error al verificar la contraseña\n\n' +
+        'Por favor verifica tu conexión e intenta nuevamente.'
+      )
+    }
   }
 }
 

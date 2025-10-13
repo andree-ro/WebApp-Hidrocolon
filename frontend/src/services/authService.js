@@ -336,6 +336,60 @@ const authService = {
       
       return false
     }
+  },
+
+  async verificarPasswordAdmin(password) {
+    try {
+      if (!password || password.trim().length === 0) {
+        return {
+          success: false,
+          message: 'Contraseña es requerida'
+        }
+      }
+
+      console.log('🔐 Verificando contraseña de administrador...')
+      
+      const response = await api.post('/auth/verificar-password', {
+        password: password.trim()
+      })
+      
+      if (response.data.success) {
+        console.log('✅ Contraseña de administrador verificada')
+        console.log('👤 Admin verificado:', response.data.data?.admin_verificado)
+        return {
+          success: true,
+          message: response.data.message,
+          data: response.data.data
+        }
+      } else {
+        console.log('❌ Contraseña incorrecta')
+        return {
+          success: false,
+          message: response.data.message
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando contraseña admin:', error)
+      
+      // Manejar errores específicos
+      if (error.response?.status === 401) {
+        return {
+          success: false,
+          message: 'Contraseña incorrecta'
+        }
+      } else if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data?.message || 'Datos inválidos'
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Error al verificar contraseña. Intente nuevamente'
+      }
+    }
   }
 }
 
