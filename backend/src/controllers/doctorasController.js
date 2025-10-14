@@ -248,7 +248,5 @@ exports.obtenerEstadisticas = async (req, res) => {
     }
 };
 
-// ============================================================================
-// ESTA LÍNEA ES CRÍTICA - EXPORTA TODO
-// ============================================================================
-module.exports = exports;
+// ✅ YA NO NECESITAS ESTA LÍNEA:
+// module.exports = exports;
