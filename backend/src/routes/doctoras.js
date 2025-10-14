@@ -15,7 +15,7 @@ router.get('/', simpleAuth, doctorasController.listarDoctoras);
 router.get('/:id', simpleAuth, doctorasController.obtenerDoctora);
 
 // GET /api/doctoras/:id/estadisticas - Estadísticas de una doctora
-// router.get('/:id/estadisticas', simpleAuth, doctorasController.obtenerEstadisticas);
+router.get('/:id/estadisticas', simpleAuth, doctorasController.obtenerEstadisticas);
 
 // ============================================================================
 // RUTAS DE ADMINISTRACIÓN (solo admin puede crear/editar/eliminar)
