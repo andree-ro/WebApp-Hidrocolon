@@ -40,6 +40,7 @@ const serviciosRoutes = require('./src/routes/servicios');
 const pacientesRoutes = require('./src/routes/pacientes');
 const ventasRoutes = require('./src/routes/ventas');
 const turnosRoutes = require('./src/routes/turnos');
+const doctorasRoutes = require('./src/routes/doctoras');
 
 const app = express();
 
@@ -257,6 +258,8 @@ console.log('✅ Rutas de ventas configuradas');
 
 app.use('/api/turnos', turnosRoutes);
 console.log('✅ Rutas de turnos configuradas');
+
+app.use('/api/doctoras', doctorasRoutes);
 
 // ============================================================================
 // RUTAS ADICIONALES
