@@ -69,8 +69,8 @@ class Venta {
                     `INSERT INTO detalle_ventas (
                         venta_id, tipo_producto, producto_id, producto_nombre,
                         cantidad, precio_unitario, precio_total,
-                        porcentaje_comision, monto_comision
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        porcentaje_comision, monto_comision, doctora_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         venta_id,
                         item.tipo_producto,
@@ -80,7 +80,8 @@ class Venta {
                         item.precio_unitario,
                         item.precio_total,
                         item.porcentaje_comision || 0,
-                        item.monto_comision || 0
+                        item.monto_comision || 0,
+                        item.doctora_id || null  // ← NUEVO CAMPO
                     ]
                 );
 
