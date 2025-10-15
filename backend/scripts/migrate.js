@@ -405,6 +405,23 @@ async function runMigration() {
         `);
         console.log('✅ Tabla creada: movimientos_inventario');
 
+        // ============================================================================
+        // NUEVA MIGRACIÓN: TABLA DOCTORAS (Sistema de Comisiones)
+        // ============================================================================
+        console.log('👩‍⚕️ Creando tabla doctoras...');
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS doctoras (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                activo BOOLEAN DEFAULT 1,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_nombre (nombre),
+                INDEX idx_activo (activo)
+            )
+        `);
+        console.log('✅ Tabla creada: doctoras');
+
         console.log('🔄 Insertando datos iniciales...');
 
         // DATOS INICIALES
@@ -445,6 +462,59 @@ async function runMigration() {
         `);
         console.log('✅ Datos insertados: usuarios');
 
+        // ============================================================================
+        // DATOS INICIALES: DOCTORAS
+        // ============================================================================
+        await connection.execute(`
+            INSERT IGNORE INTO doctoras (nombre) VALUES 
+            ('Doctora Juana'),
+            ('Doctora Edith'),
+            ('Clínica'),
+            ('Otras Doctoras')
+        `);
+        console.log('✅ Datos insertados: doctoras');
+
+        // ============================================================================
+        // AGREGAR CAMPO doctora_id A detalle_ventas
+        // ============================================================================
+        console.log('🔧 Verificando campo doctora_id en detalle_ventas...');
+        
+        const [columns] = await connection.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'detalle_ventas' 
+            AND COLUMN_NAME = 'doctora_id'
+            AND TABLE_SCHEMA = DATABASE()
+        `);
+
+        if (columns.length === 0) {
+            console.log('➕ Agregando campo doctora_id a detalle_ventas...');
+            await connection.execute(`
+                ALTER TABLE detalle_ventas 
+                ADD COLUMN doctora_id INT NULL AFTER monto_comision
+            `);
+            console.log('✅ Campo doctora_id agregado');
+
+            // Agregar foreign key
+            await connection.execute(`
+                ALTER TABLE detalle_ventas
+                ADD CONSTRAINT fk_detalle_ventas_doctora 
+                FOREIGN KEY (doctora_id) 
+                REFERENCES doctoras(id) 
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+            `);
+            console.log('✅ Foreign key creada: fk_detalle_ventas_doctora');
+
+            // Agregar índice
+            await connection.execute(`
+                CREATE INDEX idx_detalle_ventas_doctora ON detalle_ventas(doctora_id)
+            `);
+            console.log('✅ Índice creado: idx_detalle_ventas_doctora');
+        } else {
+            console.log('✅ Campo doctora_id ya existe en detalle_ventas');
+        }
+
         // Verificar tablas creadas
         const [tables] = await connection.execute('SHOW TABLES');
         console.log('📋 Tablas en la base de datos:');
@@ -452,8 +522,15 @@ async function runMigration() {
             console.log(`   - ${Object.values(table)[0]}`);
         });
 
-        console.log('🎉 ¡Migración completada exitosamente!');
-        console.log('📊 Base de datos lista para el Sistema Hidrocolon');
+        // Verificar doctoras insertadas
+        const [doctoras] = await connection.execute('SELECT * FROM doctoras');
+        console.log('\n👩‍⚕️ Doctoras en el sistema:');
+        doctoras.forEach(doc => {
+            console.log(`   - ${doc.nombre} (ID: ${doc.id})`);
+        });
+
+        console.log('\n🎉 ¡Migración completada exitosamente!');
+        console.log('📊 Base de datos lista para el Sistema Hidrocolon con Comisiones por Doctora');
         
     } catch (error) {
         console.error('❌ Error en la migración:', error.message);

@@ -522,6 +522,67 @@ const generarComprobante = async (req, res) => {
     }
 };
 
+// ============================================================================
+// OBTENER COMISIONES POR DOCTORA
+// ============================================================================
+const obtenerComisionesPorDoctora = async (req, res) => {
+    try {
+        const { doctora_id, fecha_inicio, fecha_fin, turno_id } = req.query;
+
+        const comisiones = await DetalleVenta.getComisionesPorDoctora({
+            doctora_id,
+            fecha_inicio,
+            fecha_fin,
+            turno_id
+        });
+
+        res.json({
+            success: true,
+            data: comisiones,
+            total: comisiones.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo comisiones por doctora:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo comisiones por doctora',
+            error: error.message
+        });
+    }
+};
+
+// ============================================================================
+// OBTENER DETALLE DE VENTAS POR DOCTORA
+// ============================================================================
+const obtenerDetalleVentasPorDoctora = async (req, res) => {
+    try {
+        const { doctora_id } = req.params;
+        const { page, limit, fecha_inicio, fecha_fin } = req.query;
+
+        const resultado = await DetalleVenta.getDetalleVentasPorDoctora(doctora_id, {
+            page,
+            limit,
+            fecha_inicio,
+            fecha_fin
+        });
+
+        res.json({
+            success: true,
+            data: resultado.ventas,
+            pagination: resultado.pagination
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo detalle de ventas por doctora:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo detalle de ventas por doctora',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     crearVenta,
     obtenerVenta,
@@ -532,5 +593,7 @@ module.exports = {
     obtenerComisiones,
     obtenerHistorialPaciente,
     obtenerResumenPorTipo,
-    generarComprobante
+    generarComprobante,
+    obtenerComisionesPorDoctora,
+    obtenerDetalleVentasPorDoctora
 };

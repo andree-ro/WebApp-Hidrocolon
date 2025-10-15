@@ -322,6 +322,130 @@ class DetalleVenta {
             throw error;
         }
     }
+
+    // ============================================================================
+    // OBTENER COMISIONES POR DOCTORA
+    // ============================================================================
+    static async getComisionesPorDoctora(options = {}) {
+        try {
+            let whereConditions = ['dv.doctora_id IS NOT NULL'];
+            let queryParams = [];
+
+            // Filtro por doctora específica
+            if (options.doctora_id) {
+                whereConditions.push('dv.doctora_id = ?');
+                queryParams.push(options.doctora_id);
+            }
+
+            // Filtro por rango de fechas
+            if (options.fecha_inicio && options.fecha_fin) {
+                whereConditions.push('DATE(v.fecha_creacion) BETWEEN ? AND ?');
+                queryParams.push(options.fecha_inicio, options.fecha_fin);
+            }
+
+            // Filtro por turno
+            if (options.turno_id) {
+                whereConditions.push('v.turno_id = ?');
+                queryParams.push(options.turno_id);
+            }
+
+            const whereClause = whereConditions.join(' AND ');
+
+            const [comisiones] = await pool.execute(
+                `SELECT 
+                    dv.doctora_id,
+                    d.nombre as doctora_nombre,
+                    COUNT(DISTINCT v.id) as num_ventas,
+                    SUM(dv.cantidad) as productos_vendidos,
+                    SUM(dv.precio_total) as total_vendido,
+                    SUM(dv.monto_comision) as total_comisiones
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN doctoras d ON dv.doctora_id = d.id
+                 WHERE ${whereClause}
+                 GROUP BY dv.doctora_id, d.nombre
+                 ORDER BY total_comisiones DESC`,
+                queryParams
+            );
+
+            return comisiones;
+
+        } catch (error) {
+            console.error('❌ Error en getComisionesPorDoctora:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // OBTENER DETALLE DE VENTAS POR DOCTORA
+    // ============================================================================
+    static async getDetalleVentasPorDoctora(doctora_id, options = {}) {
+        try {
+            const page = parseInt(options.page) || 1;
+            const limit = parseInt(options.limit) || 50;
+            const offset = (page - 1) * limit;
+
+            let whereConditions = ['dv.doctora_id = ?'];
+            let queryParams = [doctora_id];
+
+            // Filtro por fechas
+            if (options.fecha_inicio && options.fecha_fin) {
+                whereConditions.push('DATE(v.fecha_creacion) BETWEEN ? AND ?');
+                queryParams.push(options.fecha_inicio, options.fecha_fin);
+            }
+
+            const whereClause = whereConditions.join(' AND ');
+
+            // Contar total
+            const [countResult] = await pool.execute(
+                `SELECT COUNT(*) as total 
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 WHERE ${whereClause}`,
+                queryParams
+            );
+
+            const total = countResult[0].total;
+
+            // Obtener detalles
+            const [ventas] = await pool.execute(
+                `SELECT 
+                    v.id as venta_id,
+                    v.numero_factura,
+                    v.fecha_creacion,
+                    dv.producto_nombre,
+                    dv.tipo_producto,
+                    dv.cantidad,
+                    dv.precio_unitario,
+                    dv.precio_total,
+                    dv.porcentaje_comision,
+                    dv.monto_comision,
+                    d.nombre as doctora_nombre
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN doctoras d ON dv.doctora_id = d.id
+                 WHERE ${whereClause}
+                 ORDER BY v.fecha_creacion DESC
+                 LIMIT ${limit} OFFSET ${offset}`,
+                queryParams
+            );
+
+            return {
+                ventas,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error en getDetalleVentasPorDoctora:', error);
+            throw error;
+        }
+    }
+
 }
 
 module.exports = DetalleVenta;

@@ -38,6 +38,18 @@ router.get('/comisiones',
     ventasController.obtenerComisiones
 );
 
+// GET /api/ventas/comisiones-doctoras - Comisiones por doctora ← NUEVA
+router.get('/comisiones-doctoras',
+    simpleAuth,
+    ventasController.obtenerComisionesPorDoctora
+);
+
+// GET /api/ventas/doctora/:doctora_id/detalle - Detalle ventas por doctora ← NUEVA
+router.get('/doctora/:doctora_id/detalle',
+    simpleAuth,
+    ventasController.obtenerDetalleVentasPorDoctora
+);
+
 // GET /api/ventas/resumen-por-tipo - Resumen por tipo de producto
 router.get('/resumen-por-tipo',
     simpleAuth,
@@ -94,6 +106,8 @@ console.log('   DELETE /api/ventas/:id/anular - Anular venta');
 console.log('   GET    /api/ventas/stats - Estadísticas');
 console.log('   GET    /api/ventas/productos-mas-vendidos');
 console.log('   GET    /api/ventas/comisiones');
+console.log('   GET    /api/ventas/comisiones-doctoras - NUEVO');
+console.log('   GET    /api/ventas/doctora/:doctora_id/detalle - NUEVO');
 console.log('   GET    /api/ventas/resumen-por-tipo');
 console.log('   GET    /api/ventas/paciente/:paciente_id/historial');
 
