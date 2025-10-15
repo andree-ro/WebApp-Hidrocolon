@@ -103,28 +103,35 @@
                   <a href="#" @click.prevent="navegarA('servicios')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-blue-100 transition-colors relative">
                     <span class="text-lg mr-3">🏥</span>
                     Servicios
-                    <!-- Badge de funcional -->
-                    <span class="absolute right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                    
-                    </span>
                   </a>
                 </li>
                 <li>
                   <a href="#" @click.prevent="navegarA('pacientes')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
                     <span class="text-lg mr-3">👥</span>
                     Pacientes
-                    <span class="absolute right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                      ✓
-                    </span>
                   </a>
                 </li>
+
+    
                 <li>
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-400 rounded-md cursor-not-allowed">
+                  <a href="#" @click.prevent="navegarA('doctoras')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors relative">
+                    <span class="text-lg mr-3">👩‍⚕️</span>
+                    Doctoras
+                  </a>
+                </li>
+
+
+
+                <li>
+                  <a href="#" @click.prevent="navegarA('carrito')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors relative">
                     <span class="text-lg mr-3">🛒</span>
                     Carrito
-                    <span class="text-xs text-gray-400 ml-auto">Próximo</span>
                   </a>
                 </li>
+
+
+
+
                 <li>
                   <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-400 rounded-md cursor-not-allowed">
                     <span class="text-lg mr-3">💰</span>
@@ -296,10 +303,7 @@
                 <div class="text-xs text-purple-600 mt-1">
                   {{ stats.servicios?.total_servicios || 0 }} servicios
                 </div>
-                <!-- Badge de "¡Nuevo!" -->
-                <div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-                  ¡Nuevo!
-                </div>
+
               </button>
 
               <!-- Nueva Venta (ACTIVO) -->
@@ -311,217 +315,13 @@
                 <span class="text-xs sm:text-sm font-medium">Nueva Venta</span>
                 <div class="text-xs mt-1 opacity-90">Sistema de ventas</div>
                 <!-- Badge NUEVO -->
-                <div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-                  ¡Nuevo!
-                </div>
+
               </button>
-            </div>
-          </div>
-
-          <!-- Módulos del Sistema -->
-          <div class="card p-4 sm:p-6 mb-6 sm:mb-8">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              Módulos del Sistema
-            </h3>
-            
-            <!-- Grid de módulos -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Farmacia -->
-              <router-link to="/farmacia" class="module-card group">
-                <div class="module-header">
-                  <div class="module-icon bg-blue-100 group-hover:bg-blue-200">
-                    💊
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title">Farmacia</h4>
-                    <p class="module-description">Medicamentos e inventario</p>
-                  </div>
-                  <div class="module-status bg-green-100 text-green-800">
-                    ✓ Activo
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value">{{ stats.farmacia?.total_medicamentos || 0 }}</span>
-                    <span class="stat-label">Medicamentos</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-value text-red-600">{{ stats.farmacia?.stock_bajo || 0 }}</span>
-                    <span class="stat-label">Stock bajo</span>
-                  </div>
-                </div>
-              </router-link>
-
-              <!-- Extras -->
-              <router-link to="/extras" class="module-card group">
-                <div class="module-header">
-                  <div class="module-icon bg-green-100 group-hover:bg-green-200">
-                    🧰
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title">Extras</h4>
-                    <p class="module-description">Productos adicionales</p>
-                  </div>
-                  <div class="module-status bg-green-100 text-green-800">
-                    ✓ Activo
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value">{{ stats.extras?.total_extras || 0 }}</span>
-                    <span class="stat-label">Productos</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-value text-red-600">{{ stats.extras?.stock_bajo || 0 }}</span>
-                    <span class="stat-label">Stock bajo</span>
-                  </div>
-                </div>
-              </router-link>
-
-              <!-- ⭐ Servicios - NUEVO -->
-              <router-link to="/servicios" class="module-card group">
-                <div class="module-header">
-                  <div class="module-icon bg-purple-100 group-hover:bg-purple-200">
-                    🏥
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title">Servicios Médicos</h4>
-                    <p class="module-description">Gestión de servicios y precios</p>
-                  </div>
-                  <div class="module-status bg-green-100 text-green-800">
-                    ✓ Nuevo
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value">{{ stats.servicios?.total_servicios || 0 }}</span>
-                    <span class="stat-label">Servicios</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-value text-purple-600">{{ stats.servicios?.servicios_activos || 0 }}</span>
-                    <span class="stat-label">Activos</span>
-                  </div>
-                </div>
-              </router-link>
-
-              <!-- Pacientes (próximamente) -->
-              <router-link to="/pacientes" class="module-card group">
-                <div class="module-header">
-                  <div class="module-icon bg-blue-100 group-hover:bg-blue-200">
-                    👥
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title">Pacientes</h4>
-                    <p class="module-description">Administra pacientes y citas</p>
-                  </div>
-                  <div class="module-status bg-green-100 text-green-800">
-                    ✓ Funcional
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value">{{ stats.pacientes?.total || '--' }}</span>
-                    <span class="stat-label">Pacientes</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-value text-blue-600">{{ stats.pacientes?.citas_manana || '--' }}</span>
-                    <span class="stat-label">Citas mañana</span>
-                  </div>
-                </div>
-              </router-link>
-
-              <!-- Carrito/Ventas (ACTIVO) -->
-              <router-link to="/carrito" class="module-card group">
-                <div class="module-header">
-                  <div class="module-icon bg-orange-100 group-hover:bg-orange-200">
-                    🛒
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title">Sistema de Ventas</h4>
-                    <p class="module-description">Carrito y facturación</p>
-                  </div>
-                  <div class="module-status bg-green-100 text-green-800">
-                    ✅ Activo
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value">{{ stats.ventas?.total_hoy || 0 }}</span>
-                    <span class="stat-label">Ventas hoy</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-value text-green-600">Q{{ stats.ventas?.monto_hoy || '0.00' }}</span>
-                    <span class="stat-label">Monto vendido</span>
-                  </div>
-                </div>
-              </router-link>
-
-              <!-- Financiero (próximamente) -->
-              <div class="module-card opacity-60 cursor-not-allowed">
-                <div class="module-header">
-                  <div class="module-icon bg-gray-100">
-                    💰
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="module-title text-gray-500">Financiero</h4>
-                    <p class="module-description text-gray-400">Turnos y reportes</p>
-                  </div>
-                  <div class="module-status bg-gray-100 text-gray-600">
-                    ⏳ Próximo
-                  </div>
-                </div>
-                <div class="module-stats">
-                  <div class="stat-item">
-                    <span class="stat-value text-gray-400">--</span>
-                    <span class="stat-label text-gray-400">En desarrollo</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           <!-- Alertas y Notificaciones -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Alertas de Stock -->
-            <div class="card p-4 sm:p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <span class="mr-2">⚠️</span>
-                Alertas de Stock
-              </h3>
-              
-              <div class="space-y-3">
-                <div v-if="stats.farmacia?.stock_bajo > 0" class="alert-item bg-red-50 border-red-200">
-                  <span class="text-red-600">💊</span>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-red-800">Medicamentos con stock bajo</p>
-                    <p class="text-xs text-red-600">{{ stats.farmacia.stock_bajo }} medicamentos</p>
-                  </div>
-                  <button @click="navegarA('farmacia')" class="text-red-600 hover:text-red-800 text-sm">
-                    Ver →
-                  </button>
-                </div>
-
-                <div v-if="stats.extras?.stock_bajo > 0" class="alert-item bg-orange-50 border-orange-200">
-                  <span class="text-orange-600">🧰</span>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-orange-800">Extras con stock bajo</p>
-                    <p class="text-xs text-orange-600">{{ stats.extras.stock_bajo }} productos</p>
-                  </div>
-                  <button @click="navegarA('extras')" class="text-orange-600 hover:text-orange-800 text-sm">
-                    Ver →
-                  </button>
-                </div>
-
-                <div v-if="!stats.farmacia?.stock_bajo && !stats.extras?.stock_bajo" class="alert-item bg-green-50 border-green-200">
-                  <span class="text-green-600">✅</span>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-green-800">Stock en niveles óptimos</p>
-                    <p class="text-xs text-green-600">Todo el inventario está bien</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- Estado del Sistema -->
             <div class="card p-4 sm:p-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -892,6 +692,9 @@ export default {
         case 'pacientes':
           // Por implementar
           this.$router.push('/pacientes')
+          break
+        case 'doctoras':
+          this.$router.push('/doctoras')
           break
         case 'carrito':
           // Por implementar

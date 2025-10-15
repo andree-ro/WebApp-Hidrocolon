@@ -102,6 +102,17 @@ const routes = [
     }
   },
 
+  // Módulo Doctoras
+  {
+    path: '/doctoras',  // ← AGREGAR AQUÍ
+    name: 'Doctoras',
+    component: () => import('../views/DoctorasView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Gestión de Doctoras'
+    }
+  },
+
   // Módulo Carrito/Ventas
   {
     path: '/carrito',

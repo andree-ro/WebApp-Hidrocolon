@@ -14,6 +14,7 @@ export const useCarritoStore = defineStore('carrito', () => {
   const descuentoGlobal = ref(0)
   const observaciones = ref('')
   const metodoPago = ref('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'mixto'
+  const doctoraSeleccionada = ref(null)
   
   // Para pago mixto
   const montoEfectivo = ref(0)
@@ -159,6 +160,7 @@ export const useCarritoStore = defineStore('carrito', () => {
   function vaciarCarrito() {
     items.value = []
     pacienteSeleccionado.value = null
+    doctoraSeleccionada.value = null
     descuentoGlobal.value = 0
     observaciones.value = ''
     metodoPago.value = 'efectivo'
@@ -174,6 +176,14 @@ export const useCarritoStore = defineStore('carrito', () => {
   function setPaciente(paciente) {
     pacienteSeleccionado.value = paciente
     console.log('👤 Paciente seleccionado:', paciente)
+  }
+  
+  /**
+   * Seleccionar doctora para atribuir las ventas
+   */
+  function setDoctora(doctora) {
+    doctoraSeleccionada.value = doctora
+    console.log('👩‍⚕️ Doctora seleccionada:', doctora?.nombre)
   }
   
   /**
@@ -204,7 +214,7 @@ export const useCarritoStore = defineStore('carrito', () => {
       return { success: false, message: 'El carrito está vacío' }
     }
     
-    // Preparar detalle de productos
+    // Preparar detalle de productos CON doctora_id
     const detalle = items.value.map(item => ({
       tipo_producto: item.tipo_producto,
       producto_id: item.producto_id,
@@ -213,7 +223,8 @@ export const useCarritoStore = defineStore('carrito', () => {
       precio_unitario: item.precio_unitario,
       precio_tipo: item.precio_tipo,
       subtotal: item.subtotal,
-      comision_porcentaje: item.comision_porcentaje
+      comision_porcentaje: item.comision_porcentaje,
+      doctora_id: doctoraSeleccionada.value?.id || null  
     }))
     
     // Calcular montos según método de pago
@@ -303,6 +314,7 @@ export const useCarritoStore = defineStore('carrito', () => {
     montoEfectivo,
     montoTarjeta,
     montoTransferencia,
+    doctoraSeleccionada,
     
     // Computed
     subtotal,
@@ -317,6 +329,7 @@ export const useCarritoStore = defineStore('carrito', () => {
     eliminarItem,
     vaciarCarrito,
     setPaciente,
+    setDoctora,
     setDescuento,
     setMetodoPago,
     obtenerDatosVenta,

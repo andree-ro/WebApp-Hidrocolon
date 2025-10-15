@@ -95,6 +95,13 @@
           </div>
         </div>
 
+        
+        <!-- AGREGAR AQUÍ ↓ -->
+        <SelectorDoctora />
+        <!-- AGREGAR AQUÍ ↑ -->
+
+
+
         <!-- Buscador de productos -->
         <div class="card p-4">
           <h3 class="text-lg font-semibold text-gray-900 mb-3">🔍 Buscar Productos</h3>
@@ -418,6 +425,7 @@ import farmaciaService from '../services/farmaciaService'
 import serviciosService from '../services/serviciosService'
 import extrasService from '../services/extrasService'
 import authService from '../services/authService'
+import SelectorDoctora from '@/components/SelectorDoctora.vue'
 
 console.log('🛒 ===== CARRITO VIEW CARGANDO =====')
 
