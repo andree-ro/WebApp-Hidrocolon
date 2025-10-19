@@ -1,5 +1,6 @@
 // backend/src/routes/turnos.js
-// Rutas para gestión de turnos del Sistema Hidrocolon
+// Rutas completas para gestión de turnos del Sistema Hidrocolon
+// VERSIÓN COMBINADA: Endpoints antiguos + nuevos del módulo financiero
 
 const express = require('express');
 const router = express.Router();
@@ -9,13 +10,64 @@ const { pool } = require('../config/database');
 const authMiddleware = require('../middleware/authMiddleware');
 const turnosMiddleware = require('../middleware/turnosMiddleware');
 
+// Importar controlador nuevo
+const turnosController = require('../controllers/turnosController');
+
 const simpleAuth = authMiddleware.authenticate();
 
-console.log('🕐 Rutas de turnos cargadas');
+console.log('🔄 Rutas de turnos cargadas');
 
 // ============================================================================
-// OBTENER TURNO ACTUAL (ABIERTO)
+// ENDPOINTS NUEVOS - MÓDULO FINANCIERO COMPLETO
 // ============================================================================
+
+// POST /api/turnos/abrir-completo - Abrir turno con conteo de billetes/monedas
+router.post('/abrir-completo',
+    simpleAuth,
+    turnosController.abrirTurnoCompleto
+);
+
+// POST /api/turnos/:id/cerrar-completo - Cerrar turno con cuadre automático
+router.post('/:id/cerrar-completo',
+    simpleAuth,
+    turnosController.cerrarTurnoCompleto
+);
+
+// GET /api/turnos/activo - Obtener turno activo (NUEVO)
+router.get('/activo',
+    simpleAuth,
+    turnosController.obtenerTurnoActivo
+);
+
+// GET /api/turnos/estadisticas - Estadísticas generales
+router.get('/estadisticas',
+    simpleAuth,
+    turnosController.obtenerEstadisticas
+);
+
+// GET /api/turnos/:id/resumen - Resumen del turno (dashboard en tiempo real)
+router.get('/:id/resumen',
+    simpleAuth,
+    turnosController.obtenerResumenTurno
+);
+
+// POST /api/turnos/:id/cuadre-previo - Calcular cuadre sin cerrar (preview)
+router.post('/:id/cuadre-previo',
+    simpleAuth,
+    turnosController.calcularCuadrePrevio
+);
+
+// POST /api/turnos/validar-apertura - Validar datos de apertura
+router.post('/validar-apertura',
+    simpleAuth,
+    turnosController.validarDatosApertura
+);
+
+// ============================================================================
+// ENDPOINTS ANTIGUOS - COMPATIBILIDAD CON CÓDIGO EXISTENTE
+// ============================================================================
+
+// GET /api/turnos/actual - Obtener turno actual (ANTIGUO - Mantener por compatibilidad)
 router.get('/actual',
     simpleAuth,
     async (req, res) => {
@@ -57,9 +109,7 @@ router.get('/actual',
     }
 );
 
-// ============================================================================
-// ABRIR NUEVO TURNO
-// ============================================================================
+// POST /api/turnos - Abrir turno SIMPLE (ANTIGUO - sin conteo detallado)
 router.post('/',
     simpleAuth,
     turnosMiddleware.validarNoTurnoAbierto,
@@ -68,7 +118,7 @@ router.post('/',
             const usuario_id = req.user.id;
             const { efectivo_inicial, observaciones } = req.body;
             
-            console.log(`🔓 Abriendo turno para usuario ${usuario_id}`);
+            console.log(`🔓 Abriendo turno SIMPLE para usuario ${usuario_id}`);
             console.log(`💵 Efectivo inicial: Q${efectivo_inicial}`);
             
             // Validar efectivo inicial
@@ -93,11 +143,12 @@ router.post('/',
                 `INSERT INTO turnos (
                     usuario_id,
                     efectivo_inicial,
+                    efectivo_inicial_total,
                     observaciones,
                     estado,
                     fecha_apertura
-                ) VALUES (?, ?, ?, 'abierto', NOW())`,
-                [usuario_id, efectivo, observaciones || null]
+                ) VALUES (?, ?, ?, ?, 'abierto', NOW())`,
+                [usuario_id, efectivo, efectivo, observaciones || null]
             );
             
             const turno_id = result.insertId;
@@ -108,7 +159,7 @@ router.post('/',
                 [turno_id]
             );
             
-            console.log(`✅ Turno ${turno_id} abierto exitosamente`);
+            console.log(`✅ Turno ${turno_id} abierto exitosamente (modo simple)`);
             
             res.status(201).json({
                 success: true,
@@ -127,9 +178,7 @@ router.post('/',
     }
 );
 
-// ============================================================================
-// CERRAR TURNO
-// ============================================================================
+// PUT /api/turnos/:id/cerrar - Cerrar turno SIMPLE (ANTIGUO)
 router.put('/:id/cerrar',
     simpleAuth,
     turnosMiddleware.validarTurnoParaCierre,
@@ -138,7 +187,7 @@ router.put('/:id/cerrar',
             const turno_id = req.params.id;
             const { efectivo_final, observaciones } = req.body;
             
-            console.log(`🔒 Cerrando turno ${turno_id}`);
+            console.log(`🔒 Cerrando turno SIMPLE ${turno_id}`);
             console.log(`💵 Efectivo final: Q${efectivo_final}`);
             
             // Validar efectivo final
@@ -163,7 +212,7 @@ router.put('/:id/cerrar',
             
             // Calcular el efectivo esperado
             const efectivo_esperado = parseFloat(turno.efectivo_inicial) + 
-                                     parseFloat(turno.total_ventas_efectivo);
+                                     parseFloat(turno.total_ventas_efectivo || 0);
             
             // Calcular diferencia
             const diferencia = efectivo - efectivo_esperado;
@@ -172,6 +221,7 @@ router.put('/:id/cerrar',
             await pool.execute(
                 `UPDATE turnos 
                  SET efectivo_final = ?,
+                     efectivo_final_total = ?,
                      estado = 'cerrado',
                      fecha_cierre = NOW(),
                      observaciones = CONCAT(
@@ -181,6 +231,7 @@ router.put('/:id/cerrar',
                      )
                  WHERE id = ?`,
                 [
+                    efectivo,
                     efectivo,
                     observaciones || `Cerrado con diferencia: Q${diferencia.toFixed(2)}`,
                     turno_id
@@ -193,7 +244,7 @@ router.put('/:id/cerrar',
                 [turno_id]
             );
             
-            console.log(`✅ Turno ${turno_id} cerrado exitosamente`);
+            console.log(`✅ Turno ${turno_id} cerrado exitosamente (modo simple)`);
             
             res.json({
                 success: true,
@@ -205,7 +256,7 @@ router.put('/:id/cerrar',
                         efectivo_esperado: efectivo_esperado,
                         efectivo_contado: efectivo,
                         diferencia: diferencia,
-                        cuadra: Math.abs(diferencia) < 0.50 // Tolerancia de Q0.50
+                        cuadra: Math.abs(diferencia) < 0.50
                     }
                 }
             });
@@ -222,131 +273,36 @@ router.put('/:id/cerrar',
 );
 
 // ============================================================================
-// LISTAR TURNOS (historial)
+// ENDPOINTS COMPARTIDOS (Usan el nuevo controlador)
 // ============================================================================
+
+// GET /api/turnos - Listar turnos con filtros (USA NUEVO CONTROLADOR)
 router.get('/',
     simpleAuth,
-    async (req, res) => {
-        try {
-            const usuario_id = req.user.id;
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20;
-            const offset = (page - 1) * limit;
-            
-            let whereConditions = ['usuario_id = ?'];
-            let queryParams = [usuario_id];
-            
-            // Filtro por estado
-            if (req.query.estado) {
-                whereConditions.push('estado = ?');
-                queryParams.push(req.query.estado);
-            }
-            
-            // Filtro por fecha
-            if (req.query.fecha_inicio && req.query.fecha_fin) {
-                whereConditions.push('DATE(fecha_apertura) BETWEEN ? AND ?');
-                queryParams.push(req.query.fecha_inicio, req.query.fecha_fin);
-            }
-            
-            const whereClause = whereConditions.join(' AND ');
-            
-            // Contar total
-            const [countResult] = await pool.execute(
-                `SELECT COUNT(*) as total FROM turnos WHERE ${whereClause}`,
-                queryParams
-            );
-            
-            const total = countResult[0].total;
-            
-            // Obtener turnos
-            const [turnos] = await pool.execute(
-                `SELECT * FROM turnos 
-                 WHERE ${whereClause}
-                 ORDER BY fecha_apertura DESC
-                 LIMIT ? OFFSET ?`,
-                [...queryParams, limit, offset]
-            );
-            
-            res.json({
-                success: true,
-                data: turnos,
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
-                }
-            });
-            
-        } catch (error) {
-            console.error('❌ Error listando turnos:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error al listar turnos',
-                error: error.message
-            });
-        }
-    }
+    turnosController.listarTurnos
 );
 
-// ============================================================================
-// OBTENER TURNO POR ID
-// ============================================================================
+// GET /api/turnos/:id - Obtener turno por ID (USA NUEVO CONTROLADOR)
 router.get('/:id',
     simpleAuth,
-    async (req, res) => {
-        try {
-            const turno_id = req.params.id;
-            const usuario_id = req.user.id;
-            
-            const [turnos] = await pool.execute(
-                `SELECT t.*, u.nombres, u.apellidos
-                 FROM turnos t
-                 LEFT JOIN usuarios u ON t.usuario_id = u.id
-                 WHERE t.id = ? AND t.usuario_id = ?`,
-                [turno_id, usuario_id]
-            );
-            
-            if (turnos.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Turno no encontrado'
-                });
-            }
-            
-            // Obtener ventas del turno
-            const [ventas] = await pool.execute(
-                `SELECT COUNT(*) as num_ventas,
-                        SUM(total) as total_ventas
-                 FROM ventas
-                 WHERE turno_id = ?`,
-                [turno_id]
-            );
-            
-            res.json({
-                success: true,
-                data: {
-                    ...turnos[0],
-                    ventas: ventas[0]
-                }
-            });
-            
-        } catch (error) {
-            console.error('❌ Error obteniendo turno:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error al obtener turno',
-                error: error.message
-            });
-        }
-    }
+    turnosController.obtenerTurnoPorId
 );
 
-console.log('✅ Rutas de turnos configuradas:');
-console.log('   GET    /api/turnos/actual - Obtener turno actual');
-console.log('   POST   /api/turnos - Abrir nuevo turno');
-console.log('   PUT    /api/turnos/:id/cerrar - Cerrar turno');
-console.log('   GET    /api/turnos - Listar turnos');
-console.log('   GET    /api/turnos/:id - Obtener turno específico');
+console.log('✅ Rutas de turnos configuradas (COMBINADAS):');
+console.log('   📦 ENDPOINTS NUEVOS (Módulo Financiero):');
+console.log('      POST   /api/turnos/abrir-completo');
+console.log('      POST   /api/turnos/:id/cerrar-completo');
+console.log('      GET    /api/turnos/activo');
+console.log('      GET    /api/turnos/estadisticas');
+console.log('      GET    /api/turnos/:id/resumen');
+console.log('      POST   /api/turnos/:id/cuadre-previo');
+console.log('      POST   /api/turnos/validar-apertura');
+console.log('   ♻️  ENDPOINTS ANTIGUOS (Compatibilidad):');
+console.log('      GET    /api/turnos/actual');
+console.log('      POST   /api/turnos');
+console.log('      PUT    /api/turnos/:id/cerrar');
+console.log('   🔄 ENDPOINTS COMPARTIDOS:');
+console.log('      GET    /api/turnos');
+console.log('      GET    /api/turnos/:id');
 
 module.exports = router;

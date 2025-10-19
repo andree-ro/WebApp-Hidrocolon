@@ -41,6 +41,9 @@ const pacientesRoutes = require('./src/routes/pacientes');
 const ventasRoutes = require('./src/routes/ventas');
 const turnosRoutes = require('./src/routes/turnos');
 const doctorasRoutes = require('./src/routes/doctoras');
+const gastosRoutes = require('./src/routes/gastos');
+const vouchersRoutes = require('./src/routes/vouchers');
+const transferenciasRoutes = require('./src/routes/transferencias');
 
 const app = express();
 
@@ -187,7 +190,7 @@ app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Sistema Hidrocolon API',
-        version: '1.5.0-ventas-turnos-integration',
+        version: '1.6.0-modulo-financiero',
         timestamp: new Date().toISOString(),
         environment: NODE_ENV,
         modules: {
@@ -260,6 +263,13 @@ app.use('/api/turnos', turnosRoutes);
 console.log('✅ Rutas de turnos configuradas');
 
 app.use('/api/doctoras', doctorasRoutes);
+
+app.use('/api/gastos', gastosRoutes);
+
+app.use('/api/vouchers', vouchersRoutes);
+
+app.use('/api/transferencias', transferenciasRoutes);
+
 
 // ============================================================================
 // RUTAS ADICIONALES
