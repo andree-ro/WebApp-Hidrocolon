@@ -515,6 +515,342 @@ async function runMigration() {
             console.log('✅ Campo doctora_id ya existe en detalle_ventas');
         }
 
+
+
+
+
+
+
+        // ============================================================================
+        // MIGRACIÓN: EXPANDIR TABLA TURNOS PARA MÓDULO FINANCIERO
+        // ============================================================================
+        console.log('💰 Expandiendo tabla turnos para módulo financiero...');
+
+        // Verificar qué campos ya existen en turnos
+        const [turnosColumns] = await connection.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'turnos' 
+            AND TABLE_SCHEMA = DATABASE()
+        `);
+        
+        const existingColumns = turnosColumns.map(col => col.COLUMN_NAME);
+        console.log('📋 Columnas actuales en turnos:', existingColumns.join(', '));
+
+        // PASO 1: Conteo de billetes y monedas
+        if (!existingColumns.includes('efectivo_billetes')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_billetes JSON COMMENT 'Conteo billetes apertura: {"200":5, "100":10, ...}'
+            `);
+            console.log('✅ Agregado: efectivo_billetes');
+        }
+
+        if (!existingColumns.includes('efectivo_monedas')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_monedas JSON COMMENT 'Conteo monedas apertura: {"1":20, "0.50":15, ...}'
+            `);
+            console.log('✅ Agregado: efectivo_monedas');
+        }
+
+        if (!existingColumns.includes('efectivo_inicial_total')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_inicial_total DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total efectivo inicial calculado'
+            `);
+            console.log('✅ Agregado: efectivo_inicial_total');
+        }
+
+        if (!existingColumns.includes('efectivo_final_billetes')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_final_billetes JSON COMMENT 'Conteo billetes cierre'
+            `);
+            console.log('✅ Agregado: efectivo_final_billetes');
+        }
+
+        if (!existingColumns.includes('efectivo_final_monedas')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_final_monedas JSON COMMENT 'Conteo monedas cierre'
+            `);
+            console.log('✅ Agregado: efectivo_final_monedas');
+        }
+
+        if (!existingColumns.includes('efectivo_final_total')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_final_total DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total efectivo final calculado'
+            `);
+            console.log('✅ Agregado: efectivo_final_total');
+        }
+
+        // PASO 2: Totales del día (algunos ya existen, agregamos los que faltan)
+        if (!existingColumns.includes('venta_total')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN venta_total DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total ventas del turno'
+            `);
+            console.log('✅ Agregado: venta_total');
+        }
+
+        if (!existingColumns.includes('ventas_efectivo')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN ventas_efectivo DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total ventas en efectivo'
+            `);
+            console.log('✅ Agregado: ventas_efectivo');
+        }
+
+        if (!existingColumns.includes('ventas_tarjeta')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN ventas_tarjeta DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total ventas con tarjeta'
+            `);
+            console.log('✅ Agregado: ventas_tarjeta');
+        }
+
+        if (!existingColumns.includes('ventas_transferencia')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN ventas_transferencia DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total ventas por transferencia'
+            `);
+            console.log('✅ Agregado: ventas_transferencia');
+        }
+
+        // total_gastos ya existe en tu schema actual
+        
+        if (!existingColumns.includes('total_comisiones_pagadas')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN total_comisiones_pagadas DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total comisiones pagadas en efectivo'
+            `);
+            console.log('✅ Agregado: total_comisiones_pagadas');
+        }
+
+        if (!existingColumns.includes('total_vouchers')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN total_vouchers DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total vouchers registrados'
+            `);
+            console.log('✅ Agregado: total_vouchers');
+        }
+
+        if (!existingColumns.includes('total_transferencias')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN total_transferencias DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total transferencias registradas'
+            `);
+            console.log('✅ Agregado: total_transferencias');
+        }
+
+        if (!existingColumns.includes('total_depositos')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN total_depositos DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Total depósitos recibidos'
+            `);
+            console.log('✅ Agregado: total_depositos');
+        }
+
+        // PASO 3: Impuestos desglosados
+        if (!existingColumns.includes('impuesto_efectivo')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN impuesto_efectivo DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Impuesto 16% sobre efectivo'
+            `);
+            console.log('✅ Agregado: impuesto_efectivo');
+        }
+
+        if (!existingColumns.includes('impuesto_tarjeta')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN impuesto_tarjeta DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Impuesto 21.04% sobre tarjeta'
+            `);
+            console.log('✅ Agregado: impuesto_tarjeta');
+        }
+
+        if (!existingColumns.includes('impuesto_transferencia')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN impuesto_transferencia DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Impuesto 16% sobre transferencias'
+            `);
+            console.log('✅ Agregado: impuesto_transferencia');
+        }
+
+        if (!existingColumns.includes('impuesto_depositos')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN impuesto_depositos DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Impuesto 16% sobre depósitos'
+            `);
+            console.log('✅ Agregado: impuesto_depositos');
+        }
+
+        // PASO 4: Ventas netas y depósito
+        if (!existingColumns.includes('ventas_netas')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN ventas_netas DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Venta total - impuestos'
+            `);
+            console.log('✅ Agregado: ventas_netas');
+        }
+
+        if (!existingColumns.includes('total_a_depositar')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN total_a_depositar DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Monto final para depositar'
+            `);
+            console.log('✅ Agregado: total_a_depositar');
+        }
+
+        // PASO 5: Cuadre y diferencias
+        if (!existingColumns.includes('efectivo_esperado')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN efectivo_esperado DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Efectivo que debería haber'
+            `);
+            console.log('✅ Agregado: efectivo_esperado');
+        }
+
+        if (!existingColumns.includes('diferencia_efectivo')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN diferencia_efectivo DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Diferencia: físico - esperado'
+            `);
+            console.log('✅ Agregado: diferencia_efectivo');
+        }
+
+        if (!existingColumns.includes('diferencia_vouchers')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN diferencia_vouchers DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Diferencia vouchers vs ventas tarjeta'
+            `);
+            console.log('✅ Agregado: diferencia_vouchers');
+        }
+
+        if (!existingColumns.includes('diferencia_transferencias')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN diferencia_transferencias DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Diferencia transferencias'
+            `);
+            console.log('✅ Agregado: diferencia_transferencias');
+        }
+
+        // PASO 6: Autorización
+        if (!existingColumns.includes('requiere_autorizacion')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN requiere_autorizacion BOOLEAN DEFAULT FALSE COMMENT 'TRUE si hay diferencias'
+            `);
+            console.log('✅ Agregado: requiere_autorizacion');
+        }
+
+        if (!existingColumns.includes('autorizado_por')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN autorizado_por INT NULL COMMENT 'ID usuario admin que autorizó'
+            `);
+            console.log('✅ Agregado: autorizado_por');
+        }
+
+        if (!existingColumns.includes('justificacion_diferencias')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN justificacion_diferencias TEXT NULL COMMENT 'Motivo de las diferencias'
+            `);
+            console.log('✅ Agregado: justificacion_diferencias');
+        }
+
+        if (!existingColumns.includes('fecha_autorizacion')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD COLUMN fecha_autorizacion TIMESTAMP NULL COMMENT 'Cuándo se autorizó'
+            `);
+            console.log('✅ Agregado: fecha_autorizacion');
+        }
+
+        // PASO 7: Agregar foreign key si no existe
+        console.log('🔗 Verificando foreign key fk_turnos_autorizado_por...');
+        const [fks] = await connection.execute(`
+            SELECT CONSTRAINT_NAME 
+            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+            WHERE TABLE_NAME = 'turnos' 
+            AND CONSTRAINT_NAME = 'fk_turnos_autorizado_por'
+            AND TABLE_SCHEMA = DATABASE()
+        `);
+
+        if (fks.length === 0 && existingColumns.includes('autorizado_por')) {
+            await connection.execute(`
+                ALTER TABLE turnos 
+                ADD CONSTRAINT fk_turnos_autorizado_por 
+                FOREIGN KEY (autorizado_por) REFERENCES usuarios(id)
+            `);
+            console.log('✅ Foreign key creada: fk_turnos_autorizado_por');
+        } else {
+            console.log('✅ Foreign key ya existe o campo no disponible');
+        }
+
+        // PASO 8: Crear índices si no existen
+        console.log('📊 Creando índices para optimización...');
+        
+        const [indexes] = await connection.execute(`
+            SHOW INDEX FROM turnos WHERE Key_name = 'idx_turnos_estado'
+        `);
+        
+        if (indexes.length === 0) {
+            await connection.execute(`CREATE INDEX idx_turnos_estado ON turnos(estado)`);
+            console.log('✅ Índice creado: idx_turnos_estado');
+        }
+
+        const [indexes2] = await connection.execute(`
+            SHOW INDEX FROM turnos WHERE Key_name = 'idx_turnos_fecha_apertura'
+        `);
+        
+        if (indexes2.length === 0) {
+            await connection.execute(`CREATE INDEX idx_turnos_fecha_apertura ON turnos(fecha_apertura)`);
+            console.log('✅ Índice creado: idx_turnos_fecha_apertura');
+        }
+
+        const [indexes3] = await connection.execute(`
+            SHOW INDEX FROM turnos WHERE Key_name = 'idx_turnos_fecha_cierre'
+        `);
+        
+        if (indexes3.length === 0) {
+            await connection.execute(`CREATE INDEX idx_turnos_fecha_cierre ON turnos(fecha_cierre)`);
+            console.log('✅ Índice creado: idx_turnos_fecha_cierre');
+        }
+
+        const [indexes4] = await connection.execute(`
+            SHOW INDEX FROM turnos WHERE Key_name = 'idx_turnos_usuario'
+        `);
+        
+        if (indexes4.length === 0) {
+            await connection.execute(`CREATE INDEX idx_turnos_usuario ON turnos(usuario_id)`);
+            console.log('✅ Índice creado: idx_turnos_usuario');
+        }
+
+        console.log('✅ Tabla turnos expandida exitosamente para módulo financiero');
+
+        // Verificar estructura final de turnos
+        const [turnosColumnsFinal] = await connection.execute(`
+            SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'turnos' 
+            AND TABLE_SCHEMA = DATABASE()
+            ORDER BY ORDINAL_POSITION
+        `);
+        
+        console.log('\n📋 Estructura final de tabla turnos:');
+        turnosColumnsFinal.forEach(col => {
+            console.log(`   - ${col.COLUMN_NAME} (${col.COLUMN_TYPE})`);
+        });
+
+        console.log(`\n💰 Total de campos en turnos: ${turnosColumnsFinal.length}`);
+
+
+
+
+
         // Verificar tablas creadas
         const [tables] = await connection.execute('SHOW TABLES');
         console.log('📋 Tablas en la base de datos:');
