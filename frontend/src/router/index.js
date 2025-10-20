@@ -15,6 +15,7 @@ import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
 import PacientesView from '@/views/PacientesView.vue'
+import FinancieroView from '@/views/FinancieroView.vue'
 
 // =====================================
 // DEFINIR RUTAS - INCLUYENDO PACIENTES Y CARRITO
@@ -123,6 +124,19 @@ const routes = [
       title: 'Sistema de Ventas - Sistema Hidrocolon',
       breadcrumb: 'Carrito',
       description: 'Gestión de ventas y facturación'
+    }
+  },
+
+
+  {
+    path: '/financiero',
+    name: 'Financiero',
+    component: FinancieroView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Módulo Financiero - Sistema Hidrocolon',
+      breadcrumb: 'Financiero',
+      description: 'Control de turnos, caja y finanzas'
     }
   },
 
@@ -278,6 +292,7 @@ export const navegarA = {
     name: 'Login', 
     query: redirect ? { redirect } : {} 
   }),
+  financiero: () => router.push({ name: 'Financiero' }),
   // Navegación básica
   goBack: () => router.go(-1),
   reload: () => router.go(0)
@@ -362,6 +377,14 @@ export const menuItems = [
     icon: 'shopping-cart',
     title: 'Sistema de Ventas',
     description: 'Gestión de ventas y facturación',
+    active: true
+  },
+  {
+    name: 'Financiero',
+    path: '/financiero',
+    icon: 'currency-dollar',
+    title: 'Módulo Financiero',
+    description: 'Control de turnos, caja y finanzas',
     active: true
   }
 ]

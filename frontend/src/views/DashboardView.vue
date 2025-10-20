@@ -129,15 +129,16 @@
                   </a>
                 </li>
 
-
-
-
                 <li>
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-400 rounded-md cursor-not-allowed">
+                  <router-link 
+                    to="/financiero" 
+                    @click="closeMobileSidebar" 
+                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors"
+                    active-class="bg-gray-800 text-white"
+                  >
                     <span class="text-lg mr-3">💰</span>
                     Financiero
-                    <span class="text-xs text-gray-400 ml-auto">Próximo</span>
-                  </a>
+                  </router-link>
                 </li>
               </ul>
             </div>
