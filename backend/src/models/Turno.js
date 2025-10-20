@@ -346,18 +346,28 @@ class Turno {
             const totalesVouchers = await this.obtenerTotalVouchers(turnoId);
             const totalesTransferencias = await this.obtenerTotalTransferencias(turnoId);
 
+            // ✅ OBTENER LISTAS COMPLETAS
+            const listaGastos = await this.obtenerListaGastos(turnoId);
+            const listaVouchers = await this.obtenerListaVouchers(turnoId);
+            const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
+
+            // Calcular impuestos
+            const impuestos = this.calcularImpuestos(totalesVentas);
+
             // Calcular efectivo actual
             const efectivoActual = parseFloat(turno.efectivo_inicial_total) + 
-                                  totalesVentas.efectivo - 
-                                  totalesGastos;
+                                totalesVentas.efectivo - 
+                                totalesGastos;
 
             return {
-                turno_id: turno.id,
-                usuario: `${turno.nombres} ${turno.apellidos}`,
-                estado: turno.estado,
-                fecha_apertura: turno.fecha_apertura,
-                efectivo_inicial: parseFloat(turno.efectivo_inicial_total),
-                efectivo_actual: efectivoActual,
+                turno: {
+                    id: turno.id,
+                    usuario: `${turno.nombres} ${turno.apellidos}`,
+                    estado: turno.estado,
+                    fecha_apertura: turno.fecha_apertura,
+                    efectivo_inicial_total: parseFloat(turno.efectivo_inicial_total),
+                    efectivo_actual: efectivoActual
+                },
                 ventas: {
                     total: totalesVentas.total,
                     efectivo: totalesVentas.efectivo,
@@ -365,9 +375,15 @@ class Turno {
                     transferencia: totalesVentas.transferencia,
                     cantidad: totalesVentas.cantidad
                 },
-                gastos: totalesGastos,
-                vouchers: totalesVouchers,
-                transferencias: totalesTransferencias
+                impuestos: {
+                    efectivo: impuestos.efectivo,
+                    tarjeta: impuestos.tarjeta,
+                    transferencia: impuestos.transferencia,
+                    depositos: impuestos.depositos
+                },
+                gastos: listaGastos,                    // ✅ LISTA COMPLETA
+                vouchers: listaVouchers,                // ✅ LISTA COMPLETA
+                transferencias: listaTransferencias     // ✅ LISTA COMPLETA
             };
 
         } catch (error) {
@@ -474,6 +490,102 @@ class Turno {
             throw error;
         }
     }
+
+
+
+
+
+    // ============================================================================
+    // OBTENER LISTA DE GASTOS DEL TURNO
+    // ============================================================================
+    static async obtenerListaGastos(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [gastos] = await conn.execute(
+                `SELECT 
+                    id,
+                    turno_id,
+                    tipo_gasto as categoria,
+                    descripcion,
+                    monto,
+                    fecha_creacion
+                FROM gastos
+                WHERE turno_id = ?
+                ORDER BY fecha_creacion DESC`,
+                [turnoId]
+            );
+
+            return gastos;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo lista de gastos:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // OBTENER LISTA DE VOUCHERS DEL TURNO
+    // ============================================================================
+    static async obtenerListaVouchers(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [vouchers] = await conn.execute(
+                `SELECT 
+                    id,
+                    turno_id,
+                    numero_voucher,
+                    paciente_nombre,
+                    monto,
+                    fecha_creacion
+                FROM vouchers_tarjeta
+                WHERE turno_id = ?
+                ORDER BY fecha_creacion DESC`,
+                [turnoId]
+            );
+
+            return vouchers;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo lista de vouchers:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // OBTENER LISTA DE TRANSFERENCIAS DEL TURNO
+    // ============================================================================
+    static async obtenerListaTransferencias(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [transferencias] = await conn.execute(
+                `SELECT 
+                    id,
+                    turno_id,
+                    numero_boleta,
+                    paciente_nombre,
+                    monto,
+                    fecha_creacion
+                FROM transferencias
+                WHERE turno_id = ?
+                ORDER BY fecha_creacion DESC`,
+                [turnoId]
+            );
+
+            return transferencias;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo lista de transferencias:', error);
+            throw error;
+        }
+    }
+
+
+
+
+
 
     // ============================================================================
     // CALCULAR IMPUESTOS
