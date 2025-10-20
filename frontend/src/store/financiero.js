@@ -142,6 +142,9 @@ export const useFinancieroStore = defineStore('financiero', {
     // TURNOS
     // ========================================
     
+
+
+
     /**
      * Verificar si hay turno activo
      */
@@ -151,11 +154,20 @@ export const useFinancieroStore = defineStore('financiero', {
       
       try {
         const response = await financieroService.verificarTurnoActivo()
-        this.turnoActivo = response.data
         
-        // Si hay turno activo, cargar su resumen
-        if (this.turnoActivo) {
+        // ✅ VALIDAR Y SANITIZAR DATOS ANTES DE ASIGNAR
+        if (response.data) {
+          // Asegurarse de que todos los números decimales sean válidos
+          this.turnoActivo = {
+            ...response.data,
+            efectivo_inicial_total: parseFloat(response.data.efectivo_inicial_total) || 0,
+            efectivo_final_total: parseFloat(response.data.efectivo_final_total) || 0
+          }
+          
+          // Si hay turno activo, cargar su resumen
           await this.obtenerResumenTurno()
+        } else {
+          this.turnoActivo = null
         }
         
         return response
@@ -167,6 +179,9 @@ export const useFinancieroStore = defineStore('financiero', {
         this.loading.turno = false
       }
     },
+
+
+
     
     /**
      * Abrir un nuevo turno
@@ -249,6 +264,9 @@ export const useFinancieroStore = defineStore('financiero', {
       }
     },
     
+
+
+
     /**
      * Obtener resumen del turno en tiempo real
      */
@@ -259,24 +277,56 @@ export const useFinancieroStore = defineStore('financiero', {
       
       try {
         const response = await financieroService.obtenerResumenTurno(this.turnoActivo.id)
-        this.resumenTurno = response.data
+        
+        // ✅ VALIDAR Y SANITIZAR RESUMEN - FIX CRÍTICO
+        const resumen = response.data || {}
+        
+        // Asegurar que todos los valores numéricos sean válidos
+        this.resumenTurno = {
+          turno: {
+            ...(resumen.turno || {}),
+            efectivo_inicial_total: parseFloat(resumen.turno?.efectivo_inicial_total) || 
+                                    parseFloat(this.turnoActivo?.efectivo_inicial_total) || 0
+          },
+          ventas: {
+            total: Math.round((parseFloat(resumen.ventas?.total) || 0) * 100) / 100,
+            efectivo: Math.round((parseFloat(resumen.ventas?.efectivo) || 0) * 100) / 100,
+            tarjeta: Math.round((parseFloat(resumen.ventas?.tarjeta) || 0) * 100) / 100,
+            transferencia: Math.round((parseFloat(resumen.ventas?.transferencia) || 0) * 100) / 100,
+            cantidad: parseInt(resumen.ventas?.cantidad) || 0
+          },
+          impuestos: {
+            efectivo: Math.round((parseFloat(resumen.impuestos?.efectivo) || 0) * 100) / 100,
+            tarjeta: Math.round((parseFloat(resumen.impuestos?.tarjeta) || 0) * 100) / 100,
+            transferencia: Math.round((parseFloat(resumen.impuestos?.transferencia) || 0) * 100) / 100,
+            depositos: Math.round((parseFloat(resumen.impuestos?.depositos) || 0) * 100) / 100
+          },
+          gastos: Array.isArray(resumen.gastos) ? resumen.gastos : [],
+          vouchers: Array.isArray(resumen.vouchers) ? resumen.vouchers : [],
+          transferencias: Array.isArray(resumen.transferencias) ? resumen.transferencias : []
+        }
         
         // Actualizar listas
-        this.gastos = response.data.gastos || []
-        this.vouchers = response.data.vouchers || []
-        this.transferencias = response.data.transferencias || []
+        this.gastos = this.resumenTurno.gastos
+        this.vouchers = this.resumenTurno.vouchers
+        this.transferencias = this.resumenTurno.transferencias
         
         // Actualizar timestamp de cache
         this.cache.ultimaActualizacion = new Date()
         
+        console.log('✅ Resumen sanitizado:', this.resumenTurno)
+        
         return response
       } catch (error) {
-        console.error('Error al obtener resumen del turno:', error)
+        console.error('❌ Error al obtener resumen del turno:', error)
         // No lanzamos el error para no interrumpir el flujo
       } finally {
         this.loading.resumen = false
       }
     },
+
+
+
     
     /**
      * Calcular cuadre previo (preview sin cerrar)
@@ -347,21 +397,21 @@ export const useFinancieroStore = defineStore('financiero', {
       this.error = null
       
       try {
-        // Agregar turno_id automáticamente
+        // ✅ MAPEAR CORRECTAMENTE LOS CAMPOS PARA EL BACKEND
         const gastoCompleto = {
-          ...gasto,
-          turno_id: this.turnoActivo.id
+          turno_id: this.turnoActivo.id,
+          tipo_gasto: gasto.categoria,
+          descripcion: gasto.descripcion,
+          monto: parseFloat(gasto.monto),
+          metodo_pago: gasto.metodo_pago
         }
+        
+        console.log('📤 Enviando gasto al backend:', gastoCompleto)
         
         const response = await financieroService.registrarGasto(gastoCompleto)
         
-        // Agregar a la lista local
         this.gastos.push(response.data)
-        
-        // Actualizar resumen
         await this.obtenerResumenTurno()
-        
-        // Cerrar modal
         this.mostrarModalGasto = false
         
         return response
@@ -439,10 +489,16 @@ export const useFinancieroStore = defineStore('financiero', {
       this.error = null
       
       try {
+        // ✅ MAPEAR CORRECTAMENTE LOS CAMPOS PARA EL BACKEND
         const voucherCompleto = {
-          ...voucher,
-          turno_id: this.turnoActivo.id
+          turno_id: this.turnoActivo.id,
+          numero_voucher: voucher.numero_voucher,
+          paciente_nombre: voucher.paciente_nombre,
+          monto: parseFloat(voucher.monto)
+          // Nota: banco, fecha, notas no se envían porque no existen en la BD
         }
+        
+        console.log('📤 Enviando voucher al backend:', voucherCompleto)
         
         const response = await financieroService.registrarVoucher(voucherCompleto)
         
