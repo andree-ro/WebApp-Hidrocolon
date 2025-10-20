@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col">
       <!-- Header -->
       <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-lg">
         <div class="flex items-center justify-between">
@@ -21,7 +21,7 @@
       </div>
 
       <!-- Body -->
-      <div class="p-6 space-y-4">
+      <div class="p-6 space-y-4 overflow-y-auto flex-1">
         <!-- Número de Voucher -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -39,6 +39,23 @@
           </div>
           <p class="text-xs text-gray-500 mt-1">
             Ingresa el número que aparece en el voucher físico
+          </p>
+        </div>
+
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Nombre del Paciente *
+          </label>
+          <input
+            v-model="voucher.paciente_nombre"
+            type="text"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Ej: Juan Pérez"
+            required
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Nombre del paciente que realizó el pago
           </p>
         </div>
 
@@ -212,6 +229,7 @@ const error = ref(null)
 // Estado del voucher
 const voucher = ref({
   numero_voucher: '',
+  paciente_nombre: '',
   monto: null,
   banco: '',
   fecha: '',
@@ -228,6 +246,7 @@ const voucher = ref({
 const esValido = computed(() => {
   return (
     voucher.value.numero_voucher.trim() !== '' &&
+    voucher.value.paciente_nombre.trim() !== '' &&  // ✅ AGREGAR ESTA LÍNEA
     voucher.value.monto > 0
   )
 })
@@ -296,6 +315,7 @@ async function registrarVoucher() {
 function limpiarFormulario() {
   voucher.value = {
     numero_voucher: '',
+    paciente_nombre: '',
     monto: null,
     banco: '',
     fecha: '',

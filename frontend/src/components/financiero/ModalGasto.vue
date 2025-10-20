@@ -27,23 +27,24 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Categoría del Gasto *
           </label>
+
+
+
           <select
             v-model="gasto.categoria"
             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
             required
           >
             <option value="">Selecciona una categoría</option>
-            <option value="Servicios">🔌 Servicios (luz, agua, internet)</option>
-            <option value="Suministros">📦 Suministros</option>
-            <option value="Transporte">🚗 Transporte</option>
-            <option value="Alimentación">🍽️ Alimentación</option>
-            <option value="Mantenimiento">🔧 Mantenimiento</option>
-            <option value="Limpieza">🧹 Limpieza</option>
-            <option value="Comisiones">💰 Comisiones pagadas</option>
-            <option value="Impuestos">📋 Impuestos</option>
-            <option value="Banco">🏦 Gastos bancarios</option>
-            <option value="Otro">📌 Otro</option>
+            <option value="servicios">🔌 Servicios (luz, agua, internet)</option>
+            <option value="compras">📦 Compras y suministros</option>
+            <option value="mantenimiento">🔧 Mantenimiento</option>
+            <option value="personal">👥 Personal (salarios, comisiones)</option>
+            <option value="administrativo">📋 Administrativo</option>
+            <option value="otros">📌 Otros</option>
           </select>
+
+
         </div>
 
         <!-- Descripción -->
