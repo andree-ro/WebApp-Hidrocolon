@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full my-8">
       <!-- Header -->
       <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-t-lg">
         <div class="flex items-center justify-between">
@@ -20,8 +20,8 @@
         </div>
       </div>
 
-      <!-- Body -->
-      <div class="p-6 space-y-4">
+      <!-- Body con Scroll -->
+      <div class="p-6 space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
         <!-- Número de Boleta -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -42,18 +42,38 @@
           </p>
         </div>
 
+        <!-- Nombre del Paciente -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Nombre del Paciente *
+          </label>
+          <div class="relative">
+            <span class="absolute left-4 top-3 text-gray-500 text-lg">👤</span>
+            <input
+              v-model="transferencia.paciente_nombre"
+              type="text"
+              class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg"
+              placeholder="Ej: María López"
+              required
+            />
+          </div>
+          <p class="text-xs text-gray-500 mt-1">
+            Nombre completo del paciente que realizó la transferencia
+          </p>
+        </div>
+
         <!-- Monto -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Monto de la Transferencia *
           </label>
           <div class="relative">
-            <span class="absolute left-4 top-3 text-gray-500 text-lg font-semibold">Q</span>
+            <span class="absolute left-4 top-3 text-gray-500 text-lg">Q</span>
             <input
               v-model.number="transferencia.monto"
               type="number"
               step="0.01"
-              min="0.01"
+              min="0"
               class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg font-semibold"
               placeholder="0.00"
               required
@@ -64,75 +84,6 @@
           </p>
         </div>
 
-        <!-- Banco -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Banco Emisor *
-          </label>
-          <select
-            v-model="transferencia.banco"
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            required
-          >
-            <option value="">Selecciona el banco</option>
-            <option value="BAM">🏦 BAM - Banco Agromercantil</option>
-            <option value="Banrural">🏦 Banrural</option>
-            <option value="Industrial">🏦 Banco Industrial</option>
-            <option value="G&T Continental">🏦 G&T Continental</option>
-            <option value="BAC">🏦 BAC Credomatic</option>
-            <option value="Bantrab">🏦 Bantrab</option>
-            <option value="Ficohsa">🏦 Ficohsa</option>
-            <option value="Promerica">🏦 Promerica</option>
-            <option value="Banco de Antigua">🏦 Banco de Antigua</option>
-            <option value="Vivibanco">🏦 Vivibanco</option>
-            <option value="Otro">🏦 Otro</option>
-          </select>
-        </div>
-
-        <!-- Cuenta Destino (opcional) -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Cuenta Destino (Opcional)
-          </label>
-          <input
-            v-model="transferencia.cuenta_destino"
-            type="text"
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            placeholder="Ej: 1234567890"
-          />
-          <p class="text-xs text-gray-500 mt-1">
-            Número de cuenta a la que se transfirió
-          </p>
-        </div>
-
-        <!-- Fecha -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Fecha de la Transferencia (Opcional)
-          </label>
-          <input
-            v-model="transferencia.fecha"
-            type="date"
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          />
-          <p class="text-xs text-gray-500 mt-1">
-            Si está vacío, se usará la fecha actual
-          </p>
-        </div>
-
-        <!-- Referencia (opcional) -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Referencia / Descripción (Opcional)
-          </label>
-          <textarea
-            v-model="transferencia.referencia"
-            rows="2"
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-            placeholder="Información adicional sobre la transferencia..."
-          ></textarea>
-        </div>
-
         <!-- Resumen visual -->
         <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
           <div class="flex items-center justify-between mb-3">
@@ -140,7 +91,7 @@
               <p class="text-sm text-purple-700 font-medium">Total de la Transferencia</p>
               <p class="text-xs text-purple-600">
                 {{ transferencia.numero_boleta ? `#${transferencia.numero_boleta}` : 'Sin número' }}
-                {{ transferencia.banco ? ` - ${transferencia.banco}` : '' }}
+                {{ transferencia.paciente_nombre ? ` - ${transferencia.paciente_nombre}` : '' }}
               </p>
             </div>
             <p class="text-3xl font-bold text-purple-600">
@@ -178,7 +129,7 @@
           </div>
         </div>
 
-        <!-- Nota sobre banco -->
+        <!-- Nota sobre comprobante -->
         <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
           <div class="flex items-start gap-3">
             <span class="text-xl">💡</span>
@@ -237,14 +188,11 @@ const financieroStore = useFinancieroStore()
 const loading = ref(false)
 const error = ref(null)
 
-// Estado de la transferencia
+// Estado de la transferencia - SOLO CAMPOS QUE EXISTEN EN BD
 const transferencia = ref({
   numero_boleta: '',
-  monto: null,
-  banco: '',
-  cuenta_destino: '',
-  fecha: '',
-  referencia: ''
+  paciente_nombre: '',
+  monto: null
 })
 
 // ============================================================================
@@ -257,8 +205,8 @@ const transferencia = ref({
 const esValido = computed(() => {
   return (
     transferencia.value.numero_boleta.trim() !== '' &&
-    transferencia.value.monto > 0 &&
-    transferencia.value.banco !== ''
+    transferencia.value.paciente_nombre.trim() !== '' &&
+    transferencia.value.monto > 0
   )
 })
 
@@ -278,6 +226,11 @@ async function registrarTransferencia() {
     return
   }
 
+  if (transferencia.value.paciente_nombre.trim().length < 3) {
+    error.value = 'El nombre del paciente debe tener al menos 3 caracteres'
+    return
+  }
+
   if (transferencia.value.monto <= 0) {
     error.value = 'El monto debe ser mayor a Q0.00'
     return
@@ -289,15 +242,14 @@ async function registrarTransferencia() {
   try {
     console.log('📤 Registrando transferencia:', transferencia.value)
 
-    // Preparar datos (limpiar campos opcionales vacíos)
+    // Preparar datos - SOLO CAMPOS QUE EXISTEN EN BD
     const datosTransferencia = {
       numero_boleta: transferencia.value.numero_boleta.trim(),
-      monto: transferencia.value.monto,
-      banco: transferencia.value.banco,
-      cuenta_destino: transferencia.value.cuenta_destino || null,
-      fecha: transferencia.value.fecha || null,
-      referencia: transferencia.value.referencia || null
+      paciente_nombre: transferencia.value.paciente_nombre.trim(),
+      monto: parseFloat(transferencia.value.monto)
     }
+
+    console.log('📦 Datos a enviar:', datosTransferencia)
 
     // Llamar al store
     await financieroStore.registrarTransferencia(datosTransferencia)
@@ -307,8 +259,8 @@ async function registrarTransferencia() {
     // Emitir evento de éxito
     emit('transferencia-registrada')
 
-    // Mostrar notificación (opcional)
-    alert(`¡Transferencia registrada exitosamente!\nBoleta: ${transferencia.value.numero_boleta}\nMonto: Q${formatearNumero(transferencia.value.monto)}`)
+    // Mostrar notificación
+    alert(`¡Transferencia registrada exitosamente!\nBoleta: ${transferencia.value.numero_boleta}\nPaciente: ${transferencia.value.paciente_nombre}\nMonto: Q${formatearNumero(transferencia.value.monto)}`)
 
     // Limpiar formulario
     limpiarFormulario()
@@ -327,11 +279,8 @@ async function registrarTransferencia() {
 function limpiarFormulario() {
   transferencia.value = {
     numero_boleta: '',
-    monto: null,
-    banco: '',
-    cuenta_destino: '',
-    fecha: '',
-    referencia: ''
+    paciente_nombre: '',
+    monto: null
   }
   error.value = null
 }
@@ -357,5 +306,24 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Estilos para el scroll */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #a855f7;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #9333ea;
 }
 </style>
