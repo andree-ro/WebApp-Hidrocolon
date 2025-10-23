@@ -169,7 +169,8 @@ const crearVenta = async (req, res) => {
             subtotal,
             descuento,
             total,
-            efectivo_recibido: metodo_pago === 'efectivo' ? parseFloat(efectivo_recibido) : 0,
+            efectivo_recibido: (metodo_pago === 'efectivo') ? parseFloat(efectivo_recibido) : 
+                   (metodo_pago === 'mixto') ? (total - parseFloat(tarjeta_monto || 0) - parseFloat(transferencia_monto || 0)) : 0,
             efectivo_cambio: metodo_pago === 'efectivo' ? (parseFloat(efectivo_recibido) - total) : 0,
             tarjeta_monto: (metodo_pago === 'tarjeta' || metodo_pago === 'mixto') ? parseFloat(tarjeta_monto || 0) : 0,
             transferencia_monto: (metodo_pago === 'transferencia' || metodo_pago === 'mixto') ? parseFloat(transferencia_monto || 0) : 0,
