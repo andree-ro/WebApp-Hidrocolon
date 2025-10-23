@@ -584,6 +584,55 @@ class Turno {
 
 
 
+    // ============================================================================
+    // OBTENER LISTA DE PRODUCTOS VENDIDOS DEL TURNO
+    // ============================================================================
+    static async obtenerProductosVendidos(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [productos] = await conn.execute(
+                `SELECT 
+                    v.id as venta_id,
+                    v.metodo_pago,
+                    v.total as venta_total,
+                    v.fecha_creacion,
+                    dv.producto_nombre,
+                    dv.cantidad,
+                    dv.precio_unitario,
+                    dv.precio_total,
+                    CASE 
+                        WHEN v.metodo_pago = 'efectivo' THEN dv.precio_total
+                        WHEN v.metodo_pago = 'mixto' THEN (v.total - COALESCE(v.tarjeta_monto, 0) - COALESCE(v.transferencia_monto, 0)) * (dv.precio_total / v.total)
+                        ELSE 0 
+                    END as efectivo_producto,
+                    CASE 
+                        WHEN v.metodo_pago = 'tarjeta' THEN dv.precio_total
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.tarjeta_monto, 0) * (dv.precio_total / v.total)
+                        ELSE 0 
+                    END as tarjeta_producto,
+                    CASE 
+                        WHEN v.metodo_pago = 'transferencia' THEN dv.precio_total
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.transferencia_monto, 0) * (dv.precio_total / v.total)
+                        ELSE 0 
+                    END as transferencia_producto,
+                    u.nombres,
+                    u.apellidos
+                FROM ventas v
+                INNER JOIN detalle_ventas dv ON v.id = dv.venta_id
+                INNER JOIN usuarios u ON v.vendedor_id = u.id
+                WHERE v.turno_id = ?
+                ORDER BY v.id ASC, dv.id ASC`,
+                [turnoId]
+            );
+
+            return productos;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo productos vendidos:', error);
+            throw error;
+        }
+    }
 
 
 
@@ -686,6 +735,7 @@ class Turno {
             const listaGastos = await this.obtenerListaGastos(turnoId);
             const listaVouchers = await this.obtenerListaVouchers(turnoId);
             const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
+            const listaProductos = await this.obtenerProductosVendidos(turnoId);
             
             // Calcular totales
             const totalGastos = listaGastos.reduce((sum, g) => sum + parseFloat(g.monto), 0);
@@ -808,6 +858,20 @@ class Turno {
                 gastos_resumen: {
                     total: totalGastos
                 },
+                
+                productos_vendidos: listaProductos.map(p => ({
+                    venta_id: p.venta_id,
+                    producto_nombre: p.producto_nombre,
+                    cantidad: parseFloat(p.cantidad),
+                    precio_unitario: parseFloat(p.precio_unitario),
+                    precio_total: parseFloat(p.precio_total),
+                    efectivo: parseFloat(p.efectivo_producto),
+                    tarjeta: parseFloat(p.tarjeta_producto),
+                    transferencia: parseFloat(p.transferencia_producto),
+                    usuario: `${p.nombres} ${p.apellidos}`,
+                    fecha: p.fecha_creacion
+                })),
+
                 impuestos: {
                     efectivo: {
                         ventas: totalesVentas.efectivo,

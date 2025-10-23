@@ -6,7 +6,7 @@ class ComprobanteGenerator {
         return new Promise((resolve, reject) => {
             try {
                 const doc = new PDFDocument({ 
-                    size: 'LETTER', // Carta completa 8.5" × 11"
+                    size: 'LETTER',
                     margins: { top: 30, bottom: 30, left: 40, right: 40 }
                 });
 
@@ -16,11 +16,9 @@ class ComprobanteGenerator {
                 doc.on('end', () => resolve(Buffer.concat(chunks)));
                 doc.on('error', reject);
 
-                const MEDIA_CARTA_LIMITE = 396; // Mitad de 11" = 5.5" × 72 = 396 puntos
+                const MEDIA_CARTA_LIMITE = 396;
 
-                // ============================================
                 // ENCABEZADO
-                // ============================================
                 doc.fontSize(16)
                    .font('Helvetica-Bold')
                    .text('HIDROCOLON', { align: 'center' });
@@ -33,9 +31,7 @@ class ComprobanteGenerator {
                 
                 doc.moveDown(0.5);
 
-                // ============================================
                 // INFORMACIÓN DE LA VENTA
-                // ============================================
                 const startY = doc.y;
                 
                 doc.fontSize(8)
@@ -67,9 +63,7 @@ class ComprobanteGenerator {
 
                 doc.moveDown(1.5);
 
-                // ============================================
-                // DATOS DEL CLIENTE (Compacto)
-                // ============================================
+                // DATOS DEL CLIENTE
                 doc.fontSize(8)
                    .font('Helvetica-Bold')
                    .text('Cliente: ', { continued: true })
@@ -78,14 +72,12 @@ class ComprobanteGenerator {
 
                 doc.moveDown(0.5);
 
-                // ============================================
                 // TABLA DE PRODUCTOS
-                // ============================================
                 const tableTop = doc.y;
-                const col1 = 40;   // Cantidad
-                const col2 = 75;   // Descripción
-                const col3 = 420;  // Precio Unit.
-                const col4 = 495;  // Total
+                const col1 = 40;
+                const col2 = 75;
+                const col3 = 420;
+                const col4 = 495;
 
                 doc.fontSize(7)
                    .font('Helvetica-Bold')
@@ -99,32 +91,27 @@ class ComprobanteGenerator {
                    .stroke();
 
                 let yPosition = tableTop + 14;
+                
                 doc.font('Helvetica')
                    .fontSize(7);
 
                 for (const item of venta.detalle) {
-                    // Verificar si llegamos al límite de media carta
                     if (yPosition > MEDIA_CARTA_LIMITE - 80) {
-                        // Marcar que hay más productos
                         doc.fontSize(6)
                            .font('Helvetica-Oblique')
                            .text('(Continúa en página siguiente...)', 40, yPosition);
-                        
                         doc.addPage();
                         yPosition = 50;
                         
-                        // Re-dibujar encabezado de tabla
                         doc.fontSize(7)
                            .font('Helvetica-Bold')
                            .text('Cant', col1, yPosition)
                            .text('Descripción', col2, yPosition)
                            .text('P.Unit.', col3, yPosition)
                            .text('Total', col4, yPosition);
-                        
                         doc.moveTo(40, yPosition + 10)
                            .lineTo(555, yPosition + 10)
                            .stroke();
-                        
                         yPosition += 14;
                         doc.font('Helvetica');
                     }
@@ -133,19 +120,15 @@ class ComprobanteGenerator {
                        .text(item.producto_nombre, col2, yPosition, { width: 330 })
                        .text(`Q${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
                        .text(`Q${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
-
                     yPosition += 12;
                 }
 
                 doc.moveTo(40, yPosition + 2)
                    .lineTo(555, yPosition + 2)
                    .stroke();
-
                 yPosition += 8;
 
-                // ============================================
                 // TOTALES
-                // ============================================
                 doc.fontSize(8)
                    .font('Helvetica-Bold');
 
@@ -167,9 +150,7 @@ class ComprobanteGenerator {
                    .text('TOTAL:', 420, yPosition)
                    .text(`Q${parseFloat(venta.total).toFixed(2)}`, 495, yPosition);
 
-                // ============================================
                 // DETALLES DE PAGO
-                // ============================================
                 if (venta.metodo_pago === 'efectivo') {
                     yPosition += 12;
                     doc.fontSize(7)
@@ -181,31 +162,25 @@ class ComprobanteGenerator {
                     yPosition += 12;
                     doc.fontSize(6)
                        .font('Helvetica');
-                    
                     const detalles = [];
                     if (parseFloat(venta.tarjeta_monto) > 0) detalles.push(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
                     if (parseFloat(venta.transferencia_monto) > 0) detalles.push(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
                     const efectivo = parseFloat(venta.total) - parseFloat(venta.tarjeta_monto) - parseFloat(venta.transferencia_monto);
                     if (efectivo > 0) detalles.push(`Efectivo: Q${efectivo.toFixed(2)}`);
-                    
                     doc.text(detalles.join(' | '), 420, yPosition);
                 }
 
-                // ============================================
                 // PIE DE PÁGINA
-                // ============================================
                 doc.fontSize(6)
                    .font('Helvetica')
                    .text('Gracias por su compra', 40, MEDIA_CARTA_LIMITE - 15, { align: 'center', width: 515 });
 
-                // Línea de corte visual
                 doc.moveTo(40, MEDIA_CARTA_LIMITE)
                    .lineTo(555, MEDIA_CARTA_LIMITE)
                    .dash(5, { space: 3 })
                    .stroke();
 
                 doc.end();
-
             } catch (error) {
                 reject(error);
             }
@@ -213,12 +188,11 @@ class ComprobanteGenerator {
     }
 
     // ============================================================================
-    // GENERAR REPORTE DE CIERRE DE TURNO
+    // GENERAR REPORTE DE CIERRE DE TURNO (COMPLETO)
     // ============================================================================
     static async generarReporteCierre(datosReporte) {
         return new Promise((resolve, reject) => {
             try {
-                // Crear documento en tamaño carta
                 const doc = new PDFDocument({
                     size: 'LETTER',
                     margins: { top: 40, bottom: 40, left: 40, right: 40 }
@@ -249,7 +223,7 @@ class ComprobanteGenerator {
 
                 // Funciones auxiliares
                 const formatearMoneda = (monto) => {
-                    return `Q ${parseFloat(monto).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                    return `Q${parseFloat(monto).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
                 };
 
                 const formatearFecha = (fecha) => {
@@ -262,64 +236,19 @@ class ComprobanteGenerator {
                     });
                 };
 
-                const formatearFechaCorta = (fecha) => {
-                    return new Date(fecha).toLocaleDateString('es-GT', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: '2-digit'
-                    });
-                };
-
                 const agregarSeccionHeader = (titulo, yPos) => {
                     doc.rect(margin, yPos, contentWidth, 25).fillAndStroke(colors.primary, colors.primary);
                     doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
                        .text(titulo, margin + 10, yPos + 8);
+                    return yPos + 25;
                 };
 
-                const agregarTablaSimple = (yPos, rows) => {
-                    const colWidth = contentWidth / rows[0].length;
-                    const rowHeight = 18;
-                    let currentY = yPos;
-
-                    rows.forEach((row, rowIndex) => {
-                        const isHeader = rowIndex === 0;
-                        const isTotal = rowIndex === rows.length - 1;
-
-                        if (isHeader) {
-                            doc.rect(margin, currentY, contentWidth, rowHeight).fillAndStroke(colors.primary, colors.border);
-                        } else if (isTotal) {
-                            doc.rect(margin, currentY, contentWidth, rowHeight).fillAndStroke(colors.lightGray, colors.border);
-                        } else {
-                            if (rowIndex % 2 === 0) {
-                                doc.rect(margin, currentY, contentWidth, rowHeight).fillAndStroke('#ffffff', colors.border);
-                            } else {
-                                doc.rect(margin, currentY, contentWidth, rowHeight).fillAndStroke('#f8fafc', colors.border);
-                            }
-                        }
-
-                        row.forEach((cell, colIndex) => {
-                            const cellX = margin + (colIndex * colWidth);
-                            const align = colIndex === row.length - 1 ? 'right' : 'left';
-                            const padding = align === 'right' ? -10 : 10;
-
-                            if (isHeader) {
-                                doc.fontSize(9).fillColor('#ffffff').font('Helvetica-Bold');
-                            } else if (isTotal) {
-                                doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold');
-                            } else {
-                                doc.fontSize(9).fillColor(colors.text).font('Helvetica');
-                            }
-
-                            doc.text(cell, cellX + padding, currentY + 4, {
-                                width: colWidth - 20,
-                                align: align
-                            });
-                        });
-
-                        currentY += rowHeight;
-                    });
-
-                    return currentY;
+                const nuevaPaginaSiNecesario = (espacioNecesario) => {
+                    if (y + espacioNecesario > pageHeight - 60) {
+                        doc.addPage();
+                        return margin;
+                    }
+                    return y;
                 };
 
                 // ============================================================
@@ -327,10 +256,8 @@ class ComprobanteGenerator {
                 // ============================================================
                 doc.fontSize(18).fillColor(colors.primary).font('Helvetica-Bold')
                    .text('HIDROCOLON XELA - VIMESA ZONA 9', margin, y, { align: 'center', width: contentWidth });
-                
                 y += 25;
                 doc.fontSize(16).text('REPORTE DE CIERRE DE TURNO', margin, y, { align: 'center', width: contentWidth });
-                
                 y += 30;
                 doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
                 y += 20;
@@ -338,271 +265,264 @@ class ComprobanteGenerator {
                 // Información del turno
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica');
                 doc.text(`Turno #${datosReporte.turno.id}`, margin, y);
-                doc.text(`Estado: ${datosReporte.turno.estado.toUpperCase()}`, pageWidth - margin - 150, y, { width: 150, align: 'right' });
-                
+                doc.text(`Fecha: ${formatearFecha(datosReporte.turno.fecha_cierre)}`, pageWidth - margin - 200, y, { width: 200, align: 'right' });
                 y += 15;
                 doc.text(`Usuario: ${datosReporte.turno.usuario_nombre}`, margin, y);
-                
                 y += 15;
                 doc.text(`Apertura: ${formatearFecha(datosReporte.turno.fecha_apertura)}`, margin, y);
-                
                 y += 15;
                 doc.text(`Cierre: ${formatearFecha(datosReporte.turno.fecha_cierre)}`, margin, y);
-                
                 y += 15;
                 doc.text(`Duración: ${datosReporte.turno.duracion_horas}h ${datosReporte.turno.duracion_minutos}m`, margin, y);
-
                 y += 30;
 
                 // ============================================================
-                // RESUMEN DE VENTAS
+                // SECCIÓN 1: PRODUCTOS VENDIDOS
                 // ============================================================
-                agregarSeccionHeader('RESUMEN DE VENTAS DEL TURNO', y);
-                y += 35;
+                y = nuevaPaginaSiNecesario(100);
+                y = agregarSeccionHeader('PRODUCTOS VENDIDOS HOY', y);
+                y += 10;
 
-                const ventas = datosReporte.resumen_ventas;
-                y = agregarTablaSimple(y, [
-                    ['Concepto', 'Monto'],
-                    ['Venta Total', formatearMoneda(ventas.venta_total)],
-                    ['├─ Ventas en Efectivo', formatearMoneda(ventas.ventas_efectivo)],
-                    ['├─ Ventas con Tarjeta', formatearMoneda(ventas.ventas_tarjeta)],
-                    ['└─ Ventas con Transferencia', formatearMoneda(ventas.ventas_transferencia)]
-                ]);
-                
-                y += 30;
+                if (datosReporte.productos_vendidos && datosReporte.productos_vendidos.length > 0) {
+                    // Tabla de productos
+                    const colWidths = [30, 160, 40, 60, 60, 60, 60, 62];
+                    const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Total', 'Usuario'];
+                    
+                    // Encabezados
+                    let xPos = margin;
+                    doc.fontSize(7).fillColor('#ffffff').font('Helvetica-Bold');
+                    doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
+                    
+                    headers.forEach((header, i) => {
+                        doc.text(header, xPos + 2, y + 5, { width: colWidths[i] - 4, align: 'center' });
+                        xPos += colWidths[i];
+                    });
+                    y += 18;
 
-                // ============================================================
-                // CUADRE DE EFECTIVO
-                // ============================================================
-                agregarSeccionHeader('CUADRE DE EFECTIVO', y);
-                y += 35;
+                    // Productos
+                    doc.fontSize(6).fillColor(colors.text).font('Helvetica');
+                    datosReporte.productos_vendidos.forEach((prod, idx) => {
+                        y = nuevaPaginaSiNecesario(14);
+                        
+                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
+                        doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
 
-                // Efectivo Inicial
-                doc.fontSize(11).font('Helvetica-Bold').fillColor(colors.text)
-                   .text('A. EFECTIVO INICIAL (Apertura del Turno)', margin, y);
-                y += 20;
+                        xPos = margin;
+                        const valores = [
+                            prod.venta_id.toString(),
+                            prod.producto_nombre.substring(0, 28),
+                            prod.cantidad.toString(),
+                            formatearMoneda(prod.tarjeta),
+                            formatearMoneda(prod.efectivo),
+                            formatearMoneda(prod.transferencia),
+                            formatearMoneda(prod.precio_total),
+                            prod.usuario.substring(0, 12)
+                        ];
 
-                // Billetes iniciales
-                const billetesIniciales = [['Denominación', 'Cantidad', 'Subtotal']];
-                let totalBilletesInicial = 0;
-                const denBilletes = ['200', '100', '50', '20', '10', '5', '1'];
-                denBilletes.forEach(den => {
-                    const cant = datosReporte.efectivo_inicial.billetes[den] || 0;
-                    const subtotal = cant * parseFloat(den);
-                    totalBilletesInicial += subtotal;
-                    billetesIniciales.push([`Q ${den}`, cant.toString(), formatearMoneda(subtotal)]);
-                });
-                billetesIniciales.push(['Total Billetes', '', formatearMoneda(totalBilletesInicial)]);
+                        valores.forEach((val, i) => {
+                            doc.text(val, xPos + 2, y + 3, { width: colWidths[i] - 4, align: i === 1 || i === 7 ? 'left' : 'center' });
+                            xPos += colWidths[i];
+                        });
+                        
+                        y += 14;
+                    });
 
-                y = agregarTablaSimple(y, billetesIniciales);
-                y += 20;
-
-                // Monedas iniciales
-                const monedasIniciales = [['Denominación', 'Cantidad', 'Subtotal']];
-                let totalMonedasInicial = 0;
-                const denMonedas = ['1', '0.50', '0.25', '0.10', '0.05'];
-                denMonedas.forEach(den => {
-                    const cant = datosReporte.efectivo_inicial.monedas[den] || 0;
-                    const subtotal = cant * parseFloat(den);
-                    totalMonedasInicial += subtotal;
-                    monedasIniciales.push([`Q ${den}`, cant.toString(), formatearMoneda(subtotal)]);
-                });
-                monedasIniciales.push(['Total Monedas', '', formatearMoneda(totalMonedasInicial)]);
-
-                y = agregarTablaSimple(y, monedasIniciales);
-                y += 20;
-
-                doc.font('Helvetica-Bold').fontSize(10).text(`Efectivo Inicial Total: ${formatearMoneda(datosReporte.efectivo_inicial.total)}`, margin, y);
-                y += 30;
-
-                // Verificar nueva página
-                if (y > pageHeight - 250) {
-                    doc.addPage();
-                    y = margin;
-                }
-
-                // Movimientos de efectivo
-                doc.fontSize(11).font('Helvetica-Bold').text('B. MOVIMIENTOS DE EFECTIVO', margin, y);
-                y += 20;
-
-                y = agregarTablaSimple(y, [
-                    ['Concepto', 'Monto'],
-                    ['(+) Efectivo Inicial', formatearMoneda(datosReporte.movimientos_efectivo.efectivo_inicial)],
-                    ['(+) Ventas en Efectivo', formatearMoneda(datosReporte.movimientos_efectivo.ventas_efectivo)],
-                    ['(-) Gastos del Turno', formatearMoneda(datosReporte.movimientos_efectivo.gastos)],
-                    ['(-) Comisiones Pagadas', formatearMoneda(datosReporte.movimientos_efectivo.comisiones_pagadas)],
-                    ['= EFECTIVO ESPERADO', formatearMoneda(datosReporte.movimientos_efectivo.efectivo_esperado)]
-                ]);
-
-                y += 30;
-
-                // Verificar nueva página
-                if (y > pageHeight - 300) {
-                    doc.addPage();
-                    y = margin;
-                }
-
-                // Efectivo Final
-                doc.fontSize(11).font('Helvetica-Bold').text('C. EFECTIVO FINAL (Conteo al Cierre)', margin, y);
-                y += 20;
-
-                // Billetes finales
-                const billetesFinal = [['Denominación', 'Cantidad', 'Subtotal']];
-                let totalBilletesFinal = 0;
-                denBilletes.forEach(den => {
-                    const cant = datosReporte.efectivo_final.billetes[den] || 0;
-                    const subtotal = cant * parseFloat(den);
-                    totalBilletesFinal += subtotal;
-                    billetesFinal.push([`Q ${den}`, cant.toString(), formatearMoneda(subtotal)]);
-                });
-                billetesFinal.push(['Total Billetes', '', formatearMoneda(totalBilletesFinal)]);
-
-                y = agregarTablaSimple(y, billetesFinal);
-                y += 20;
-
-                // Monedas finales
-                const monedasFinal = [['Denominación', 'Cantidad', 'Subtotal']];
-                let totalMonedasFinal = 0;
-                denMonedas.forEach(den => {
-                    const cant = datosReporte.efectivo_final.monedas[den] || 0;
-                    const subtotal = cant * parseFloat(den);
-                    totalMonedasFinal += subtotal;
-                    monedasFinal.push([`Q ${den}`, cant.toString(), formatearMoneda(subtotal)]);
-                });
-                monedasFinal.push(['Total Monedas', '', formatearMoneda(totalMonedasFinal)]);
-
-                y = agregarTablaSimple(y, monedasFinal);
-                y += 20;
-
-                doc.font('Helvetica-Bold').fontSize(10).text(`Efectivo Contado Total: ${formatearMoneda(datosReporte.efectivo_final.total)}`, margin, y);
-                y += 30;
-
-                // Resultado del cuadre
-                doc.fontSize(11).font('Helvetica-Bold').text('D. RESULTADO DEL CUADRE', margin, y);
-                y += 20;
-
-                const diferencia = datosReporte.diferencias.efectivo;
-                const estado = datosReporte.diferencias.estado_efectivo;
-                
-                let colorEstado = colors.success;
-                let icono = '✓';
-                if (estado === 'SOBRANTE') {
-                    colorEstado = colors.warning;
-                    icono = '⚠';
-                } else if (estado === 'FALTANTE') {
-                    colorEstado = colors.error;
-                    icono = '✗';
-                }
-
-                doc.rect(margin, y, contentWidth, 80).fillAndStroke(colors.lightGray, colors.border);
-                y += 15;
-
-                doc.fillColor(colors.text).font('Helvetica').fontSize(10)
-                   .text(`Efectivo Esperado: ${formatearMoneda(datosReporte.movimientos_efectivo.efectivo_esperado)}`, margin + 20, y);
-                y += 15;
-                doc.text(`Efectivo Contado: ${formatearMoneda(datosReporte.efectivo_final.total)}`, margin + 20, y);
-                y += 15;
-                doc.text(`Diferencia: ${formatearMoneda(diferencia)}`, margin + 20, y);
-                y += 20;
-                doc.fillColor(colorEstado).font('Helvetica-Bold')
-                   .text(`${icono} Estado: ${estado}`, margin + 20, y);
-
-                y += 50;
-
-                // Nueva página si es necesario
-                if (y > pageHeight - 300) {
-                    doc.addPage();
-                    y = margin;
+                    y += 10;
+                } else {
+                    doc.fontSize(9).fillColor(colors.secondary).font('Helvetica')
+                       .text('No hay productos vendidos en este turno', margin, y);
+                    y += 20;
                 }
 
                 // ============================================================
-                // IMPUESTOS
+                // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
                 // ============================================================
-                agregarSeccionHeader('IMPUESTOS Y VENTAS NETAS', y);
-                y += 35;
-
-                y = agregarTablaSimple(y, [
-                    ['Método de Pago', 'Ventas', 'Impuesto', 'Tasa', 'Venta Neta'],
-                    [
-                        'Efectivo',
-                        formatearMoneda(datosReporte.impuestos.efectivo.ventas),
-                        formatearMoneda(datosReporte.impuestos.efectivo.impuesto),
-                        '16%',
-                        formatearMoneda(datosReporte.impuestos.efectivo.venta_neta)
-                    ],
-                    [
-                        'Tarjeta',
-                        formatearMoneda(datosReporte.impuestos.tarjeta.ventas),
-                        formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_total),
-                        '6%+16%',
-                        formatearMoneda(datosReporte.impuestos.tarjeta.venta_neta)
-                    ],
-                    [
-                        'Transferencia',
-                        formatearMoneda(datosReporte.impuestos.transferencia.ventas),
-                        formatearMoneda(datosReporte.impuestos.transferencia.impuesto),
-                        '16%',
-                        formatearMoneda(datosReporte.impuestos.transferencia.venta_neta)
-                    ],
-                    [
-                        'TOTALES',
-                        formatearMoneda(datosReporte.resumen_ventas.venta_total),
-                        formatearMoneda(datosReporte.impuestos.total_impuestos),
-                        '',
-                        formatearMoneda(datosReporte.impuestos.total_ventas_netas)
-                    ]
-                ]);
-
-                y += 30;
-
-                // ============================================================
-                // TOTAL A DEPOSITAR
-                // ============================================================
-                agregarSeccionHeader('CÁLCULO DE DEPÓSITO', y);
-                y += 35;
-
-                doc.rect(margin, y, contentWidth, 80).fillAndStroke(colors.lightGray, colors.border);
+                y = nuevaPaginaSiNecesario(200);
+                y = agregarSeccionHeader('CIERRE CRUDO (SIN IMPUESTOS)', y);
                 y += 15;
 
-                doc.fillColor(colors.text).font('Helvetica').fontSize(10)
-                   .text(`Ventas Netas: ${formatearMoneda(datosReporte.deposito.ventas_netas)}`, margin + 20, y);
-                y += 15;
-                doc.text(`(-) Gastos: ${formatearMoneda(datosReporte.deposito.gastos)}`, margin + 20, y);
-                y += 15;
-                doc.text(`(-) Comisiones Pagadas: ${formatearMoneda(datosReporte.deposito.comisiones)}`, margin + 20, y);
-                y += 20;
-                doc.fillColor(colors.primary).font('Helvetica-Bold').fontSize(12)
-                   .text(`TOTAL A DEPOSITAR: ${formatearMoneda(datosReporte.deposito.total_a_depositar)}`, margin + 20, y);
+                // Datos de entrada
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Datos de Entrada:', margin, y);
+                y += 18;
 
-                y += 40;
+                const datosEntrada = [
+                    ['Ingreso Efectivo', formatearMoneda(datosReporte.resumen_ventas.ventas_efectivo)],
+                    ['Ingreso Tarjeta', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta)],
+                    ['Ingreso Transferencia', formatearMoneda(datosReporte.resumen_ventas.ventas_transferencia)],
+                    ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
+                    ['Total Real', formatearMoneda(datosReporte.resumen_ventas.venta_total)],
+                    ['Total Banco', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta + datosReporte.resumen_ventas.ventas_transferencia)]
+                ];
 
-                // ============================================================
-                // AUTORIZACIÓN (si aplica)
-                // ============================================================
-                if (datosReporte.autorizacion.requiere) {
-                    if (y > pageHeight - 200) {
-                        doc.addPage();
-                        y = margin;
+                doc.fontSize(9).font('Helvetica');
+                datosEntrada.forEach(([label, value]) => {
+                    doc.fillColor(colors.text).text(label, margin + 20, y, { width: 200 });
+                    doc.fillColor(colors.primary).font('Helvetica-Bold').text(value, margin + 240, y, { width: 100, align: 'right' });
+                    doc.font('Helvetica');
+                    y += 14;
+                });
+
+                y += 10;
+
+                // Resultados del cierre crudo
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Resultados del Cierre Crudo:', margin, y);
+                y += 18;
+
+                const ventaBruta = datosReporte.resumen_ventas.venta_total;
+                const gastos = datosReporte.gastos_resumen.total;
+
+                const resultadosCrudo = [
+                    ['VENTA BRUTA', formatearMoneda(ventaBruta)],
+                    ['GASTOS', formatearMoneda(gastos)],
+                    ['TOTAL CRUDO', formatearMoneda(ventaBruta - gastos)]
+                ];
+
+                doc.fontSize(9).font('Helvetica');
+                resultadosCrudo.forEach(([label, value], idx) => {
+                    const esFinal = idx === resultadosCrudo.length - 1;
+                    if (esFinal) {
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
+                        doc.fillColor(colors.primary).font('Helvetica-Bold');
                     }
+                    doc.text(label, margin + 25, y, { width: 200 });
+                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica');
+                    y += esFinal ? 20 : 14;
+                });
 
-                    doc.rect(margin, y, contentWidth, 120).fillAndStroke('#fff7ed', colors.warning);
-                    y += 15;
+                y += 15;
 
-                    doc.fillColor(colors.warning).fontSize(12).font('Helvetica-Bold')
-                       .text('⚠️  ESTE CIERRE PRESENTA DIFERENCIAS', margin + 20, y);
+                // ============================================================
+                // SECCIÓN 3: CIERRE NETO (CON IMPUESTOS)
+                // ============================================================
+                y = nuevaPaginaSiNecesario(250);
+                y = agregarSeccionHeader('CIERRE NETO (CON IMPUESTOS)', y);
+                y += 15;
+
+                // Ingresos netos
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Ingresos Netos:', margin, y);
+                y += 18;
+
+                const ingresosNetos = [
+                    ['Efectivo Neto', formatearMoneda(datosReporte.impuestos.efectivo.venta_neta)],
+                    ['Tarjeta Neta', formatearMoneda(datosReporte.impuestos.tarjeta.venta_neta)],
+                    ['Transferencia Neta', formatearMoneda(datosReporte.impuestos.transferencia.venta_neta)],
+                    ['Total Ingresos Netos', formatearMoneda(datosReporte.impuestos.total_ventas_netas)]
+                ];
+
+                doc.fontSize(9).font('Helvetica');
+                ingresosNetos.forEach(([label, value], idx) => {
+                    const esFinal = idx === ingresosNetos.length - 1;
+                    if (esFinal) {
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
+                        doc.fillColor(colors.success).font('Helvetica-Bold');
+                    }
+                    doc.fillColor(esFinal ? colors.success : colors.text).text(label, margin + 25, y, { width: 200 });
+                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica');
+                    y += esFinal ? 20 : 14;
+                });
+
+                y += 15;
+
+                // Gastos y deducciones
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Gastos y Deducciones:', margin, y);
+                y += 18;
+
+                const deducciones = [
+                    ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
+                    ['Total Impuestos', formatearMoneda(datosReporte.impuestos.total_impuestos)],
+                    ['  - Impuesto Efectivo (16%)', formatearMoneda(datosReporte.impuestos.efectivo.impuesto)],
+                    ['  - Impuesto Tarjeta (6% + 16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_total)],
+                    ['  - Impuesto Transferencia (16%)', formatearMoneda(datosReporte.impuestos.transferencia.impuesto)],
+                    ['Comisiones', formatearMoneda(datosReporte.deposito.comisiones)],
+                    ['Total Deducciones', formatearMoneda(datosReporte.gastos_resumen.total + datosReporte.impuestos.total_impuestos + datosReporte.deposito.comisiones)]
+                ];
+
+                doc.fontSize(9).font('Helvetica');
+                deducciones.forEach(([label, value], idx) => {
+                    const esFinal = idx === deducciones.length - 1;
+                    const esSubtotal = label.startsWith('  -');
                     
-                    y += 25;
-                    doc.fillColor(colors.text).fontSize(10).font('Helvetica')
-                       .text(`Autorizado por: ${datosReporte.autorizacion.autorizado_por}`, margin + 20, y);
+                    if (esFinal) {
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
+                        doc.fillColor(colors.error).font('Helvetica-Bold');
+                    }
                     
-                    y += 15;
-                    doc.text(`Fecha de autorización: ${formatearFecha(datosReporte.autorizacion.fecha_autorizacion)}`, margin + 20, y);
+                    doc.fillColor(esFinal ? colors.error : colors.text).text(label, margin + (esSubtotal ? 35 : 25), y, { width: 200 });
+                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica');
+                    y += esFinal ? 20 : 14;
+                });
+
+                y += 15;
+
+                // Resultado final
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Resultado Final:', margin, y);
+                y += 18;
+
+                doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke('#ecfdf5', '#10b981');
+                doc.fontSize(11).fillColor(colors.success).font('Helvetica-Bold')
+                   .text('RESULTADO NETO', margin + 25, y + 5, { width: 200 });
+                doc.fontSize(12).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 5, { width: 100, align: 'right' });
+                y += 30;
+
+                // ============================================================
+                // SECCIÓN 4: GASTOS DETALLADOS
+                // ============================================================
+                if (datosReporte.gastos && datosReporte.gastos.length > 0) {
+                    y = nuevaPaginaSiNecesario(150);
+                    y = agregarSeccionHeader('GASTOS DEL TURNO', y);
+                    y += 10;
+
+                    const colW = [40, 100, 250, 80, 62];
+                    const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
                     
-                    y += 15;
-                    doc.text(`Justificación:`, margin + 20, y);
+                    xPos = margin;
+                    doc.fontSize(7).fillColor('#ffffff').font('Helvetica-Bold');
+                    doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
                     
-                    y += 15;
-                    doc.fontSize(9).text(datosReporte.autorizacion.justificacion || 'No especificada', margin + 20, y, { width: contentWidth - 40 });
+                    headersGastos.forEach((header, i) => {
+                        doc.text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
+                        xPos += colW[i];
+                    });
+                    y += 18;
+
+                    doc.fontSize(7).fillColor(colors.text).font('Helvetica');
+                    datosReporte.gastos.forEach((gasto, idx) => {
+                        y = nuevaPaginaSiNecesario(14);
+                        
+                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
+                        doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
+
+                        xPos = margin;
+                        const vals = [
+                            (idx + 1).toString(),
+                            gasto.categoria.substring(0, 18),
+                            gasto.descripcion.substring(0, 45),
+                            formatearMoneda(gasto.monto),
+                            new Date(gasto.fecha).toLocaleDateString('es-GT')
+                        ];
+
+                        vals.forEach((val, i) => {
+                            doc.text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
+                            xPos += colW[i];
+                        });
+                        
+                        y += 14;
+                    });
+
+                    // Total de gastos
+                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
+                    doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
+                       .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
+                    doc.text(formatearMoneda(datosReporte.gastos_resumen.total), pageWidth - margin - 90, y + 4, { width: 80, align: 'right' });
+                    y += 30;
                 }
 
                 // ============================================================
@@ -614,7 +534,6 @@ class ComprobanteGenerator {
                 doc.text('Este documento es válido como comprobante de cierre de turno', margin, pageHeight - 30);
 
                 doc.end();
-
             } catch (error) {
                 console.error('❌ Error generando PDF de cierre:', error);
                 reject(error);
