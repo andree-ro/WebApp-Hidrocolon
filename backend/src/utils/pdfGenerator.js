@@ -307,7 +307,7 @@ class ComprobanteGenerator {
                         const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
                         doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
 
-                        xPos = margin;
+                        let xPos = margin;
                         const valores = [
                             prod.venta_id.toString(),
                             prod.producto_nombre.substring(0, 28),
@@ -483,7 +483,7 @@ class ComprobanteGenerator {
                     const colW = [40, 100, 250, 80, 62];
                     const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
                     
-                    xPos = margin;
+                    let xPos = margin;
                     doc.fontSize(7).fillColor('#ffffff').font('Helvetica-Bold');
                     doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
                     
@@ -500,7 +500,7 @@ class ComprobanteGenerator {
                         const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
                         doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
 
-                        xPos = margin;
+                        let xPos = margin;
                         const vals = [
                             (idx + 1).toString(),
                             gasto.categoria.substring(0, 18),
