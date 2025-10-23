@@ -68,7 +68,7 @@ const abrirTurnoCompleto = async (req, res) => {
 };
 
 // ============================================================================
-// CERRAR TURNO COMPLETO (con cuadre automático)
+// CERRAR TURNO COMPLETO (con cuadre automático y generación de PDF)
 // ============================================================================
 const cerrarTurnoCompleto = async (req, res) => {
     try {
@@ -107,11 +107,46 @@ const cerrarTurnoCompleto = async (req, res) => {
             justificacion_diferencias
         });
 
-        res.json({
-            success: true,
-            message: 'Turno cerrado exitosamente',
-            data: turno
-        });
+        console.log(`✅ Turno ${id} cerrado exitosamente`);
+
+        // Generar PDF automáticamente
+        try {
+            console.log(`📄 Generando PDF del reporte para turno ${id}...`);
+            
+            const datosReporte = await Turno.obtenerDatosReporte(id);
+            const ComprobanteGenerator = require('../utils/pdfGenerator');
+            const pdfBuffer = await ComprobanteGenerator.generarReporteCierre(datosReporte);
+            
+            console.log(`✅ PDF generado exitosamente para turno ${id}`);
+
+            // Convertir buffer a base64 para enviar en JSON
+            const pdfBase64 = pdfBuffer.toString('base64');
+
+            res.json({
+                success: true,
+                message: 'Turno cerrado exitosamente',
+                data: turno,
+                pdf: {
+                    disponible: true,
+                    base64: pdfBase64,
+                    filename: `reporte_cierre_turno_${id}.pdf`
+                }
+            });
+
+        } catch (pdfError) {
+            console.error('⚠️ Error generando PDF (turno cerrado correctamente):', pdfError);
+            
+            // El turno ya está cerrado, solo fallamos en el PDF
+            res.json({
+                success: true,
+                message: 'Turno cerrado exitosamente (PDF no disponible)',
+                data: turno,
+                pdf: {
+                    disponible: false,
+                    error: 'No se pudo generar el PDF automáticamente. Puede descargarlo desde el historial de turnos.'
+                }
+            });
+        }
 
     } catch (error) {
         console.error('❌ Error cerrando turno:', error);
@@ -457,6 +492,127 @@ const obtenerEstadisticas = async (req, res) => {
     }
 };
 
+
+
+// ============================================================================
+// OBTENER DATOS COMPLETOS PARA REPORTE DE CIERRE PDF
+// ============================================================================
+const obtenerDatosReporte = async (req, res) => {
+    try {
+        const turnoId = parseInt(req.params.id);
+        const usuarioActual = req.user;
+
+        console.log(`📊 Obteniendo datos para reporte del turno ${turnoId}`);
+
+        // Validar que el turno exista
+        const turno = await Turno.obtenerPorId(turnoId);
+        
+        if (!turno) {
+            return res.status(404).json({
+                success: false,
+                message: 'Turno no encontrado'
+            });
+        }
+
+        // Validar permisos: solo el usuario del turno o un admin pueden ver el reporte
+        if (turno.usuario_id !== usuarioActual.id && usuarioActual.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'No tiene permisos para ver el reporte de este turno'
+            });
+        }
+
+        // Validar que el turno esté cerrado
+        if (turno.estado !== 'cerrado') {
+            return res.status(400).json({
+                success: false,
+                message: 'Solo se pueden generar reportes de turnos cerrados'
+            });
+        }
+
+        // Obtener datos completos del reporte
+        const datosReporte = await Turno.obtenerDatosReporte(turnoId);
+
+        console.log(`✅ Datos del reporte obtenidos exitosamente para turno ${turnoId}`);
+
+        res.json({
+            success: true,
+            data: datosReporte
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo datos del reporte:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener datos del reporte',
+            error: error.message
+        });
+    }
+};
+
+
+
+
+// ============================================================================
+// GENERAR PDF DE REPORTE DE CIERRE
+// ============================================================================
+const generarPDFReporte = async (req, res) => {
+    try {
+        const turnoId = parseInt(req.params.id);
+        const usuarioActual = req.user;
+
+        console.log(`📄 Generando PDF del reporte para turno ${turnoId}`);
+
+        // Validar que el turno exista
+        const turno = await Turno.obtenerPorId(turnoId);
+        
+        if (!turno) {
+            return res.status(404).json({
+                success: false,
+                message: 'Turno no encontrado'
+            });
+        }
+
+        // Validar permisos
+        if (turno.usuario_id !== usuarioActual.id && usuarioActual.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'No tiene permisos para generar el reporte de este turno'
+            });
+        }
+
+        // Validar que el turno esté cerrado
+        if (turno.estado !== 'cerrado') {
+            return res.status(400).json({
+                success: false,
+                message: 'Solo se pueden generar reportes de turnos cerrados'
+            });
+        }
+
+        // Obtener datos completos del reporte
+        const datosReporte = await Turno.obtenerDatosReporte(turnoId);
+
+        // Generar PDF
+        const ComprobanteGenerator = require('../utils/pdfGenerator');
+        const pdfBuffer = await ComprobanteGenerator.generarReporteCierre(datosReporte);
+
+        console.log(`✅ PDF del reporte generado exitosamente para turno ${turnoId}`);
+
+        // Enviar PDF como descarga
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=reporte_cierre_turno_${turnoId}.pdf`);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('❌ Error generando PDF del reporte:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al generar PDF del reporte',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     abrirTurnoCompleto,
     cerrarTurnoCompleto,
@@ -466,5 +622,7 @@ module.exports = {
     obtenerResumenTurno,
     validarDatosApertura,
     calcularCuadrePrevio,
-    obtenerEstadisticas
+    obtenerEstadisticas,
+    obtenerDatosReporte,
+    generarPDFReporte,
 };

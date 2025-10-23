@@ -63,6 +63,18 @@ router.post('/validar-apertura',
     turnosController.validarDatosApertura
 );
 
+// GET /api/turnos/:id/datos-reporte - Obtener datos completos para generar PDF
+router.get('/:id/datos-reporte',
+    simpleAuth,
+    turnosController.obtenerDatosReporte
+);
+
+// GET /api/turnos/:id/reporte-pdf - Generar y descargar PDF del reporte
+router.get('/:id/reporte-pdf',
+    simpleAuth,
+    turnosController.generarPDFReporte
+);
+
 // ============================================================================
 // ENDPOINTS ANTIGUOS - COMPATIBILIDAD CON CÓDIGO EXISTENTE
 // ============================================================================
@@ -297,6 +309,8 @@ console.log('      GET    /api/turnos/estadisticas');
 console.log('      GET    /api/turnos/:id/resumen');
 console.log('      POST   /api/turnos/:id/cuadre-previo');
 console.log('      POST   /api/turnos/validar-apertura');
+console.log('      GET    /api/turnos/:id/datos-reporte');
+console.log('      GET    /api/turnos/:id/reporte-pdf');
 console.log('   ♻️  ENDPOINTS ANTIGUOS (Compatibilidad):');
 console.log('      GET    /api/turnos/actual');
 console.log('      POST   /api/turnos');
