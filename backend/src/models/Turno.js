@@ -620,7 +620,7 @@ class Turno {
                     u.apellidos
                 FROM ventas v
                 INNER JOIN detalle_ventas dv ON v.id = dv.venta_id
-                INNER JOIN usuarios u ON v.vendedor_id = u.id
+                INNER JOIN usuarios u ON v.usuario_vendedor_id = u.id
                 WHERE v.turno_id = ?
                 ORDER BY v.id ASC, dv.id ASC`,
                 [turnoId]
@@ -858,7 +858,7 @@ class Turno {
                 gastos_resumen: {
                     total: totalGastos
                 },
-                
+
                 productos_vendidos: listaProductos.map(p => ({
                     venta_id: p.venta_id,
                     producto_nombre: p.producto_nombre,
