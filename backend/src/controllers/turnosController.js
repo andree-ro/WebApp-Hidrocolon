@@ -305,7 +305,7 @@ const validarDatosApertura = async (req, res) => {
 };
 
 // ============================================================================
-// CALCULAR CUADRE PREVIO AL CIERRE (Preview)
+// CALCULAR CUADRE PREVIO AL CIERRE (Preview) - ✅ CORREGIDO
 // ============================================================================
 const calcularCuadrePrevio = async (req, res) => {
     try {
@@ -337,6 +337,19 @@ const calcularCuadrePrevio = async (req, res) => {
                                 totalesVentas.efectivo - 
                                 totalesGastos;
 
+        // ✅ CALCULAR IMPUESTOS
+        const impuestos = Turno.calcularImpuestos(totalesVentas);
+        
+        // ✅ CALCULAR VENTAS NETAS
+        const ventasNetas = totalesVentas.total - 
+                           impuestos.efectivo - 
+                           impuestos.tarjeta - 
+                           impuestos.transferencia - 
+                           impuestos.depositos;
+        
+        // ✅ CALCULAR TOTAL A DEPOSITAR (con fórmula corregida)
+        const totalADepositar = ventasNetas - totalesGastos;
+
         // Calcular diferencias
         const diferencias = {
             efectivo: efectivoFinalTotal - efectivoEsperado,
@@ -355,10 +368,20 @@ const calcularCuadrePrevio = async (req, res) => {
                 efectivo_inicial: parseFloat(turno.efectivo_inicial_total),
                 efectivo_esperado: efectivoEsperado,
                 efectivo_contado: efectivoFinalTotal,
+                // ✅ AMBOS NOMBRES PARA COMPATIBILIDAD
+                venta_total: totalesVentas.total,
                 ventas_totales: totalesVentas.total,
                 ventas_efectivo: totalesVentas.efectivo,
                 ventas_tarjeta: totalesVentas.tarjeta,
                 ventas_transferencia: totalesVentas.transferencia,
+                // ✅ IMPUESTOS DESGLOSADOS
+                impuesto_efectivo: impuestos.efectivo,
+                impuesto_tarjeta: impuestos.tarjeta,
+                impuesto_transferencia: impuestos.transferencia,
+                total_impuestos: impuestos.efectivo + impuestos.tarjeta + impuestos.transferencia + impuestos.depositos,
+                // ✅ VENTAS NETAS Y TOTAL A DEPOSITAR
+                ventas_netas: ventasNetas,
+                total_a_depositar: totalADepositar,
                 total_gastos: totalesGastos,
                 total_vouchers: totalesVouchers,
                 total_transferencias: totalesTransferencias,
