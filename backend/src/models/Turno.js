@@ -1,6 +1,6 @@
 // backend/src/models/Turno.js
-// Modelo completo para gestión de turnos del Sistema Hidrocolon
-// Incluye: apertura con conteo, cierre con cuadre, validaciones y cálculos
+// Modelo completo para gestiÃ³n de turnos del Sistema Hidrocolon
+// Incluye: apertura con conteo, cierre con cuadre, validaciones y cÃ¡lculos
 
 const { pool } = require('../config/database');
 
@@ -48,17 +48,17 @@ class Turno {
                     datos.usuario_id,
                     JSON.stringify(datos.efectivo_billetes || {}),
                     JSON.stringify(datos.efectivo_monedas || {}),
-                    efectivoInicialTotal, // Para compatibilidad con código anterior
+                    efectivoInicialTotal, // Para compatibilidad con cÃ³digo anterior
                     efectivoInicialTotal
                 ]
             );
 
-            console.log(`✅ Turno ${result.insertId} abierto exitosamente con Q${efectivoInicialTotal.toFixed(2)}`);
+            console.log(`âœ… Turno ${result.insertId} abierto exitosamente con Q${efectivoInicialTotal.toFixed(2)}`);
             
             return await this.obtenerPorId(result.insertId);
 
         } catch (error) {
-            console.error('❌ Error abriendo turno:', error);
+            console.error('âŒ Error abriendo turno:', error);
             throw error;
         } finally {
             if (connection) connection.release();
@@ -66,7 +66,7 @@ class Turno {
     }
 
     // ============================================================================
-    // CERRAR TURNO COMPLETO (con cuadre automático)
+    // CERRAR TURNO COMPLETO (con cuadre automÃ¡tico)
     // ============================================================================
     static async cerrarCompleto(turnoId, datosCierre) {
         let connection;
@@ -81,7 +81,7 @@ class Turno {
             }
 
             if (turno.estado === 'cerrado') {
-                throw new Error('El turno ya está cerrado');
+                throw new Error('El turno ya estÃ¡ cerrado');
             }
 
             // 2. Calcular totales del turno desde ventas
@@ -114,11 +114,11 @@ class Turno {
                                     (datosCierre.total_comisiones_pagadas || 0);
 
             // 8. Calcular total a depositar
+            // Total a depositar = Ventas netas - Gastos - Comisiones pagadas
+            // NO se restan vouchers ni transferencias (son formas de pago, no salidas de dinero)
             const totalADepositar = ventasNetas - 
                                    totalesGastos - 
-                                   (datosCierre.total_comisiones_pagadas || 0) - 
-                                   totalesVouchers - 
-                                   totalesTransferencias;
+                                   (datosCierre.total_comisiones_pagadas || 0);
 
             // 9. Calcular diferencias
             const diferencias = {
@@ -127,13 +127,13 @@ class Turno {
                 transferencias: totalesTransferencias - totalesVentas.transferencia
             };
 
-            // 10. Validar si requiere autorización
+            // 10. Validar si requiere autorizaciÃ³n
             const requiereAutorizacion = Math.abs(diferencias.efectivo) > 0.50 || 
                                         Math.abs(diferencias.vouchers) > 0.50 || 
                                         Math.abs(diferencias.transferencias) > 0.50;
 
             if (requiereAutorizacion && !datosCierre.autorizado_por) {
-                throw new Error('El cierre presenta diferencias y requiere autorización de un administrador');
+                throw new Error('El cierre presenta diferencias y requiere autorizaciÃ³n de un administrador');
             }
 
             // 11. Actualizar turno con todos los datos
@@ -205,16 +205,16 @@ class Turno {
 
             await connection.commit();
 
-            console.log(`✅ Turno ${turnoId} cerrado exitosamente`);
-            console.log(`   💰 Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
-            console.log(`   💵 Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
-            console.log(`   📊 Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
+            console.log(`âœ… Turno ${turnoId} cerrado exitosamente`);
+            console.log(`   ðŸ’° Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
+            console.log(`   ðŸ’µ Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
+            console.log(`   ðŸ“Š Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
 
             return await this.obtenerPorId(turnoId);
 
         } catch (error) {
             if (connection) await connection.rollback();
-            console.error('❌ Error cerrando turno:', error);
+            console.error('âŒ Error cerrando turno:', error);
             throw error;
         } finally {
             if (connection) connection.release();
@@ -241,7 +241,7 @@ class Turno {
             return this.formatearTurno(turnos[0]);
 
         } catch (error) {
-            console.error('❌ Error obteniendo turno activo:', error);
+            console.error('âŒ Error obteniendo turno activo:', error);
             throw error;
         }
     }
@@ -270,7 +270,7 @@ class Turno {
             return this.formatearTurno(turnos[0]);
 
         } catch (error) {
-            console.error('❌ Error obteniendo turno por ID:', error);
+            console.error('âŒ Error obteniendo turno por ID:', error);
             throw error;
         }
     }
@@ -309,7 +309,7 @@ class Turno {
 
             query += ' ORDER BY t.fecha_apertura DESC';
 
-            // Paginación
+            // PaginaciÃ³n
             if (filtros.limit) {
                 query += ' LIMIT ?';
                 params.push(parseInt(filtros.limit));
@@ -325,7 +325,7 @@ class Turno {
             return turnos.map(t => this.formatearTurno(t));
 
         } catch (error) {
-            console.error('❌ Error listando turnos:', error);
+            console.error('âŒ Error listando turnos:', error);
             throw error;
         }
     }
@@ -346,7 +346,7 @@ class Turno {
             const totalesVouchers = await this.obtenerTotalVouchers(turnoId);
             const totalesTransferencias = await this.obtenerTotalTransferencias(turnoId);
 
-            // ✅ OBTENER LISTAS COMPLETAS
+            // âœ… OBTENER LISTAS COMPLETAS
             const listaGastos = await this.obtenerListaGastos(turnoId);
             const listaVouchers = await this.obtenerListaVouchers(turnoId);
             const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
@@ -381,13 +381,13 @@ class Turno {
                     transferencia: impuestos.transferencia,
                     depositos: impuestos.depositos
                 },
-                gastos: listaGastos,                    // ✅ LISTA COMPLETA
-                vouchers: listaVouchers,                // ✅ LISTA COMPLETA
-                transferencias: listaTransferencias     // ✅ LISTA COMPLETA
+                gastos: listaGastos,                    // âœ… LISTA COMPLETA
+                vouchers: listaVouchers,                // âœ… LISTA COMPLETA
+                transferencias: listaTransferencias     // âœ… LISTA COMPLETA
             };
 
         } catch (error) {
-            console.error('❌ Error obteniendo resumen:', error);
+            console.error('âŒ Error obteniendo resumen:', error);
             throw error;
         }
     }
@@ -416,7 +416,7 @@ class Turno {
 
             const totales = result[0];
 
-            // Sumar ventas mixtas a sus respectivos métodos
+            // Sumar ventas mixtas a sus respectivos mÃ©todos
             return {
                 cantidad: parseInt(totales.cantidad),
                 total: parseFloat(totales.total),
@@ -426,7 +426,7 @@ class Turno {
             };
 
         } catch (error) {
-            console.error('❌ Error calculando totales de ventas:', error);
+            console.error('âŒ Error calculando totales de ventas:', error);
             throw error;
         }
     }
@@ -446,7 +446,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('❌ Error obteniendo total vouchers:', error);
+            console.error('âŒ Error obteniendo total vouchers:', error);
             throw error;
         }
     }
@@ -466,7 +466,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('❌ Error obteniendo total transferencias:', error);
+            console.error('âŒ Error obteniendo total transferencias:', error);
             throw error;
         }
     }
@@ -486,7 +486,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('❌ Error obteniendo total gastos:', error);
+            console.error('âŒ Error obteniendo total gastos:', error);
             throw error;
         }
     }
@@ -519,7 +519,7 @@ class Turno {
             return gastos;
 
         } catch (error) {
-            console.error('❌ Error obteniendo lista de gastos:', error);
+            console.error('âŒ Error obteniendo lista de gastos:', error);
             throw error;
         }
     }
@@ -548,7 +548,7 @@ class Turno {
             return vouchers;
 
         } catch (error) {
-            console.error('❌ Error obteniendo lista de vouchers:', error);
+            console.error('âŒ Error obteniendo lista de vouchers:', error);
             throw error;
         }
     }
@@ -577,7 +577,7 @@ class Turno {
             return transferencias;
 
         } catch (error) {
-            console.error('❌ Error obteniendo lista de transferencias:', error);
+            console.error('âŒ Error obteniendo lista de transferencias:', error);
             throw error;
         }
     }
@@ -591,17 +591,17 @@ class Turno {
     // CALCULAR IMPUESTOS
     // ============================================================================
     static calcularImpuestos(totalesVentas) {
-        // EFECTIVO/TRANSFERENCIA/DEPÓSITOS: 16% directo
+        // EFECTIVO/TRANSFERENCIA/DEPÃ“SITOS: 16% directo
         const impuestoEfectivo = totalesVentas.efectivo * 0.16;
         const impuestoTransferencia = totalesVentas.transferencia * 0.16;
         
         // TARJETA: Doble impuesto
-        // 1. Comisión bancaria 6%
+        // 1. ComisiÃ³n bancaria 6%
         const comisionBancaria = totalesVentas.tarjeta * 0.06;
-        // 2. Impuesto 16% sobre el restante (después de comisión)
+        // 2. Impuesto 16% sobre el restante (despuÃ©s de comisiÃ³n)
         const montoRestante = totalesVentas.tarjeta - comisionBancaria;
         const impuestoSobreRestante = montoRestante * 0.16;
-        // 3. Total impuesto tarjeta = comisión + impuesto
+        // 3. Total impuesto tarjeta = comisiÃ³n + impuesto
         const impuestoTarjeta = comisionBancaria + impuestoSobreRestante;
         
         return {
@@ -678,7 +678,7 @@ class Turno {
             efectivo_final_monedas: typeof turno.efectivo_final_monedas === 'string'
                 ? JSON.parse(turno.efectivo_final_monedas)
                 : turno.efectivo_final_monedas,
-            // Convertir a números
+            // Convertir a nÃºmeros
             efectivo_inicial_total: parseFloat(turno.efectivo_inicial_total || 0),
             efectivo_final_total: parseFloat(turno.efectivo_final_total || 0),
             venta_total: parseFloat(turno.venta_total || 0),
