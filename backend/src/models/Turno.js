@@ -1,6 +1,6 @@
 // backend/src/models/Turno.js
-// Modelo completo para gestiÃ³n de turnos del Sistema Hidrocolon
-// Incluye: apertura con conteo, cierre con cuadre, validaciones y cÃ¡lculos
+// Modelo completo para gestiÃƒÂ³n de turnos del Sistema Hidrocolon
+// Incluye: apertura con conteo, cierre con cuadre, validaciones y cÃƒÂ¡lculos
 
 const { pool } = require('../config/database');
 
@@ -48,17 +48,17 @@ class Turno {
                     datos.usuario_id,
                     JSON.stringify(datos.efectivo_billetes || {}),
                     JSON.stringify(datos.efectivo_monedas || {}),
-                    efectivoInicialTotal, // Para compatibilidad con cÃ³digo anterior
+                    efectivoInicialTotal, // Para compatibilidad con cÃƒÂ³digo anterior
                     efectivoInicialTotal
                 ]
             );
 
-            console.log(`âœ… Turno ${result.insertId} abierto exitosamente con Q${efectivoInicialTotal.toFixed(2)}`);
+            console.log(`Ã¢Å“â€¦ Turno ${result.insertId} abierto exitosamente con Q${efectivoInicialTotal.toFixed(2)}`);
             
             return await this.obtenerPorId(result.insertId);
 
         } catch (error) {
-            console.error('âŒ Error abriendo turno:', error);
+            console.error('Ã¢ÂÅ’ Error abriendo turno:', error);
             throw error;
         } finally {
             if (connection) connection.release();
@@ -66,7 +66,7 @@ class Turno {
     }
 
     // ============================================================================
-    // CERRAR TURNO COMPLETO (con cuadre automÃ¡tico)
+    // CERRAR TURNO COMPLETO (con cuadre automÃƒÂ¡tico)
     // ============================================================================
     static async cerrarCompleto(turnoId, datosCierre) {
         let connection;
@@ -81,7 +81,7 @@ class Turno {
             }
 
             if (turno.estado === 'cerrado') {
-                throw new Error('El turno ya estÃ¡ cerrado');
+                throw new Error('El turno ya estÃƒÂ¡ cerrado');
             }
 
             // 2. Calcular totales del turno desde ventas
@@ -127,13 +127,13 @@ class Turno {
                 transferencias: totalesTransferencias - totalesVentas.transferencia
             };
 
-            // 10. Validar si requiere autorizaciÃ³n
+            // 10. Validar si requiere autorizaciÃƒÂ³n
             const requiereAutorizacion = Math.abs(diferencias.efectivo) > 0.50 || 
                                         Math.abs(diferencias.vouchers) > 0.50 || 
                                         Math.abs(diferencias.transferencias) > 0.50;
 
             if (requiereAutorizacion && !datosCierre.autorizado_por) {
-                throw new Error('El cierre presenta diferencias y requiere autorizaciÃ³n de un administrador');
+                throw new Error('El cierre presenta diferencias y requiere autorizaciÃƒÂ³n de un administrador');
             }
 
             // 11. Actualizar turno con todos los datos
@@ -205,16 +205,16 @@ class Turno {
 
             await connection.commit();
 
-            console.log(`âœ… Turno ${turnoId} cerrado exitosamente`);
-            console.log(`   ðŸ’° Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
-            console.log(`   ðŸ’µ Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
-            console.log(`   ðŸ“Š Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
+            console.log(`Ã¢Å“â€¦ Turno ${turnoId} cerrado exitosamente`);
+            console.log(`   Ã°Å¸â€™Â° Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
+            console.log(`   Ã°Å¸â€™Âµ Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
+            console.log(`   Ã°Å¸â€œÅ  Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
 
             return await this.obtenerPorId(turnoId);
 
         } catch (error) {
             if (connection) await connection.rollback();
-            console.error('âŒ Error cerrando turno:', error);
+            console.error('Ã¢ÂÅ’ Error cerrando turno:', error);
             throw error;
         } finally {
             if (connection) connection.release();
@@ -241,7 +241,7 @@ class Turno {
             return this.formatearTurno(turnos[0]);
 
         } catch (error) {
-            console.error('âŒ Error obteniendo turno activo:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo turno activo:', error);
             throw error;
         }
     }
@@ -270,7 +270,7 @@ class Turno {
             return this.formatearTurno(turnos[0]);
 
         } catch (error) {
-            console.error('âŒ Error obteniendo turno por ID:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo turno por ID:', error);
             throw error;
         }
     }
@@ -309,7 +309,7 @@ class Turno {
 
             query += ' ORDER BY t.fecha_apertura DESC';
 
-            // PaginaciÃ³n
+            // PaginaciÃƒÂ³n
             if (filtros.limit) {
                 query += ' LIMIT ?';
                 params.push(parseInt(filtros.limit));
@@ -325,7 +325,7 @@ class Turno {
             return turnos.map(t => this.formatearTurno(t));
 
         } catch (error) {
-            console.error('âŒ Error listando turnos:', error);
+            console.error('Ã¢ÂÅ’ Error listando turnos:', error);
             throw error;
         }
     }
@@ -346,7 +346,7 @@ class Turno {
             const totalesVouchers = await this.obtenerTotalVouchers(turnoId);
             const totalesTransferencias = await this.obtenerTotalTransferencias(turnoId);
 
-            // âœ… OBTENER LISTAS COMPLETAS
+            // Ã¢Å“â€¦ OBTENER LISTAS COMPLETAS
             const listaGastos = await this.obtenerListaGastos(turnoId);
             const listaVouchers = await this.obtenerListaVouchers(turnoId);
             const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
@@ -381,13 +381,13 @@ class Turno {
                     transferencia: impuestos.transferencia,
                     depositos: impuestos.depositos
                 },
-                gastos: listaGastos,                    // âœ… LISTA COMPLETA
-                vouchers: listaVouchers,                // âœ… LISTA COMPLETA
-                transferencias: listaTransferencias     // âœ… LISTA COMPLETA
+                gastos: listaGastos,                    // Ã¢Å“â€¦ LISTA COMPLETA
+                vouchers: listaVouchers,                // Ã¢Å“â€¦ LISTA COMPLETA
+                transferencias: listaTransferencias     // Ã¢Å“â€¦ LISTA COMPLETA
             };
 
         } catch (error) {
-            console.error('âŒ Error obteniendo resumen:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo resumen:', error);
             throw error;
         }
     }
@@ -416,7 +416,7 @@ class Turno {
 
             const totales = result[0];
 
-            // Sumar ventas mixtas a sus respectivos mÃ©todos
+            // Sumar ventas mixtas a sus respectivos mÃƒÂ©todos
             return {
                 cantidad: parseInt(totales.cantidad),
                 total: parseFloat(totales.total),
@@ -426,7 +426,7 @@ class Turno {
             };
 
         } catch (error) {
-            console.error('âŒ Error calculando totales de ventas:', error);
+            console.error('Ã¢ÂÅ’ Error calculando totales de ventas:', error);
             throw error;
         }
     }
@@ -446,7 +446,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('âŒ Error obteniendo total vouchers:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo total vouchers:', error);
             throw error;
         }
     }
@@ -466,7 +466,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('âŒ Error obteniendo total transferencias:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo total transferencias:', error);
             throw error;
         }
     }
@@ -486,7 +486,7 @@ class Turno {
             return parseFloat(result[0].total);
 
         } catch (error) {
-            console.error('âŒ Error obteniendo total gastos:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo total gastos:', error);
             throw error;
         }
     }
@@ -519,7 +519,7 @@ class Turno {
             return gastos;
 
         } catch (error) {
-            console.error('âŒ Error obteniendo lista de gastos:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo lista de gastos:', error);
             throw error;
         }
     }
@@ -548,7 +548,7 @@ class Turno {
             return vouchers;
 
         } catch (error) {
-            console.error('âŒ Error obteniendo lista de vouchers:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo lista de vouchers:', error);
             throw error;
         }
     }
@@ -577,7 +577,7 @@ class Turno {
             return transferencias;
 
         } catch (error) {
-            console.error('âŒ Error obteniendo lista de transferencias:', error);
+            console.error('Ã¢ÂÅ’ Error obteniendo lista de transferencias:', error);
             throw error;
         }
     }
@@ -591,17 +591,17 @@ class Turno {
     // CALCULAR IMPUESTOS
     // ============================================================================
     static calcularImpuestos(totalesVentas) {
-        // EFECTIVO/TRANSFERENCIA/DEPÃ“SITOS: 16% directo
+        // EFECTIVO/TRANSFERENCIA/DEPÃƒâ€œSITOS: 16% directo
         const impuestoEfectivo = totalesVentas.efectivo * 0.16;
         const impuestoTransferencia = totalesVentas.transferencia * 0.16;
         
         // TARJETA: Doble impuesto
-        // 1. ComisiÃ³n bancaria 6%
+        // 1. ComisiÃƒÂ³n bancaria 6%
         const comisionBancaria = totalesVentas.tarjeta * 0.06;
-        // 2. Impuesto 16% sobre el restante (despuÃ©s de comisiÃ³n)
+        // 2. Impuesto 16% sobre el restante (despuÃƒÂ©s de comisiÃƒÂ³n)
         const montoRestante = totalesVentas.tarjeta - comisionBancaria;
         const impuestoSobreRestante = montoRestante * 0.16;
-        // 3. Total impuesto tarjeta = comisiÃ³n + impuesto
+        // 3. Total impuesto tarjeta = comisiÃƒÂ³n + impuesto
         const impuestoTarjeta = comisionBancaria + impuestoSobreRestante;
         
         return {
@@ -661,6 +661,197 @@ class Turno {
     }
 
     // ============================================================================
+
+    // ============================================================================
+    // OBTENER DATOS COMPLETOS PARA REPORTE DE CIERRE PDF
+    // ============================================================================
+    static async obtenerDatosReporte(turnoId) {
+        try {
+            console.log(`📊 Obteniendo datos completos para reporte del turno ${turnoId}`);
+            
+            // 1. Obtener información básica del turno
+            const turno = await this.obtenerPorId(turnoId);
+            if (!turno) {
+                throw new Error('Turno no encontrado');
+            }
+            
+            if (turno.estado !== 'cerrado') {
+                throw new Error('Solo se pueden generar reportes de turnos cerrados');
+            }
+            
+            // 2. Obtener totales de ventas
+            const totalesVentas = await this.calcularTotalesVentas(turnoId);
+            
+            // 3. Obtener gastos, vouchers y transferencias
+            const listaGastos = await this.obtenerListaGastos(turnoId);
+            const listaVouchers = await this.obtenerListaVouchers(turnoId);
+            const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
+            
+            // Calcular totales
+            const totalGastos = listaGastos.reduce((sum, g) => sum + parseFloat(g.monto), 0);
+            const totalVouchers = listaVouchers.reduce((sum, v) => sum + parseFloat(v.monto), 0);
+            const totalTransferencias = listaTransferencias.reduce((sum, t) => sum + parseFloat(t.monto), 0);
+            
+            // 4. Calcular impuestos
+            const impuestoEfectivo = totalesVentas.efectivo * 0.16;
+            const ventaNetaEfectivo = totalesVentas.efectivo - impuestoEfectivo;
+            
+            const comisionTarjeta = totalesVentas.tarjeta * 0.06;
+            const restanteTarjeta = totalesVentas.tarjeta - comisionTarjeta;
+            const impuestoTarjeta = restanteTarjeta * 0.16;
+            const impuestoTotalTarjeta = comisionTarjeta + impuestoTarjeta;
+            const ventaNetaTarjeta = totalesVentas.tarjeta - impuestoTotalTarjeta;
+            
+            const impuestoTransferencia = totalesVentas.transferencia * 0.16;
+            const ventaNetaTransferencia = totalesVentas.transferencia - impuestoTransferencia;
+            
+            const totalImpuestos = impuestoEfectivo + impuestoTotalTarjeta + impuestoTransferencia;
+            const totalVentasNetas = ventaNetaEfectivo + ventaNetaTarjeta + ventaNetaTransferencia;
+            
+            // 5. Calcular total a depositar
+            const totalADepositar = totalVentasNetas - totalGastos - (turno.total_comisiones_pagadas || 0);
+            
+            // 6. Calcular movimientos de efectivo
+            const efectivoEsperado = parseFloat(turno.efectivo_inicial_total) + 
+                                    totalesVentas.efectivo - 
+                                    totalGastos - 
+                                    (turno.total_comisiones_pagadas || 0);
+            
+            const efectivoContado = parseFloat(turno.efectivo_final_total);
+            const diferenciaEfectivo = efectivoContado - efectivoEsperado;
+            
+            let estadoEfectivo = 'CUADRADO';
+            if (diferenciaEfectivo > 0.50) {
+                estadoEfectivo = 'SOBRANTE';
+            } else if (diferenciaEfectivo < -0.50) {
+                estadoEfectivo = 'FALTANTE';
+            }
+            
+            // 7. Calcular duración del turno
+            const fechaApertura = new Date(turno.fecha_apertura);
+            const fechaCierre = new Date(turno.fecha_cierre);
+            const duracionMs = fechaCierre - fechaApertura;
+            const duracionHoras = Math.floor(duracionMs / (1000 * 60 * 60));
+            const duracionMinutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            // 8. Construir objeto de datos para el PDF
+            const datosReporte = {
+                turno: {
+                    id: turno.id,
+                    usuario_nombre: `${turno.nombres} ${turno.apellidos}`,
+                    estado: turno.estado,
+                    fecha_apertura: turno.fecha_apertura,
+                    fecha_cierre: turno.fecha_cierre,
+                    duracion_horas: duracionHoras,
+                    duracion_minutos: duracionMinutos
+                },
+                resumen_ventas: {
+                    venta_total: totalesVentas.total,
+                    ventas_efectivo: totalesVentas.efectivo,
+                    ventas_tarjeta: totalesVentas.tarjeta,
+                    ventas_transferencia: totalesVentas.transferencia
+                },
+                efectivo_inicial: {
+                    billetes: turno.efectivo_billetes || {},
+                    monedas: turno.efectivo_monedas || {},
+                    total: parseFloat(turno.efectivo_inicial_total)
+                },
+                movimientos_efectivo: {
+                    efectivo_inicial: parseFloat(turno.efectivo_inicial_total),
+                    ventas_efectivo: totalesVentas.efectivo,
+                    gastos: totalGastos,
+                    comisiones_pagadas: turno.total_comisiones_pagadas || 0,
+                    efectivo_esperado: efectivoEsperado
+                },
+                efectivo_final: {
+                    billetes: turno.efectivo_final_billetes || {},
+                    monedas: turno.efectivo_final_monedas || {},
+                    total: efectivoContado
+                },
+                diferencias: {
+                    efectivo: diferenciaEfectivo,
+                    estado_efectivo: estadoEfectivo
+                },
+                vouchers: listaVouchers.map(v => ({
+                    id: v.id,
+                    numero_voucher: v.numero_voucher,
+                    paciente_nombre: v.paciente_nombre,
+                    monto: parseFloat(v.monto),
+                    fecha: v.fecha_creacion
+                })),
+                vouchers_resumen: {
+                    ventas_tarjeta: totalesVentas.tarjeta,
+                    total_vouchers: totalVouchers,
+                    diferencia: totalesVentas.tarjeta - totalVouchers,
+                    estado: Math.abs(totalesVentas.tarjeta - totalVouchers) < 0.01 ? 'CUADRADO' : 'DESCUADRADO'
+                },
+                transferencias: listaTransferencias.map(t => ({
+                    id: t.id,
+                    numero_boleta: t.numero_boleta,
+                    paciente_nombre: t.paciente_nombre,
+                    monto: parseFloat(t.monto),
+                    fecha: t.fecha_creacion
+                })),
+                transferencias_resumen: {
+                    ventas_transferencia: totalesVentas.transferencia,
+                    total_transferencias: totalTransferencias,
+                    diferencia: totalesVentas.transferencia - totalTransferencias,
+                    estado: Math.abs(totalesVentas.transferencia - totalTransferencias) < 0.01 ? 'CUADRADO' : 'DESCUADRADO'
+                },
+                gastos: listaGastos.map(g => ({
+                    id: g.id,
+                    categoria: g.categoria,
+                    descripcion: g.descripcion,
+                    monto: parseFloat(g.monto),
+                    fecha: g.fecha_creacion
+                })),
+                gastos_resumen: {
+                    total: totalGastos
+                },
+                impuestos: {
+                    efectivo: {
+                        ventas: totalesVentas.efectivo,
+                        impuesto: impuestoEfectivo,
+                        venta_neta: ventaNetaEfectivo
+                    },
+                    tarjeta: {
+                        ventas: totalesVentas.tarjeta,
+                        comision: comisionTarjeta,
+                        impuesto_restante: impuestoTarjeta,
+                        impuesto_total: impuestoTotalTarjeta,
+                        venta_neta: ventaNetaTarjeta
+                    },
+                    transferencia: {
+                        ventas: totalesVentas.transferencia,
+                        impuesto: impuestoTransferencia,
+                        venta_neta: ventaNetaTransferencia
+                    },
+                    total_impuestos: totalImpuestos,
+                    total_ventas_netas: totalVentasNetas
+                },
+                deposito: {
+                    ventas_netas: totalVentasNetas,
+                    gastos: totalGastos,
+                    comisiones: turno.total_comisiones_pagadas || 0,
+                    total_a_depositar: totalADepositar
+                },
+                autorizacion: {
+                    requiere: turno.autorizado_por ? true : false,
+                    autorizado_por: turno.autorizado_por ? `${turno.autorizado_nombres} ${turno.autorizado_apellidos}` : null,
+                    fecha_autorizacion: turno.fecha_autorizacion,
+                    justificacion: turno.justificacion_diferencias
+                }
+            };
+            
+            console.log('✅ Datos del reporte obtenidos exitosamente');
+            return datosReporte;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo datos del reporte:', error);
+            throw error;
+        }
+    }
+
     // FORMATEAR TURNO (convertir JSON strings)
     // ============================================================================
     static formatearTurno(turno) {
@@ -678,7 +869,7 @@ class Turno {
             efectivo_final_monedas: typeof turno.efectivo_final_monedas === 'string'
                 ? JSON.parse(turno.efectivo_final_monedas)
                 : turno.efectivo_final_monedas,
-            // Convertir a nÃºmeros
+            // Convertir a nÃƒÂºmeros
             efectivo_inicial_total: parseFloat(turno.efectivo_inicial_total || 0),
             efectivo_final_total: parseFloat(turno.efectivo_final_total || 0),
             venta_total: parseFloat(turno.venta_total || 0),
