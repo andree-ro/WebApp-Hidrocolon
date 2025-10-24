@@ -285,7 +285,7 @@ class ComprobanteGenerator {
 
                 if (datosReporte.productos_vendidos && datosReporte.productos_vendidos.length > 0) {
                     // Tabla de productos
-                    const colWidths = [30, 160, 40, 60, 60, 60, 60, 62];
+                    const colWidths = [30, 150, 40, 60, 60, 60, 60, 72];
                     const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Total', 'Usuario'];
                     
                     // Encabezados
@@ -299,8 +299,9 @@ class ComprobanteGenerator {
                     });
                     y += 18;
 
-                    // Productos
-                    doc.fontSize(6).fillColor(colors.text).font('Helvetica');
+                    // ⭐ CRÍTICO: Cambiar color a negro para productos
+                    doc.fontSize(7).fillColor(colors.text).font('Helvetica');
+                    
                     datosReporte.productos_vendidos.forEach((prod, idx) => {
                         y = nuevaPaginaSiNecesario(14);
                         
@@ -310,17 +311,17 @@ class ComprobanteGenerator {
                         let xPos = margin;
                         const valores = [
                             prod.venta_id.toString(),
-                            prod.producto_nombre.substring(0, 28),
+                            prod.producto_nombre.substring(0, 26),
                             prod.cantidad.toString(),
                             formatearMoneda(prod.tarjeta),
                             formatearMoneda(prod.efectivo),
                             formatearMoneda(prod.transferencia),
                             formatearMoneda(prod.precio_total),
-                            prod.usuario.substring(0, 12)
+                            prod.usuario.substring(0, 13)
                         ];
 
                         valores.forEach((val, i) => {
-                            doc.text(val, xPos + 2, y + 3, { width: colWidths[i] - 4, align: i === 1 || i === 7 ? 'left' : 'center' });
+                            doc.fillColor(colors.text).text(val, xPos + 2, y + 3, { width: colWidths[i] - 4, align: i === 1 || i === 7 ? 'left' : 'center' });
                             xPos += colWidths[i];
                         });
                         
@@ -433,20 +434,19 @@ class ComprobanteGenerator {
                    .text('Gastos y Deducciones:', margin, y);
                 y += 18;
 
-
                 const totalGastos = parseFloat(datosReporte.gastos_resumen.total) || 0;
                 const totalImpuestos = parseFloat(datosReporte.impuestos.total_impuestos) || 0;
                 const totalComisiones = parseFloat(datosReporte.deposito.comisiones) || 0;
                 const totalDeducciones = totalGastos + totalImpuestos + totalComisiones;
 
                 const deducciones = [
-                    ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
-                    ['Total Impuestos', formatearMoneda(datosReporte.impuestos.total_impuestos)],
+                    ['Total Gastos', formatearMoneda(totalGastos)],
+                    ['Total Impuestos', formatearMoneda(totalImpuestos)],
                     ['  - Impuesto Efectivo (16%)', formatearMoneda(datosReporte.impuestos.efectivo.impuesto)],
                     ['  - Impuesto Tarjeta (6% + 16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_total)],
                     ['  - Impuesto Transferencia (16%)', formatearMoneda(datosReporte.impuestos.transferencia.impuesto)],
-                    ['Comisiones', formatearMoneda(datosReporte.deposito.comisiones)],
-                    ['Total Deducciones', formatearMoneda(datosReporte.gastos_resumen.total + datosReporte.impuestos.total_impuestos + datosReporte.deposito.comisiones)]
+                    ['Comisiones', formatearMoneda(totalComisiones)],
+                    ['Total Deducciones', formatearMoneda(totalDeducciones)]
                 ];
 
                 doc.fontSize(9).font('Helvetica');
@@ -499,7 +499,9 @@ class ComprobanteGenerator {
                     });
                     y += 18;
 
+                    // ⭐ CRÍTICO: Cambiar color a negro para gastos
                     doc.fontSize(7).fillColor(colors.text).font('Helvetica');
+                    
                     datosReporte.gastos.forEach((gasto, idx) => {
                         y = nuevaPaginaSiNecesario(14);
                         
@@ -516,7 +518,7 @@ class ComprobanteGenerator {
                         ];
 
                         vals.forEach((val, i) => {
-                            doc.text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
+                            doc.fillColor(colors.text).text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
                             xPos += colW[i];
                         });
                         
