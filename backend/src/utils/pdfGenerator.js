@@ -289,12 +289,12 @@ class ComprobanteGenerator {
                     const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Total', 'Usuario'];
                     
                     // Encabezados
-                    let xPos = margin;
-                    doc.fontSize(7).fillColor('#ffffff').font('Helvetica-Bold');
                     doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
                     
+                    let xPos = margin;
+                    doc.fontSize(7).font('Helvetica-Bold');
                     headers.forEach((header, i) => {
-                        doc.text(header, xPos + 2, y + 5, { width: colWidths[i] - 4, align: 'center' });
+                        doc.fillColor('#ffffff').text(header, xPos + 2, y + 5, { width: colWidths[i] - 4, align: 'center' });
                         xPos += colWidths[i];
                     });
                     y += 18;
@@ -489,12 +489,12 @@ class ComprobanteGenerator {
                     const colW = [40, 100, 250, 80, 62];
                     const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
                     
-                    let xPos = margin;
-                    doc.fontSize(7).fillColor('#ffffff').font('Helvetica-Bold');
                     doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
                     
+                    let xPos = margin;
+                    doc.fontSize(7).font('Helvetica-Bold');
                     headersGastos.forEach((header, i) => {
-                        doc.text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
+                        doc.fillColor('#ffffff').text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
                         xPos += colW[i];
                     });
                     y += 18;
