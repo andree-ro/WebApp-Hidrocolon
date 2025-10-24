@@ -433,6 +433,12 @@ class ComprobanteGenerator {
                    .text('Gastos y Deducciones:', margin, y);
                 y += 18;
 
+
+                const totalGastos = parseFloat(datosReporte.gastos_resumen.total) || 0;
+                const totalImpuestos = parseFloat(datosReporte.impuestos.total_impuestos) || 0;
+                const totalComisiones = parseFloat(datosReporte.deposito.comisiones) || 0;
+                const totalDeducciones = totalGastos + totalImpuestos + totalComisiones;
+
                 const deducciones = [
                     ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
                     ['Total Impuestos', formatearMoneda(datosReporte.impuestos.total_impuestos)],
