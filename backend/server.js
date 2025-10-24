@@ -1,6 +1,6 @@
 // server.js
 // Servidor principal del Sistema Hidrocolon
-// Configuración completa con autenticación, farmacia, extras, servicios, ventas y turnos
+// ConfiguraciÃ³n completa con autenticaciÃ³n, farmacia, extras, servicios, ventas y turnos
 
 require('dotenv').config();
 const express = require('express');
@@ -15,20 +15,20 @@ const slowDown = require('express-slow-down');
 const NODE_ENV = process.env.NODE_ENV || 'production';
 const PORT = process.env.PORT || 8080;
 
-console.log(`🔧 Configurando seguridad para ambiente: ${NODE_ENV}`);
+console.log(`ðŸ”§ Configurando seguridad para ambiente: ${NODE_ENV}`);
 
 // ============================================================================
 // FUNCIONES Y RUTAS
 // ============================================================================
 
-// Función simple para detectar amenazas
+// FunciÃ³n simple para detectar amenazas
 const detectThreats = (req, body) => {
     const threats = ['<script>', 'union select', '../'];
     const found = threats.some(threat => 
         body.toLowerCase().includes(threat.toLowerCase())
     );
     if (found) {
-        console.warn(`⚠️ Amenaza detectada desde ${req.ip}: ${body.substring(0, 100)}`);
+        console.warn(`âš ï¸ Amenaza detectada desde ${req.ip}: ${body.substring(0, 100)}`);
     }
 };
 
@@ -44,15 +44,17 @@ const doctorasRoutes = require('./src/routes/doctoras');
 const gastosRoutes = require('./src/routes/gastos');
 const vouchersRoutes = require('./src/routes/vouchers');
 const transferenciasRoutes = require('./src/routes/transferencias');
+const comisionesRoutes = require('./src/routes/comisiones');
+const laboratoriosRoutes = require('./src/routes/laboratorios');
 
 const app = express();
 
 // ============================================================================
-// CONFIGURACIÓN DE SEGURIDAD
+// CONFIGURACIÃ“N DE SEGURIDAD
 // ============================================================================
 
 app.set('trust proxy', 1);
-console.log('✅ Trust proxy configurado: 1');
+console.log('âœ… Trust proxy configurado: 1');
 
 app.use(helmet({
     contentSecurityPolicy: {
@@ -69,7 +71,7 @@ app.use(helmet({
         preload: true
     }
 }));
-console.log('✅ Headers de seguridad configurados');
+console.log('âœ… Headers de seguridad configurados');
 
 const corsOptions = {
     origin: [
@@ -86,7 +88,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-console.log('✅ CORS configurado');
+console.log('âœ… CORS configurado');
 
 // ============================================================================
 // MIDDLEWARE GENERAL
@@ -106,7 +108,7 @@ app.use((req, res, next) => {
     const startTime = Date.now();
     
     if (!req.path.includes('/health')) {
-        console.log(`📍 [${timestamp}] ${req.method} ${req.path} - IP: ${req.ip}`);
+        console.log(`ðŸ“ [${timestamp}] ${req.method} ${req.path} - IP: ${req.ip}`);
     }
     
     const originalSend = res.send;
@@ -114,7 +116,7 @@ app.use((req, res, next) => {
         const duration = Date.now() - startTime;
         
         if (!req.path.includes('/health') && res.statusCode >= 400) {
-            console.error(`❌ Error ${res.statusCode}: ${req.method} ${req.path} (${duration}ms)`);
+            console.error(`âŒ Error ${res.statusCode}: ${req.method} ${req.path} (${duration}ms)`);
         }
         
         originalSend.call(this, data);
@@ -135,14 +137,14 @@ const slowDownConfig = slowDown({
 });
 
 app.use(slowDownConfig);
-console.log('✅ Slow down configurado');
+console.log('âœ… Slow down configurado');
 
 const generalRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: NODE_ENV === 'development' ? 50000 : 1000, // 🔥 50k en dev
+    max: NODE_ENV === 'development' ? 50000 : 1000, // ðŸ”¥ 50k en dev
     message: {
         success: false,
-        message: 'Demasiadas requests. Intente de nuevo más tarde',
+        message: 'Demasiadas requests. Intente de nuevo mÃ¡s tarde',
         code: 'RATE_LIMIT_GENERAL'
     },
     standardHeaders: true,
@@ -150,37 +152,37 @@ const generalRateLimit = rateLimit({
     handler: (req, res) => {
         res.status(429).json({
             success: false,
-            message: 'Demasiadas requests. Intente de nuevo más tarde',
+            message: 'Demasiadas requests. Intente de nuevo mÃ¡s tarde',
             code: 'RATE_LIMIT_GENERAL'
         });
     }
 });
 
 app.use(generalRateLimit);
-console.log('✅ Rate limiting general configurado');
+console.log('âœ… Rate limiting general configurado');
 
 const apiRateLimit = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minuto
-    max: NODE_ENV === 'development' ? 50000 : 200, // 🔥 50k en dev, 200 en prod
+    max: NODE_ENV === 'development' ? 50000 : 200, // ðŸ”¥ 50k en dev, 200 en prod
     message: {
         success: false,
-        message: 'Límite de API excedido',
+        message: 'LÃ­mite de API excedido',
         code: 'RATE_LIMIT_API'
     },
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
-        console.warn(`⚠️ Rate limit API alcanzado - IP: ${req.ip}`);
+        console.warn(`âš ï¸ Rate limit API alcanzado - IP: ${req.ip}`);
         res.status(429).json({
             success: false,
-            message: 'Límite de API excedido',
+            message: 'LÃ­mite de API excedido',
             code: 'RATE_LIMIT_API'
         });
     }
 });
 
 app.use('/api/', apiRateLimit);
-console.log('✅ Rate limiting API configurado');
+console.log('âœ… Rate limiting API configurado');
 
 // ============================================================================
 // RUTAS PRINCIPALES
@@ -190,7 +192,7 @@ app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Sistema Hidrocolon API',
-        version: '1.6.0-modulo-financiero',
+        version: '1.7.0-modulo-comisiones-laboratorios',
         timestamp: new Date().toISOString(),
         environment: NODE_ENV,
         modules: {
@@ -200,7 +202,9 @@ app.get('/', (req, res) => {
             servicios: 'Gestión de servicios médicos y promociones',
             pacientes: 'Gestión de pacientes y historial',
             ventas: 'Sistema de ventas y carrito',
-            turnos: 'Control de turnos y caja'
+            turnos: 'Control de turnos y caja',
+            comisiones: 'Sistema de comisiones para doctoras',
+            laboratorios: 'Ganancias de laboratorios'
         },
         endpoints: {
             health: 'GET /health',
@@ -210,7 +214,9 @@ app.get('/', (req, res) => {
             servicios: 'GET|POST|PUT|DELETE /api/servicios/*',
             pacientes: 'GET|POST|PUT|DELETE /api/pacientes/*',
             ventas: 'GET|POST|DELETE /api/ventas/*',
-            turnos: 'GET|POST|PUT /api/turnos/*'
+            turnos: 'GET|POST|PUT /api/turnos/*',
+            comisiones: 'GET|POST|DELETE /api/comisiones/*',
+            laboratorios: 'GET|POST|PUT|DELETE|PATCH /api/laboratorios/*'
         }
     });
 });
@@ -222,7 +228,7 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: NODE_ENV,
-        version: '1.5.0-ventas-turnos-integration',
+        version: '1.7.0-modulo-comisiones-laboratorios',
         database: 'connected',
         services: {
             auth: 'active',
@@ -232,35 +238,37 @@ app.get('/health', (req, res) => {
             pacientes: 'active',
             ventas: 'active',
             turnos: 'active',
+            comisiones: 'active',
+            laboratorios: 'active',
             api: 'active'
         }
     });
 });
 
 // ============================================================================
-// MONTAR RUTAS DE MÓDULOS
+// MONTAR RUTAS DE MÃ“DULOS
 // ============================================================================
 
 app.use('/api/auth', authRoutes);
-console.log('✅ Rutas de autenticación configuradas');
+console.log('âœ… Rutas de autenticaciÃ³n configuradas');
 
 app.use('/api/farmacia', farmaciaRoutes);
-console.log('✅ Rutas de farmacia configuradas');
+console.log('âœ… Rutas de farmacia configuradas');
 
 app.use('/api/extras', extrasRoutes);
-console.log('✅ Rutas de extras configuradas');
+console.log('âœ… Rutas de extras configuradas');
 
 app.use('/api/servicios', serviciosRoutes);
-console.log('✅ Rutas de servicios configuradas');
+console.log('âœ… Rutas de servicios configuradas');
 
 app.use('/api/pacientes', pacientesRoutes);
-console.log('✅ Rutas de pacientes configuradas');
+console.log('âœ… Rutas de pacientes configuradas');
 
 app.use('/api/ventas', ventasRoutes);
-console.log('✅ Rutas de ventas configuradas');
+console.log('âœ… Rutas de ventas configuradas');
 
 app.use('/api/turnos', turnosRoutes);
-console.log('✅ Rutas de turnos configuradas');
+console.log('âœ… Rutas de turnos configuradas');
 
 app.use('/api/doctoras', doctorasRoutes);
 
@@ -269,6 +277,12 @@ app.use('/api/gastos', gastosRoutes);
 app.use('/api/vouchers', vouchersRoutes);
 
 app.use('/api/transferencias', transferenciasRoutes);
+
+app.use('/api/comisiones', comisionesRoutes);
+console.log('✅ Rutas de comisiones configuradas');
+
+app.use('/api/laboratorios', laboratoriosRoutes);
+console.log('✅ Rutas de laboratorios configuradas');
 
 
 // ============================================================================
@@ -283,7 +297,7 @@ app.get('/api/medicamentos/:id/extras', simpleAuth, ExtrasController.getExtrasDe
 app.post('/api/medicamentos/:id/extras', simpleAuth, ExtrasController.vincularExtraConMedicamento);
 app.delete('/api/medicamentos/:id/extras/:extraId', simpleAuth, ExtrasController.desvincularExtraDeMedicamento);
 
-console.log('✅ Rutas medicamentos-extras configuradas');
+console.log('âœ… Rutas medicamentos-extras configuradas');
 
 // ============================================================================
 // MANEJO DE ERRORES
@@ -298,7 +312,7 @@ app.use('*', (req, res) => {
 });
 
 app.use((error, req, res, next) => {
-    console.error('❌ Error global:', error.message);
+    console.error('âŒ Error global:', error.message);
 
     if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
         return res.status(400).json({
@@ -336,10 +350,10 @@ app.use((error, req, res, next) => {
 // ============================================================================
 
 app.listen(PORT, () => {
-    console.log('🚀 Servidor corriendo en puerto', PORT);
-    console.log('🌍 Ambiente:', NODE_ENV);
-    console.log('✅ Sistema Hidrocolon listo');
-    console.log('\n📋 Módulos activos: auth, farmacia, extras, servicios, pacientes, ventas, turnos');
+    console.log('ðŸš€ Servidor corriendo en puerto', PORT);
+    console.log('ðŸŒ Ambiente:', NODE_ENV);
+    console.log('âœ… Sistema Hidrocolon listo');
+    console.log('📋 Módulos activos: auth, farmacia, extras, servicios, pacientes, ventas, turnos, comisiones, laboratorios');
 });
 
 // ============================================================================
@@ -347,22 +361,22 @@ app.listen(PORT, () => {
 // ============================================================================
 
 process.on('SIGINT', () => {
-    console.log('\n🛑 Cerrando servidor...');
+    console.log('\nðŸ›‘ Cerrando servidor...');
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\n🛑 Cerrando servidor...');
+    console.log('\nðŸ›‘ Cerrando servidor...');
     process.exit(0);
 });
 
 process.on('uncaughtException', (error) => {
-    console.error('❌ Error no capturado:', error);
+    console.error('âŒ Error no capturado:', error);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Promise rechazada:', reason);
+    console.error('âŒ Promise rechazada:', reason);
     process.exit(1);
 });
 
