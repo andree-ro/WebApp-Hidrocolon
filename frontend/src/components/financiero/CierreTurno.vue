@@ -183,41 +183,92 @@ async function verificarYCerrar() {
  * Cerrar turno definitivamente
  */
 async function cerrarTurno(conAutorizacion = false) {
-  if (!conAutorizacion && !confirm('¿Estás seguro de cerrar el turno? Esta acción no se puede deshacer.')) {
-    return
-  }
-
   loadingCierre.value = true
   error.value = null
 
   try {
-    const usuario = JSON.parse(localStorage.getItem('user_data'))
-    
     const datosCierre = {
       efectivo_final_billetes: efectivoFinal.value.billetes,
       efectivo_final_monedas: efectivoFinal.value.monedas,
+      total_comisiones_pagadas: 0, // Si usas comisiones, agregar aquí
       observaciones: notasCierre.value || null
     }
 
-    // Si requiere autorización, agregar campos
-    if (conAutorizacion && requiereAutorizacion.value) {
-      datosCierre.autorizado_por = usuario.id
-      datosCierre.justificacion_diferencias = justificacionDiferencias.value.trim()
+    // Si viene con autorización, agregar datos del admin
+    if (conAutorizacion) {
+      datosCierre.autorizado_por = authService.getCurrentUser()?.id
+      datosCierre.justificacion_diferencias = justificacionDiferencias.value
     }
 
-    console.log('📦 Datos de cierre:', datosCierre)
+    console.log('📤 Enviando datos de cierre:', datosCierre)
 
-    await financieroStore.cerrarTurno(datosCierre)
+    const response = await financieroStore.cerrarTurno(datosCierre)
 
-    alert('¡Turno cerrado exitosamente!')
-    emit('turno-cerrado')
+    if (response.success) {
+      console.log('✅ Turno cerrado exitosamente')
+
+      // Descargar PDF automáticamente si está disponible
+      if (response.pdf && response.pdf.disponible) {
+        console.log('📄 Descargando PDF del reporte...')
+        descargarPDF(response.pdf.base64, response.pdf.filename)
+      } else if (response.pdf && !response.pdf.disponible) {
+        console.warn('⚠️ PDF no disponible:', response.pdf.error)
+      }
+
+      // Emitir evento de cierre exitoso
+      emit('turno-cerrado', response.data)
+    }
 
   } catch (err) {
-    error.value = err.message
-    console.error('Error al cerrar turno:', err)
-    alert(`Error al cerrar turno: ${err.message}`)
+    error.value = err.message || 'Error al cerrar el turno'
+    console.error('❌ Error cerrando turno:', err)
+    
+    // Si el error es de autorización requerida, mostrar formulario
+    if (err.message?.includes('requiere autorización')) {
+      mostrarAutorizacion.value = true
+    }
   } finally {
     loadingCierre.value = false
+  }
+}
+
+/**
+ * Función para descargar el PDF desde base64
+ */
+function descargarPDF(base64String, filename) {
+  try {
+    console.log('📥 Iniciando descarga del PDF:', filename)
+    
+    // Convertir base64 a blob
+    const byteCharacters = atob(base64String)
+    const byteNumbers = new Array(byteCharacters.length)
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: 'application/pdf' })
+    
+    // Crear enlace de descarga
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    
+    // Simular click para descargar
+    document.body.appendChild(link)
+    link.click()
+    
+    // Limpiar
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    console.log('✅ PDF descargado exitosamente')
+    
+  } catch (err) {
+    console.error('❌ Error descargando PDF:', err)
+    error.value = 'Error al descargar el PDF del reporte'
   }
 }
 
