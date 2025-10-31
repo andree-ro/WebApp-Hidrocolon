@@ -117,7 +117,8 @@ const crearVenta = async (req, res) => {
                 precio_unitario: parseFloat(item.precio_unitario),
                 precio_total: precio_total,
                 porcentaje_comision: parseFloat(item.porcentaje_comision || 0),
-                monto_comision: monto_comision
+                monto_comision: monto_comision,
+                doctora_id: item.doctora_id || null
             });
 
             subtotal += precio_total;
