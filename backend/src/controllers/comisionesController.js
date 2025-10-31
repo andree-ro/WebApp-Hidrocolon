@@ -714,7 +714,7 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
     try {
         // Obtener datos de la doctora
         const [doctora] = await pool.execute(
-            `SELECT nombres, apellidos FROM doctoras WHERE id = ?`,
+            `SELECT nombre FROM doctoras WHERE id = ?`,
             [doctoraId]
         );
 
@@ -722,7 +722,7 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
             throw new Error('Doctora no encontrada');
         }
 
-        const nombreDoctora = `${doctora[0].nombres} ${doctora[0].apellidos}`;
+        const nombreDoctora = doctora[0].nombre;
 
         // Formatear fechas para el PDF
         const fechaInicioObj = new Date(fechaInicio);
@@ -735,10 +735,11 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
 
         // Preparar columnas de fechas con formato "martes 14-oct"
         const columnasFechas = ventasAgrupadas.fechas.map(fecha => {
-            const f = new Date(fecha + 'T00:00:00');
-            const diaSemana = dias[f.getDay()];
-            const dia = f.getDate();
-            const mes = meses[f.getMonth()].substring(0, 3); // Primeras 3 letras
+            const f = new Date(fecha + 'T12:00:00'); // Usar mediodía para evitar problemas de zona horaria
+            const diaSemana = dias[f.getUTCDay()];
+            const dia = f.getUTCDate();
+            const mesCompleto = meses[f.getUTCMonth()];
+            const mes = mesCompleto ? mesCompleto.substring(0, 3) : 'mes';
             
             return {
                 fecha: fecha,
@@ -748,7 +749,7 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
                 dia_semana: diaSemana
             };
         });
-
+        
         // Convertir monto a letras (función básica, mejorar si es necesario)
         const montoEnLetras = numeroALetras(ventasAgrupadas.totales.total_comisiones);
 
