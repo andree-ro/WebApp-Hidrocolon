@@ -26,16 +26,22 @@ router.get('/dashboard',
     comisionesController.obtenerDashboard
 );
 
-// GET /api/comisiones/doctora/:doctora_id - Detalle de comisiones de una doctora
-router.get('/doctora/:doctora_id',
-    simpleAuth,
-    comisionesController.obtenerDetalleComisionesDoctora
-);
-
 // GET /api/comisiones/acumuladas - Comisiones no pagadas por falta de efectivo
 router.get('/acumuladas',
     simpleAuth,
     comisionesController.verificarComisionesAcumuladas
+);
+
+// GET /api/comisiones/doctora/:doctora_id/ventas-agrupadas - Ventas agrupadas para reporte
+router.get('/doctora/:doctora_id/ventas-agrupadas',
+    simpleAuth,
+    comisionesController.obtenerVentasAgrupadasParaReporte
+);
+
+// GET /api/comisiones/doctora/:doctora_id - Detalle de comisiones de una doctora
+router.get('/doctora/:doctora_id',
+    simpleAuth,
+    comisionesController.obtenerDetalleComisionesDoctora
 );
 
 // ============================================================================
@@ -47,6 +53,13 @@ router.post('/pagar',
     simpleAuth,
     turnosMiddleware.validarTurnoAbierto,
     comisionesController.registrarPago
+);
+
+// POST /api/comisiones/pagar-con-rango - Registrar pago con rango de fechas (NUEVO)
+router.post('/pagar-con-rango',
+    simpleAuth,
+    turnosMiddleware.validarTurnoAbierto,
+    comisionesController.pagarComisionesConRango
 );
 
 // ============================================================================
@@ -149,9 +162,11 @@ router.use((error, req, res, next) => {
 
 console.log('✅ Rutas de comisiones configuradas:');
 console.log('   GET    /api/comisiones/dashboard - Dashboard general');
+console.log('   GET    /api/comisiones/doctora/:doctora_id/ventas-agrupadas - Ventas para reporte');
 console.log('   GET    /api/comisiones/doctora/:doctora_id - Detalle por doctora');
 console.log('   GET    /api/comisiones/acumuladas - Comisiones no pagadas');
 console.log('   POST   /api/comisiones/pagar - Registrar pago (requiere turno)');
+console.log('   POST   /api/comisiones/pagar-con-rango - Pagar con rango de fechas');
 console.log('   GET    /api/comisiones/historial - Historial de pagos');
 console.log('   GET    /api/comisiones/estadisticas - Estadísticas');
 console.log('   GET    /api/comisiones/pago/:id - Obtener pago específico');

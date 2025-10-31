@@ -215,17 +215,23 @@ export const useCarritoStore = defineStore('carrito', () => {
     }
     
     // Preparar detalle de productos CON doctora_id
-    const detalle = items.value.map(item => ({
-      tipo_producto: item.tipo_producto,
-      producto_id: item.producto_id,
-      producto_nombre: item.producto_nombre,
-      cantidad: item.cantidad,
-      precio_unitario: item.precio_unitario,
-      precio_tipo: item.precio_tipo,
-      subtotal: item.subtotal,
-      comision_porcentaje: item.comision_porcentaje,
-      doctora_id: doctoraSeleccionada.value?.id || null  
-    }))
+    const detalle = items.value.map(item => {
+      const precioTotal = item.precio_unitario * item.cantidad
+      const porcentajeComision = item.comision_porcentaje || 0
+      const montoComision = (precioTotal * porcentajeComision) / 100
+      
+      return {
+        tipo_producto: item.tipo_producto,
+        producto_id: item.producto_id,
+        producto_nombre: item.producto_nombre,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+        precio_total: precioTotal,
+        porcentaje_comision: porcentajeComision,
+        monto_comision: montoComision,
+        doctora_id: doctoraSeleccionada.value?.id || null  
+      }
+    })
     
     // Calcular montos según método de pago
     const totalFinal = total.value

@@ -558,6 +558,292 @@ class PagoComision {
             }
         }
     }
+
+    // ============================================================================
+    // OBTENER VENTAS AGRUPADAS POR DÍA Y PRODUCTO (PARA REPORTE)
+    // ============================================================================
+    static async obtenerVentasAgrupadasPorDiaYProducto(doctoraId, fechaInicio, fechaFin) {
+        try {
+            console.log(`📊 Obteniendo ventas agrupadas para doctora ID: ${doctoraId}`);
+            console.log(`   Rango: ${fechaInicio} a ${fechaFin}`);
+
+            // Obtener todas las ventas del período
+            const [ventas] = await pool.execute(
+                `SELECT 
+                    dv.producto_nombre,
+                    dv.precio_unitario,
+                    dv.porcentaje_comision,
+                    dv.cantidad,
+                    dv.monto_comision,
+                    DATE(v.fecha_creacion) as fecha_venta,
+                    DAYNAME(v.fecha_creacion) as dia_semana,
+                    DAY(v.fecha_creacion) as dia_mes,
+                    MONTH(v.fecha_creacion) as mes,
+                    dv.pago_comision_id
+                FROM detalle_ventas dv
+                INNER JOIN ventas v ON dv.venta_id = v.id
+                WHERE dv.doctora_id = ?
+                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND dv.monto_comision > 0
+                ORDER BY dv.producto_nombre, v.fecha_creacion`,
+                [doctoraId, fechaInicio, fechaFin]
+            );
+
+            if (ventas.length === 0) {
+                return {
+                    productos: [],
+                    fechas: [],
+                    totales: {
+                        total_ventas: 0,
+                        total_comisiones: 0
+                    },
+                    tiene_pagos_previos: false
+                };
+            }
+
+            // Verificar si alguna venta ya fue pagada
+            const tiene_pagos_previos = ventas.some(v => v.pago_comision_id !== null);
+
+            // Obtener fechas únicas ordenadas
+            const fechasUnicas = [...new Set(ventas.map(v => v.fecha_venta))].sort();
+            
+            // Agrupar por producto
+            const productosMap = new Map();
+            
+            ventas.forEach(venta => {
+                const key = venta.producto_nombre;
+                
+                if (!productosMap.has(key)) {
+                    productosMap.set(key, {
+                        nombre: venta.producto_nombre,
+                        precio: parseFloat(venta.precio_unitario),
+                        porcentaje_comision: parseFloat(venta.porcentaje_comision),
+                        ventas_por_dia: {},
+                        total_cantidad: 0
+                    });
+                }
+                
+                const producto = productosMap.get(key);
+                const fechaKey = venta.fecha_venta;
+                
+                if (!producto.ventas_por_dia[fechaKey]) {
+                    producto.ventas_por_dia[fechaKey] = {
+                        cantidad: 0,
+                        dia_semana: venta.dia_semana,
+                        dia_mes: venta.dia_mes,
+                        mes: venta.mes
+                    };
+                }
+                
+                producto.ventas_por_dia[fechaKey].cantidad += venta.cantidad;
+                producto.total_cantidad += venta.cantidad;
+            });
+
+            // Convertir Map a Array y calcular totales
+            const productos = Array.from(productosMap.values()).map(prod => {
+                const total_ventas = prod.total_cantidad * prod.precio;
+                const total_comision = prod.total_cantidad * prod.porcentaje_comision;
+                
+                return {
+                    ...prod,
+                    total_ventas: parseFloat(total_ventas.toFixed(2)),
+                    total_comision: parseFloat(total_comision.toFixed(2))
+                };
+            });
+
+            // Calcular totales generales
+            const totales = {
+                total_ventas: productos.reduce((sum, p) => sum + p.total_ventas, 0),
+                total_comisiones: productos.reduce((sum, p) => sum + p.total_comision, 0)
+            };
+
+            console.log(`✅ Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} días`);
+
+            return {
+                productos,
+                fechas: fechasUnicas,
+                totales: {
+                    total_ventas: parseFloat(totales.total_ventas.toFixed(2)),
+                    total_comisiones: parseFloat(totales.total_comisiones.toFixed(2))
+                },
+                tiene_pagos_previos
+            };
+
+        } catch (error) {
+            console.error('❌ Error obteniendo ventas agrupadas:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // VALIDAR SI YA EXISTE UN PAGO EN EL RANGO DE FECHAS
+    // ============================================================================
+    static async validarPagoDuplicado(doctoraId, fechaInicio, fechaFin) {
+        try {
+            const [pagos] = await pool.execute(
+                `SELECT 
+                    pc.id,
+                    pc.fecha_pago,
+                    pc.fecha_corte,
+                    pc.monto_total,
+                    pc.estado,
+                    CONCAT(u.nombres, ' ', u.apellidos) as usuario_registro
+                FROM pagos_comisiones pc
+                LEFT JOIN usuarios u ON pc.usuario_registro_id = u.id
+                WHERE pc.doctora_id = ?
+                AND pc.estado != 'anulado'
+                AND (
+                    (DATE(pc.fecha_corte) BETWEEN ? AND ?)
+                    OR (? BETWEEN DATE(pc.fecha_corte) AND DATE(pc.fecha_pago))
+                    OR (? BETWEEN DATE(pc.fecha_corte) AND DATE(pc.fecha_pago))
+                )
+                ORDER BY pc.fecha_pago DESC
+                LIMIT 1`,
+                [doctoraId, fechaInicio, fechaFin, fechaInicio, fechaFin]
+            );
+
+            if (pagos.length > 0) {
+                return {
+                    existe_pago: true,
+                    pago: pagos[0]
+                };
+            }
+
+            return {
+                existe_pago: false,
+                pago: null
+            };
+
+        } catch (error) {
+            console.error('❌ Error validando pago duplicado:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // REGISTRAR PAGO CON RANGO DE FECHAS (NUEVO FORMATO)
+    // ============================================================================
+    static async registrarPagoConRango(datos) {
+        let connection;
+        
+        try {
+            console.log(`💳 Registrando pago de comisiones con rango de fechas`);
+            console.log(`   Doctora ID: ${datos.doctora_id}`);
+            console.log(`   Rango: ${datos.fecha_inicio} a ${datos.fecha_fin}`);
+
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            // Validaciones
+            if (!datos.doctora_id) throw new Error('El ID de la doctora es requerido');
+            if (!datos.fecha_inicio) throw new Error('La fecha de inicio es requerida');
+            if (!datos.fecha_fin) throw new Error('La fecha de fin es requerida');
+            if (!datos.usuario_registro_id) throw new Error('El ID del usuario es requerido');
+
+            // Validar que no exista un pago previo (a menos que tenga autorización)
+            if (!datos.autorizado_por_admin) {
+                const validacion = await this.validarPagoDuplicado(
+                    datos.doctora_id,
+                    datos.fecha_inicio,
+                    datos.fecha_fin
+                );
+
+                if (validacion.existe_pago) {
+                    throw new Error(
+                        `Ya existe un pago registrado para este período. ` +
+                        `Pago ID: ${validacion.pago.id}, Fecha: ${validacion.pago.fecha_pago}. ` +
+                        `Se requiere autorización de administrador.`
+                    );
+                }
+            }
+
+            // Obtener ventas agrupadas
+            const ventasAgrupadas = await this.obtenerVentasAgrupadasPorDiaYProducto(
+                datos.doctora_id,
+                datos.fecha_inicio,
+                datos.fecha_fin
+            );
+
+            if (ventasAgrupadas.productos.length === 0) {
+                throw new Error('No hay ventas en el rango de fechas seleccionado');
+            }
+
+            const montoTotal = ventasAgrupadas.totales.total_comisiones;
+
+            // Insertar registro de pago
+            const [resultPago] = await connection.execute(
+                `INSERT INTO pagos_comisiones (
+                    doctora_id,
+                    fecha_corte,
+                    fecha_pago,
+                    monto_total,
+                    cantidad_ventas,
+                    efectivo_disponible,
+                    estado,
+                    observaciones,
+                    turno_id,
+                    usuario_registro_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    datos.doctora_id,
+                    datos.fecha_fin, // fecha_corte es el fin del rango
+                    new Date().toISOString().split('T')[0], // fecha_pago es hoy
+                    montoTotal,
+                    ventasAgrupadas.productos.reduce((sum, p) => sum + p.total_cantidad, 0),
+                    true, // siempre es true porque se paga inmediatamente
+                    'pagado',
+                    datos.observaciones || `Pago de comisiones del ${datos.fecha_inicio} al ${datos.fecha_fin}`,
+                    datos.turno_id || null,
+                    datos.usuario_registro_id
+                ]
+            );
+
+            const pagoComisionId = resultPago.insertId;
+
+            // Marcar todas las ventas como pagadas
+            await connection.execute(
+                `UPDATE detalle_ventas dv
+                INNER JOIN ventas v ON dv.venta_id = v.id
+                SET dv.pago_comision_id = ?
+                WHERE dv.doctora_id = ?
+                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND dv.monto_comision > 0
+                AND dv.pago_comision_id IS NULL`,
+                [pagoComisionId, datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
+            );
+
+            // Si hay turno asociado, actualizar totales
+            if (datos.turno_id) {
+                await connection.execute(
+                    `UPDATE turnos 
+                    SET total_comisiones_pagadas = total_comisiones_pagadas + ?
+                    WHERE id = ?`,
+                    [montoTotal, datos.turno_id]
+                );
+            }
+
+            await connection.commit();
+
+            console.log(`✅ Pago registrado exitosamente - ID: ${pagoComisionId}`);
+
+            return {
+                pago_id: pagoComisionId,
+                monto_total: montoTotal,
+                fecha_inicio: datos.fecha_inicio,
+                fecha_fin: datos.fecha_fin,
+                ventas_agrupadas: ventasAgrupadas
+            };
+
+        } catch (error) {
+            if (connection) await connection.rollback();
+            console.error('❌ Error registrando pago con rango:', error);
+            throw error;
+        } finally {
+            if (connection) connection.release();
+        }
+    }
+
+
 }
 
 module.exports = PagoComision;
