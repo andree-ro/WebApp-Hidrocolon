@@ -346,7 +346,17 @@ class Turno {
             const totalesVouchers = await this.obtenerTotalVouchers(turnoId);
             const totalesTransferencias = await this.obtenerTotalTransferencias(turnoId);
 
-            // Ã¢Å“â€¦ OBTENER LISTAS COMPLETAS
+            // ✅ NUEVO: Obtener total de comisiones pagadas
+            const [comisiones] = await pool.execute(
+                `SELECT COALESCE(SUM(monto_total), 0) as total_comisiones
+                FROM pagos_comisiones
+                WHERE turno_id = ?
+                AND estado = 'pagado'`,
+                [turnoId]
+            );
+            const totalComisionesPagadas = parseFloat(comisiones[0]?.total_comisiones || 0);
+
+            // OBTENER LISTAS COMPLETAS
             const listaGastos = await this.obtenerListaGastos(turnoId);
             const listaVouchers = await this.obtenerListaVouchers(turnoId);
             const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
@@ -357,7 +367,8 @@ class Turno {
             // Calcular efectivo actual
             const efectivoActual = parseFloat(turno.efectivo_inicial_total) + 
                                 totalesVentas.efectivo - 
-                                totalesGastos;
+                                totalesGastos -
+                                totalComisionesPagadas;
 
             return {
                 turno: {
@@ -383,7 +394,8 @@ class Turno {
                 },
                 gastos: listaGastos,                    // Ã¢Å“â€¦ LISTA COMPLETA
                 vouchers: listaVouchers,                // Ã¢Å“â€¦ LISTA COMPLETA
-                transferencias: listaTransferencias     // Ã¢Å“â€¦ LISTA COMPLETA
+                transferencias: listaTransferencias,     // Ã¢Å“â€¦ LISTA COMPLETA
+                total_comisiones_pagadas: totalComisionesPagadas
             };
 
         } catch (error) {
