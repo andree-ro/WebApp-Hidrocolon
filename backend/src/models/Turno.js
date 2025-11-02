@@ -109,16 +109,16 @@ class Turno {
 
             // 7. Calcular efectivo esperado
             const efectivoEsperado = parseFloat(turno.efectivo_inicial_total) + 
-                                    totalesVentas.efectivo - 
-                                    totalesGastos - 
-                                    (datosCierre.total_comisiones_pagadas || 0);
+                        totalesVentas.efectivo - 
+                        totalesGastos - 
+                        parseFloat(turno.total_comisiones_pagadas || 0);
 
             // 8. Calcular total a depositar
             // Total a depositar = Ventas netas - Gastos - Comisiones pagadas
             // NO se restan vouchers ni transferencias (son formas de pago, no salidas de dinero)
             const totalADepositar = ventasNetas - 
-                                   totalesGastos - 
-                                   (datosCierre.total_comisiones_pagadas || 0);
+                       totalesGastos - 
+                       parseFloat(turno.total_comisiones_pagadas || 0);
 
             // 9. Calcular diferencias
             const diferencias = {
@@ -180,7 +180,7 @@ class Turno {
                     totalesVentas.tarjeta,
                     totalesVentas.transferencia,
                     totalesGastos,
-                    datosCierre.total_comisiones_pagadas || 0,
+                    parseFloat(turno.total_comisiones_pagadas || 0),
                     totalesVouchers,
                     totalesTransferencias,
                     0, // total_depositos (por implementar)
@@ -205,16 +205,16 @@ class Turno {
 
             await connection.commit();
 
-            console.log(`Ã¢Å“â€¦ Turno ${turnoId} cerrado exitosamente`);
-            console.log(`   Ã°Å¸â€™Â° Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
-            console.log(`   Ã°Å¸â€™Âµ Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
-            console.log(`   Ã°Å¸â€œÅ  Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
+            console.log(`Turno ${turnoId} cerrado exitosamente`);
+            console.log(`   Efectivo esperado: Q${efectivoEsperado.toFixed(2)}`);
+            console.log(`   Efectivo contado: Q${efectivoFinalTotal.toFixed(2)}`);
+            console.log(`   Diferencia: Q${diferencias.efectivo.toFixed(2)}`);
 
             return await this.obtenerPorId(turnoId);
 
         } catch (error) {
             if (connection) await connection.rollback();
-            console.error('Ã¢ÂÅ’ Error cerrando turno:', error);
+            console.error('Error cerrando turno:', error);
             throw error;
         } finally {
             if (connection) connection.release();
