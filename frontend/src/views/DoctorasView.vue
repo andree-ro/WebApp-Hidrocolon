@@ -19,6 +19,16 @@
       <p class="text-gray-600 mt-1">Administra las doctoras para asignación de comisiones</p>
     </div>
   </div>
+
+  <div class="flex gap-2">
+    <!-- Botón Ver Comisiones -->
+  <button
+    @click="$router.push('/comisiones')"
+    class="btn-secondary flex items-center space-x-2"
+  >
+    <span class="text-lg">💰</span>
+    <span>Ver Comisiones</span>
+  </button>
   
   <!-- Botón Agregar Nueva Doctora -->
   <button
@@ -28,6 +38,8 @@
     <span class="text-lg">➕</span>
     <span>Agregar Doctora</span>
   </button>
+  </div>
+  
 </header>
 
 
@@ -530,6 +542,17 @@ function formatearFecha(fecha) {
     return '--'
   }
 }
+
+/**
+ * Ver comisiones y ventas de la doctora
+ */
+function verComisiones(doctora) {
+  console.log('💰 Ver comisiones de:', doctora.nombre)
+  
+  // Redirigir al módulo de comisiones con filtro de doctora
+  window.location.href = `/comisiones?doctora_id=${doctora.id}&doctora_nombre=${encodeURIComponent(doctora.nombre)}`
+}
+
 </script>
 
 <style scoped>

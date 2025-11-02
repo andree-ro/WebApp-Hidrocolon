@@ -303,7 +303,8 @@ export const useFinancieroStore = defineStore('financiero', {
           },
           gastos: Array.isArray(resumen.gastos) ? resumen.gastos : [],
           vouchers: Array.isArray(resumen.vouchers) ? resumen.vouchers : [],
-          transferencias: Array.isArray(resumen.transferencias) ? resumen.transferencias : []
+          transferencias: Array.isArray(resumen.transferencias) ? resumen.transferencias : [],
+          total_comisiones_pagadas: parseFloat(resumen.total_comisiones_pagadas) || 0
         }
         
         // Actualizar listas

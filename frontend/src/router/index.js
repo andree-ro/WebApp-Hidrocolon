@@ -22,7 +22,7 @@ import FinancieroView from '@/views/FinancieroView.vue'
 // =====================================
 
 const routes = [
-  // Ruta raíz - Dashboard principal
+  // Ruta raÃ­z - Dashboard principal
   {
     path: '/',
     name: 'Dashboard',
@@ -41,7 +41,7 @@ const routes = [
     component: LoginView,
     meta: { 
       requiresAuth: false,
-      title: 'Iniciar Sesión - Sistema Hidrocolon'
+      title: 'Iniciar SesiÃ³n - Sistema Hidrocolon'
     }
   },
 
@@ -51,7 +51,7 @@ const routes = [
     redirect: '/'
   },
 
-  // Módulo Farmacia
+  // MÃ³dulo Farmacia
   {
     path: '/farmacia',
     name: 'Farmacia',
@@ -60,11 +60,11 @@ const routes = [
       requiresAuth: true,
       title: 'Farmacia - Sistema Hidrocolon',
       breadcrumb: 'Farmacia',
-      description: 'Gestión de medicamentos e inventario'
+      description: 'GestiÃ³n de medicamentos e inventario'
     }
   },
 
-  // Módulo Extras
+  // MÃ³dulo Extras
   {
     path: '/extras',
     name: 'Extras',
@@ -77,7 +77,7 @@ const routes = [
     }
   },
 
-  // Módulo Servicios
+  // MÃ³dulo Servicios
   {
     path: '/servicios',
     name: 'Servicios',
@@ -85,12 +85,12 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Servicios - Sistema Hidrocolon',
-      breadcrumb: 'Servicios Médicos',
-      description: 'Gestión de servicios médicos, precios y medicamentos vinculados'
+      breadcrumb: 'Servicios MÃ©dicos',
+      description: 'GestiÃ³n de servicios mÃ©dicos, precios y medicamentos vinculados'
     }
   },
 
-  // Módulo Pacientes
+  // MÃ³dulo Pacientes
   {
     path: '/pacientes',
     name: 'Pacientes',
@@ -98,23 +98,36 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Pacientes - Sistema Hidrocolon',
-      breadcrumb: 'Gestión de Pacientes',
-      description: 'Administra información de pacientes, citas y seguimiento médico'
+      breadcrumb: 'GestiÃ³n de Pacientes',
+      description: 'Administra informaciÃ³n de pacientes, citas y seguimiento mÃ©dico'
     }
   },
 
-  // Módulo Doctoras
+  // MÃ³dulo Doctoras
   {
-    path: '/doctoras',  // ← AGREGAR AQUÍ
+    path: '/doctoras',  // â† AGREGAR AQUÃ
     name: 'Doctoras',
     component: () => import('../views/DoctorasView.vue'),
     meta: { 
       requiresAuth: true,
-      title: 'Gestión de Doctoras'
+      title: 'GestiÃ³n de Doctoras'
     }
   },
 
-  // Módulo Carrito/Ventas
+  // Módulo Comisiones
+  {
+    path: '/comisiones',
+    name: 'Comisiones',
+    component: () => import('../views/ComisionesView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Comisiones - Sistema Hidrocolon',
+      breadcrumb: 'Gestión de Comisiones',
+      description: 'Administración de comisiones y pagos a doctoras'
+    }
+  },
+
+  // MÃ³dulo Carrito/Ventas
   {
     path: '/carrito',
     name: 'Carrito',
@@ -123,7 +136,7 @@ const routes = [
       requiresAuth: true,
       title: 'Sistema de Ventas - Sistema Hidrocolon',
       breadcrumb: 'Carrito',
-      description: 'Gestión de ventas y facturación'
+      description: 'GestiÃ³n de ventas y facturaciÃ³n'
     }
   },
 
@@ -134,13 +147,13 @@ const routes = [
     component: FinancieroView,
     meta: { 
       requiresAuth: true,
-      title: 'Módulo Financiero - Sistema Hidrocolon',
+      title: 'MÃ³dulo Financiero - Sistema Hidrocolon',
       breadcrumb: 'Financiero',
       description: 'Control de turnos, caja y finanzas'
     }
   },
 
-  // Página 404 simple
+  // PÃ¡gina 404 simple
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -150,10 +163,10 @@ const routes = [
           <div class="text-center">
             <h1 class="text-6xl font-bold text-gray-400 mb-4">404</h1>
             <h2 class="text-2xl font-semibold text-gray-900 mb-4">
-              Página no encontrada
+              PÃ¡gina no encontrada
             </h2>
             <p class="text-gray-600 mb-8">
-              La página que buscas no existe en el Sistema Hidrocolon.
+              La pÃ¡gina que buscas no existe en el Sistema Hidrocolon.
             </p>
             <router-link
               to="/"
@@ -166,7 +179,7 @@ const routes = [
       `
     },
     meta: {
-      title: 'Página no encontrada - Sistema Hidrocolon'
+      title: 'PÃ¡gina no encontrada - Sistema Hidrocolon'
     }
   }
 ]
@@ -188,33 +201,33 @@ const router = createRouter({
 })
 
 // =====================================
-// GUARDS DE NAVEGACIÓN - CON LOGS DETALLADOS
+// GUARDS DE NAVEGACIÃ“N - CON LOGS DETALLADOS
 // =====================================
 
-// Guard global - verificar autenticación
+// Guard global - verificar autenticaciÃ³n
 router.beforeEach(async (to, from, next) => {
-  console.log('═══════════════════════════════════════════════════════')
-  console.log(`🧭 NAVEGANDO A: ${to.name} (${to.path})`)
-  console.log(`📍 DESDE: ${from.name || 'inicial'} (${from.path})`)
-  console.log('═══════════════════════════════════════════════════════')
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•')
+  console.log(`ðŸ§­ NAVEGANDO A: ${to.name} (${to.path})`)
+  console.log(`ðŸ“ DESDE: ${from.name || 'inicial'} (${from.path})`)
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•')
   
-  // Actualizar título de la página
+  // Actualizar tÃ­tulo de la pÃ¡gina
   if (to.meta.title) {
     document.title = to.meta.title
   }
 
-  // ========== PASO 1: VERIFICAR SI REQUIERE AUTENTICACIÓN ==========
-  console.log(`🔐 ¿Requiere auth? ${to.meta.requiresAuth}`)
+  // ========== PASO 1: VERIFICAR SI REQUIERE AUTENTICACIÃ“N ==========
+  console.log(`ðŸ” Â¿Requiere auth? ${to.meta.requiresAuth}`)
   
   if (to.meta.requiresAuth) {
-    console.log('🔒 ✅ Ruta requiere autenticación, verificando...')
+    console.log('ðŸ”’ âœ… Ruta requiere autenticaciÃ³n, verificando...')
     
     const isAuth = authService.isAuthenticated()
-    console.log('🔑 authService.isAuthenticated():', isAuth)
+    console.log('ðŸ”‘ authService.isAuthenticated():', isAuth)
     
     if (!isAuth) {
-      console.log('❌ Usuario NO autenticado')
-      console.log('🔄 Redirigiendo a Login...')
+      console.log('âŒ Usuario NO autenticado')
+      console.log('ðŸ”„ Redirigiendo a Login...')
       next({
         name: 'Login',
         query: { redirect: to.fullPath }
@@ -222,63 +235,63 @@ router.beforeEach(async (to, from, next) => {
       return
     }
     
-    console.log('✅ Usuario AUTENTICADO correctamente')
+    console.log('âœ… Usuario AUTENTICADO correctamente')
 
     // ========== PASO 2: VERIFICAR PERMISOS DE ADMIN (SI APLICA) ==========
     if (to.meta.adminOnly) {
-      console.log('👑 Ruta requiere permisos de administrador')
+      console.log('ðŸ‘‘ Ruta requiere permisos de administrador')
       const user = authService.getUser()
-      console.log('👤 Usuario actual:', user)
-      console.log('🎭 Rol del usuario:', user?.rol_nombre)
+      console.log('ðŸ‘¤ Usuario actual:', user)
+      console.log('ðŸŽ­ Rol del usuario:', user?.rol_nombre)
       
       if (!user || user.rol_nombre !== 'administrador') {
-        console.log('⛔ ACCESO DENEGADO - No es administrador')
-        console.log('🔄 Redirigiendo a Dashboard...')
+        console.log('â›” ACCESO DENEGADO - No es administrador')
+        console.log('ðŸ”„ Redirigiendo a Dashboard...')
         next({ name: 'Dashboard' })
         return
       }
-      console.log('✅ Usuario ES administrador')
+      console.log('âœ… Usuario ES administrador')
     } else {
-      console.log('ℹ️ Ruta NO requiere permisos especiales')
+      console.log('â„¹ï¸ Ruta NO requiere permisos especiales')
     }
   } else {
-    console.log('ℹ️ Ruta pública, no requiere autenticación')
+    console.log('â„¹ï¸ Ruta pÃºblica, no requiere autenticaciÃ³n')
   }
   
-  // ========== PASO 3: EVITAR IR A LOGIN SI YA ESTÁ AUTENTICADO ==========
+  // ========== PASO 3: EVITAR IR A LOGIN SI YA ESTÃ AUTENTICADO ==========
   if (to.name === 'Login') {
-    console.log('🚪 Destino es Login, verificando si ya está autenticado...')
+    console.log('ðŸšª Destino es Login, verificando si ya estÃ¡ autenticado...')
     if (authService.isAuthenticated()) {
-      console.log('✅ Usuario YA autenticado')
-      console.log('🔄 Redirigiendo a Dashboard en lugar de Login...')
+      console.log('âœ… Usuario YA autenticado')
+      console.log('ðŸ”„ Redirigiendo a Dashboard en lugar de Login...')
       next({ name: 'Dashboard' })
       return
     } else {
-      console.log('ℹ️ Usuario no autenticado, permitir acceso a Login')
+      console.log('â„¹ï¸ Usuario no autenticado, permitir acceso a Login')
     }
   }
   
-  // ========== PASO 4: PERMITIR NAVEGACIÓN ==========
-  console.log('✅✅✅ NAVEGACIÓN PERMITIDA A:', to.name)
-  console.log('═══════════════════════════════════════════════════════')
+  // ========== PASO 4: PERMITIR NAVEGACIÃ“N ==========
+  console.log('âœ…âœ…âœ… NAVEGACIÃ“N PERMITIDA A:', to.name)
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•')
   next()
 })
 
-// Guard posterior a la navegación
+// Guard posterior a la navegaciÃ³n
 router.afterEach((to, from) => {
-  console.log(`🎯 Navegación completada: ${from.name || 'inicial'} → ${to.name}`)
+  console.log(`ðŸŽ¯ NavegaciÃ³n completada: ${from.name || 'inicial'} â†’ ${to.name}`)
 })
 
 // Guard de error
 router.onError((error) => {
-  console.error('❌❌❌ ERROR EN ROUTER:', error)
+  console.error('âŒâŒâŒ ERROR EN ROUTER:', error)
   console.error('Stack trace:', error.stack)
 })
 
 export default router
 
 // ==========================================
-// UTILIDADES DE NAVEGACIÓN - INCLUYENDO PACIENTES Y CARRITO
+// UTILIDADES DE NAVEGACIÃ“N - INCLUYENDO PACIENTES Y CARRITO
 // ==========================================
 
 export const navegarA = {
@@ -293,7 +306,7 @@ export const navegarA = {
     query: redirect ? { redirect } : {} 
   }),
   financiero: () => router.push({ name: 'Financiero' }),
-  // Navegación básica
+  // NavegaciÃ³n bÃ¡sica
   goBack: () => router.go(-1),
   reload: () => router.go(0)
 }
@@ -305,7 +318,7 @@ export const navegarA = {
 export const obtenerBreadcrumbs = (route) => {
   const breadcrumbs = []
   
-  // Siempre agregar Dashboard como base (excepto si ya estamos ahí)
+  // Siempre agregar Dashboard como base (excepto si ya estamos ahÃ­)
   if (route.name !== 'Dashboard') {
     breadcrumbs.push({
       text: 'Dashboard',
@@ -314,7 +327,7 @@ export const obtenerBreadcrumbs = (route) => {
     })
   }
   
-  // Agregar página actual
+  // Agregar pÃ¡gina actual
   if (route.meta?.breadcrumb) {
     breadcrumbs.push({
       text: route.meta.breadcrumb,
@@ -327,7 +340,7 @@ export const obtenerBreadcrumbs = (route) => {
 }
 
 // ==========================================
-// MENÚ CON PACIENTES Y CARRITO AGREGADOS
+// MENÃš CON PACIENTES Y CARRITO AGREGADOS
 // ==========================================
 
 export const menuItems = [
@@ -344,7 +357,7 @@ export const menuItems = [
     path: '/farmacia',
     icon: 'beaker',
     title: 'Farmacia',
-    description: 'Gestión de medicamentos e inventario',
+    description: 'GestiÃ³n de medicamentos e inventario',
     active: true
   },
   {
@@ -359,15 +372,15 @@ export const menuItems = [
     name: 'Servicios',
     path: '/servicios',
     icon: 'heart',
-    title: 'Servicios Médicos',
-    description: 'Gestión de servicios y precios',
+    title: 'Servicios MÃ©dicos',
+    description: 'GestiÃ³n de servicios y precios',
     active: true
   },
   {
     name: 'Pacientes',
     path: '/pacientes',
     icon: 'users',
-    title: 'Gestión de Pacientes',
+    title: 'GestiÃ³n de Pacientes',
     description: 'Administra pacientes, citas y seguimiento',
     active: true
   },
@@ -376,21 +389,21 @@ export const menuItems = [
     path: '/carrito',
     icon: 'shopping-cart',
     title: 'Sistema de Ventas',
-    description: 'Gestión de ventas y facturación',
+    description: 'GestiÃ³n de ventas y facturaciÃ³n',
     active: true
   },
   {
     name: 'Financiero',
     path: '/financiero',
     icon: 'currency-dollar',
-    title: 'Módulo Financiero',
+    title: 'MÃ³dulo Financiero',
     description: 'Control de turnos, caja y finanzas',
     active: true
   }
 ]
 
 // ==========================================
-// UTILIDADES DE VALIDACIÓN DE RUTAS
+// UTILIDADES DE VALIDACIÃ“N DE RUTAS
 // ==========================================
 
 export const esRutaValida = (path) => {
@@ -412,12 +425,12 @@ export const esRutaAdmin = (path) => {
 // ==========================================
 
 export const debugRouter = () => {
-  console.log('🔍 Debug del Router:')
+  console.log('ðŸ” Debug del Router:')
   console.log('- Rutas registradas:', routes.length)
   console.log('- Ruta actual:', router.currentRoute.value)
   console.log('- Usuario autenticado:', authService.isAuthenticated())
   console.log('- Datos de usuario:', authService.getUser())
-  console.log('- Módulos disponibles: Dashboard, Farmacia, Extras, Servicios, Pacientes, Carrito')
+  console.log('- MÃ³dulos disponibles: Dashboard, Farmacia, Extras, Servicios, Pacientes, Carrito')
 }
 
 // Exportar debug globalmente para console

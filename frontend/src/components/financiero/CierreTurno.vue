@@ -196,7 +196,8 @@ async function cerrarTurno(conAutorizacion = false) {
 
     // Si viene con autorización, agregar datos del admin
     if (conAutorizacion) {
-      datosCierre.autorizado_por = authService.getCurrentUser()?.id
+      const usuario = authService.getUser()
+      datosCierre.autorizado_por = usuario?.id
       datosCierre.justificacion_diferencias = justificacionDiferencias.value
     }
 
@@ -521,6 +522,10 @@ function formatearFechaCorta(fecha) {
               <div class="flex justify-between items-center py-2">
                 <span class="text-orange-800">- Gastos</span>
                 <span class="font-semibold text-red-600">-Q{{ formatearNumero(cuadre.total_gastos) }}</span>
+              </div>
+              <div class="flex justify-between items-center py-2">
+                <span class="text-orange-800">- Comisiones Pagadas</span>
+                <span class="font-semibold text-red-600">-Q{{ formatearNumero(cuadre.total_comisiones_pagadas || 0) }}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-t-2 border-orange-400 pt-3">
                 <span class="font-bold text-orange-900">= Efectivo Esperado</span>
