@@ -346,15 +346,8 @@ class Turno {
             const totalesVouchers = await this.obtenerTotalVouchers(turnoId);
             const totalesTransferencias = await this.obtenerTotalTransferencias(turnoId);
 
-            // ✅ NUEVO: Obtener total de comisiones pagadas
-            const [comisiones] = await pool.execute(
-                `SELECT COALESCE(SUM(monto_total), 0) as total_comisiones
-                FROM pagos_comisiones
-                WHERE turno_id = ?
-                AND estado = 'pagado'`,
-                [turnoId]
-            );
-            const totalComisionesPagadas = parseFloat(comisiones[0]?.total_comisiones || 0);
+            // ✅ Usar el campo total_comisiones_pagadas del turno (ya está actualizado)
+            const totalComisionesPagadas = parseFloat(turno.total_comisiones_pagadas || 0);
 
             // OBTENER LISTAS COMPLETAS
             const listaGastos = await this.obtenerListaGastos(turnoId);
