@@ -361,6 +361,7 @@ const calcularCuadrePrevio = async (req, res) => {
         const totalesGastos = await Turno.obtenerTotalGastos(id);
         const totalesVouchers = await Turno.obtenerTotalVouchers(id);
         const totalesTransferencias = await Turno.obtenerTotalTransferencias(id);
+        const totalComisionesPagadas = parseFloat(turno.total_comisiones_pagadas || 0);
 
         // Calcular efectivo final contado
         const totalBilletesFinal = Turno.calcularTotalBilletes(efectivo_final_billetes || {});
@@ -369,9 +370,9 @@ const calcularCuadrePrevio = async (req, res) => {
 
         // Calcular efectivo esperado
         const efectivoEsperado = parseFloat(turno.efectivo_inicial_total) + 
-                                totalesVentas.efectivo - 
-                                totalesGastos;
-
+                        totalesVentas.efectivo - 
+                        totalesGastos -
+                        totalComisionesPagadas;
         // ✅ CALCULAR IMPUESTOS
         const impuestos = Turno.calcularImpuestos(totalesVentas);
         
@@ -383,7 +384,7 @@ const calcularCuadrePrevio = async (req, res) => {
                            impuestos.depositos;
         
         // ✅ CALCULAR TOTAL A DEPOSITAR (con fórmula corregida)
-        const totalADepositar = ventasNetas - totalesGastos;
+        const totalADepositar = ventasNetas - totalesGastos - totalComisionesPagadas;
 
         // Calcular diferencias
         const diferencias = {
@@ -418,6 +419,7 @@ const calcularCuadrePrevio = async (req, res) => {
                 ventas_netas: ventasNetas,
                 total_a_depositar: totalADepositar,
                 total_gastos: totalesGastos,
+                total_comisiones_pagadas: totalComisionesPagadas,
                 total_vouchers: totalesVouchers,
                 total_transferencias: totalesTransferencias,
                 diferencias: diferencias,
