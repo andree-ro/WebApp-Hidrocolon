@@ -548,6 +548,221 @@ class ComprobanteGenerator {
             }
         });
     }
+
+
+    // ============================================================================
+    // GENERAR PDF DE COMISIONES
+    // ============================================================================
+    static async generarPDFComisiones(datosPDF) {
+        return new Promise((resolve, reject) => {
+            try {
+                const doc = new PDFDocument({
+                    size: 'LETTER',
+                    margins: { top: 40, bottom: 40, left: 40, right: 40 }
+                });
+
+                const chunks = [];
+                doc.on('data', chunk => chunks.push(chunk));
+                doc.on('end', () => resolve(Buffer.concat(chunks)));
+                doc.on('error', reject);
+
+                const pageWidth = 612;
+                const pageHeight = 792;
+                const margin = 40;
+                const contentWidth = pageWidth - (margin * 2);
+                let y = margin;
+
+                // Colores
+                const colors = {
+                    primary: '#2563eb',
+                    text: '#1e293b',
+                    lightGray: '#f1f5f9',
+                    border: '#cbd5e1'
+                };
+
+                const formatearMoneda = (monto) => {
+                    return `Q${parseFloat(monto).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                };
+
+                const formatearFecha = (fecha) => {
+                    return new Date(fecha).toLocaleDateString('es-GT');
+                };
+
+                // ============================================================
+                // ENCABEZADO
+                // ============================================================
+                doc.fontSize(18).fillColor(colors.primary).font('Helvetica-Bold')
+                   .text('HIDROCOLON - VIMESA', margin, y, { align: 'center', width: contentWidth });
+                y += 25;
+                
+                doc.fontSize(14).text('COMPROBANTE DE PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
+                y += 30;
+                
+                doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
+                y += 20;
+
+                // ============================================================
+                // INFORMACIÓN GENERAL
+                // ============================================================
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold');
+                
+                doc.text('Fecha de Pago:', margin, y);
+                doc.font('Helvetica').text(formatearFecha(datosPDF.fecha_pago), margin + 120, y);
+                y += 15;
+                
+                doc.font('Helvetica-Bold').text('Doctora:', margin, y);
+                doc.font('Helvetica').text(datosPDF.doctora_nombre, margin + 120, y);
+                y += 15;
+                
+                doc.font('Helvetica-Bold').text('Período:', margin, y);
+                doc.font('Helvetica').text(`${formatearFecha(datosPDF.fecha_inicio)} al ${formatearFecha(datosPDF.fecha_fin)}`, margin + 120, y);
+                y += 15;
+                
+                doc.font('Helvetica-Bold').text('No. Pago:', margin, y);
+                doc.font('Helvetica').text(`#${datosPDF.pago_id}`, margin + 120, y);
+                y += 15;
+
+                if (datosPDF.turno_id) {
+                    doc.font('Helvetica-Bold').text('Turno ID:', margin, y);
+                    doc.font('Helvetica').text(datosPDF.turno_id.toString(), margin + 120, y);
+                    y += 15;
+                }
+                
+                y += 10;
+                doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
+                y += 20;
+
+                // ============================================================
+                // TABLA DE PRODUCTOS
+                // ============================================================
+                doc.fontSize(12).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Detalle de Ventas:', margin, y);
+                y += 20;
+
+                // Encabezados de tabla
+                const colWidths = [200, 60, 80, 70, 82];
+                const headers = ['Producto/Servicio', 'Cant', 'P.Unit.', 'Com %', 'Total Com.'];
+                
+                doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
+                
+                let xPos = margin;
+                doc.fontSize(8).font('Helvetica-Bold');
+                headers.forEach((header, i) => {
+                    doc.fillColor('#ffffff').text(header, xPos + 4, y + 5, { 
+                        width: colWidths[i] - 8, 
+                        align: i === 0 ? 'left' : 'center' 
+                    });
+                    xPos += colWidths[i];
+                });
+                y += 18;
+
+                // Datos de productos
+                doc.fontSize(8).fillColor(colors.text).font('Helvetica');
+                let totalComisiones = 0;
+
+                if (datosPDF.ventas_agrupadas && datosPDF.ventas_agrupadas.length > 0) {
+                    datosPDF.ventas_agrupadas.forEach((item, idx) => {
+                        // Nueva página si es necesario
+                        if (y > pageHeight - 80) {
+                            doc.addPage();
+                            y = margin + 20;
+                        }
+
+                        const comision = parseFloat(item.total_comision || 0);
+                        totalComisiones += comision;
+
+                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
+                        doc.rect(margin, y, contentWidth, 16).fillAndStroke(bgColor, colors.border);
+
+                        let xPos = margin;
+                        const valores = [
+                            (item.producto_nombre || 'Sin nombre').substring(0, 35),
+                            (item.cantidad_total || 0).toString(),
+                            formatearMoneda(item.precio_promedio || 0),
+                            `${parseFloat(item.comision_porcentaje || 0).toFixed(1)}%`,
+                            formatearMoneda(comision)
+                        ];
+
+                        valores.forEach((val, i) => {
+                            doc.fillColor(colors.text).text(val, xPos + 4, y + 4, { 
+                                width: colWidths[i] - 8, 
+                                align: i === 0 ? 'left' : 'center' 
+                            });
+                            xPos += colWidths[i];
+                        });
+
+                        y += 16;
+                    });
+                } else {
+                    doc.fontSize(9).fillColor(colors.text).font('Helvetica')
+                       .text('No hay ventas registradas para este período', margin + 10, y);
+                    y += 20;
+                }
+
+                y += 5;
+                doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
+                y += 15;
+
+                // ============================================================
+                // TOTAL
+                // ============================================================
+                doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.lightGray, colors.border);
+                
+                doc.fontSize(12).fillColor(colors.primary).font('Helvetica-Bold')
+                   .text('TOTAL COMISIONES:', margin + 10, y + 7);
+                
+                doc.fontSize(14).text(formatearMoneda(datosPDF.monto_total), 
+                    pageWidth - margin - 120, y + 6, { width: 110, align: 'right' });
+                
+                y += 35;
+
+                // ============================================================
+                // OBSERVACIONES
+                // ============================================================
+                if (datosPDF.observaciones) {
+                    y += 10;
+                    doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
+                       .text('Observaciones:', margin, y);
+                    y += 12;
+                    doc.font('Helvetica').fontSize(8)
+                       .text(datosPDF.observaciones, margin, y, { width: contentWidth });
+                    y += 25;
+                }
+
+                // ============================================================
+                // FIRMAS
+                // ============================================================
+                y = Math.max(y + 30, pageHeight - 120);
+
+                // Líneas de firma
+                doc.moveTo(margin, y).lineTo(margin + 180, y).stroke(colors.border);
+                doc.moveTo(pageWidth - margin - 180, y).lineTo(pageWidth - margin, y).stroke(colors.border);
+                
+                y += 8;
+                doc.fontSize(9).fillColor(colors.text).font('Helvetica')
+                   .text('Firma Doctora', margin, y, { width: 180, align: 'center' });
+                doc.text('Firma Administrador', pageWidth - margin - 180, y, { width: 180, align: 'center' });
+
+                // ============================================================
+                // PIE DE PÁGINA
+                // ============================================================
+                doc.fontSize(7).fillColor('#666666').font('Helvetica')
+                   .text(
+                       `Generado el ${formatearFecha(new Date())} - Sistema Hidrocolon`,
+                       margin,
+                       pageHeight - 30,
+                       { align: 'center', width: contentWidth }
+                   );
+
+                doc.end();
+            } catch (error) {
+                console.error('❌ Error generando PDF de comisiones:', error);
+                reject(error);
+            }
+        });
+    }
+
+
 }
 
 module.exports = ComprobanteGenerator;
