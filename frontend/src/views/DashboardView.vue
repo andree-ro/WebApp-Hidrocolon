@@ -196,7 +196,7 @@
         <div class="p-4 sm:p-6">
           <div class="mb-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
-              Dashboard Principal
+              Menú Principal
             </h2>
             <p class="text-gray-600 text-sm sm:text-base">
               Bienvenido al Sistema de Gestión Hidrocolon

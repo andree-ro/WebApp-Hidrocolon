@@ -377,7 +377,7 @@ class ComprobanteGenerator {
                 const resultadosCrudo = [
                     ['VENTA BRUTA', formatearMoneda(ventaBruta)],
                     ['GASTOS', formatearMoneda(gastos)],
-                    ['TOTAL CRUDO', formatearMoneda(ventaBruta - gastos)]
+                    ['TOTAL INGRESOS DEL DIA', formatearMoneda(ventaBruta - gastos)]
                 ];
 
                 doc.fontSize(9).font('Helvetica');
