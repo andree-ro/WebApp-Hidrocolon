@@ -442,41 +442,60 @@ class PagoComision {
                 throw new Error('Pago no encontrado');
             }
 
+            // Obtener ventas agrupadas por producto
+            const [ventasAgrupadas] = await pool.execute(`
+                SELECT 
+                    dv.producto_id,
+                    dv.producto_nombre,
+                    dv.tipo_producto,
+                    SUM(dv.cantidad) as cantidad_total,
+                    AVG(dv.precio_unitario) as precio_promedio,
+                    dv.porcentaje_comision as comision_porcentaje,
+                    SUM(dv.monto_comision) as total_comision
+                FROM detalle_ventas dv
+                INNER JOIN pagos_comisiones_detalles pcd ON pcd.detalle_venta_id = dv.id
+                WHERE pcd.pago_comision_id = ?
+                GROUP BY dv.producto_id, dv.producto_nombre, dv.tipo_producto, dv.porcentaje_comision
+                ORDER BY dv.producto_nombre
+            `, [id]);
+
             // Formatear datos para el PDF
             const datosPDF = {
-                // Encabezado
-                empresa: 'HIDROCOLON - VIMESA',
-                titulo: 'PAGO DE COMISIONES',
+                // IDs
+                pago_id: pago.id,
+                turno_id: pago.turno_id,
                 
                 // Información del pago
                 doctora_nombre: pago.doctora_nombre,
                 fecha_pago: pago.fecha_pago,
-                fecha_corte: pago.fecha_corte,
-                numero_pago: `PC-${String(pago.id).padStart(6, '0')}`,
+                fecha_inicio: pago.fecha_corte, // Usar fecha_corte como fecha_inicio
+                fecha_fin: pago.fecha_pago,     // Usar fecha_pago como fecha_fin
                 
                 // Totales
                 monto_total: parseFloat(pago.monto_total),
                 cantidad_ventas: pago.cantidad_ventas,
-                cantidad_items: pago.detalles.length,
                 
-                // Detalle de ventas
-                detalles: pago.detalles.map(d => ({
-                    fecha: d.fecha_venta,
-                    producto: d.producto_nombre,
-                    cantidad: d.cantidad,
-                    monto_venta: parseFloat(d.monto_venta),
-                    porcentaje: parseFloat(d.porcentaje_comision),
-                    comision: parseFloat(d.monto_comision)
+                // Ventas agrupadas (para el PDF)
+                ventas_agrupadas: ventasAgrupadas.map(v => ({
+                    producto_id: v.producto_id,
+                    producto_nombre: v.producto_nombre,
+                    tipo_producto: v.tipo_producto,
+                    cantidad_total: parseInt(v.cantidad_total),
+                    precio_promedio: parseFloat(v.precio_promedio),
+                    comision_porcentaje: parseFloat(v.comision_porcentaje),
+                    total_comision: parseFloat(v.total_comision)
                 })),
                 
                 // Información adicional
-                estado: pago.estado,
-                efectivo_disponible: pago.efectivo_disponible,
                 observaciones: pago.observaciones,
                 usuario_registro: `${pago.usuario_nombres} ${pago.usuario_apellidos}`
             };
 
-            console.log('✅ Datos para PDF preparados');
+            console.log('✅ Datos para PDF preparados:', {
+                pago_id: datosPDF.pago_id,
+                productos: datosPDF.ventas_agrupadas.length,
+                monto: datosPDF.monto_total
+            });
 
             return datosPDF;
 

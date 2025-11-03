@@ -550,7 +550,7 @@ class ComprobanteGenerator {
     }
 
 
-    // ============================================================================
+// ============================================================================
     // GENERAR PDF DE COMISIONES
     // ============================================================================
     static async generarPDFComisiones(datosPDF) {
@@ -585,62 +585,53 @@ class ComprobanteGenerator {
                 };
 
                 const formatearFecha = (fecha) => {
-                    return new Date(fecha).toLocaleDateString('es-GT');
+                    if (!fecha) return 'N/A';
+                    return new Date(fecha).toLocaleDateString('es-GT', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                };
+
+                const formatearFechaLarga = (fecha) => {
+                    if (!fecha) return 'N/A';
+                    return new Date(fecha).toLocaleDateString('es-GT', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
                 };
 
                 // ============================================================
                 // ENCABEZADO
                 // ============================================================
-                doc.fontSize(18).fillColor(colors.primary).font('Helvetica-Bold')
-                   .text('HIDROCOLON - VIMESA', margin, y, { align: 'center', width: contentWidth });
-                y += 25;
+                doc.fontSize(16).fillColor(colors.primary).font('Helvetica-Bold')
+                   .text('HIDROCOLON XELA - VIMESA', margin, y, { align: 'center', width: contentWidth });
+                y += 22;
                 
-                doc.fontSize(14).text('COMPROBANTE DE PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
+                doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
+                y += 20;
+                
+                doc.fontSize(11).fillColor(colors.text).font('Helvetica')
+                   .text(`DEL ${formatearFechaLarga(datosPDF.fecha_pago)}`, margin, y, { align: 'center', width: contentWidth });
+                y += 18;
+                
+                doc.fontSize(12).font('Helvetica-Bold')
+                   .text(datosPDF.doctora_nombre.toUpperCase(), margin, y, { align: 'center', width: contentWidth });
                 y += 30;
                 
                 doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
                 y += 20;
 
                 // ============================================================
-                // INFORMACIÓN GENERAL
-                // ============================================================
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold');
-                
-                doc.text('Fecha de Pago:', margin, y);
-                doc.font('Helvetica').text(formatearFecha(datosPDF.fecha_pago), margin + 120, y);
-                y += 15;
-                
-                doc.font('Helvetica-Bold').text('Doctora:', margin, y);
-                doc.font('Helvetica').text(datosPDF.doctora_nombre, margin + 120, y);
-                y += 15;
-                
-                doc.font('Helvetica-Bold').text('Período:', margin, y);
-                doc.font('Helvetica').text(`${formatearFecha(datosPDF.fecha_inicio)} al ${formatearFecha(datosPDF.fecha_fin)}`, margin + 120, y);
-                y += 15;
-                
-                doc.font('Helvetica-Bold').text('No. Pago:', margin, y);
-                doc.font('Helvetica').text(`#${datosPDF.pago_id}`, margin + 120, y);
-                y += 15;
-
-                if (datosPDF.turno_id) {
-                    doc.font('Helvetica-Bold').text('Turno ID:', margin, y);
-                    doc.font('Helvetica').text(datosPDF.turno_id.toString(), margin + 120, y);
-                    y += 15;
-                }
-                
-                y += 10;
-                doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
-                y += 20;
-
-                // ============================================================
                 // TABLA DE PRODUCTOS
                 // ============================================================
-                doc.fontSize(12).fillColor(colors.text).font('Helvetica-Bold')
-                   .text('Detalle de Ventas:', margin, y);
-                y += 20;
+                doc.fontSize(11).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('DETALLE DE VENTAS:', margin, y);
+                y += 18;
 
                 // Encabezados de tabla
-                const colWidths = [200, 60, 80, 70, 82];
+                const colWidths = [220, 50, 80, 60, 82];
                 const headers = ['Producto/Servicio', 'Cant', 'P.Unit.', 'Com %', 'Total Com.'];
                 
                 doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
@@ -658,29 +649,25 @@ class ComprobanteGenerator {
 
                 // Datos de productos
                 doc.fontSize(8).fillColor(colors.text).font('Helvetica');
-                let totalComisiones = 0;
 
                 if (datosPDF.ventas_agrupadas && datosPDF.ventas_agrupadas.length > 0) {
                     datosPDF.ventas_agrupadas.forEach((item, idx) => {
                         // Nueva página si es necesario
-                        if (y > pageHeight - 80) {
+                        if (y > pageHeight - 200) {
                             doc.addPage();
                             y = margin + 20;
                         }
-
-                        const comision = parseFloat(item.total_comision || 0);
-                        totalComisiones += comision;
 
                         const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
                         doc.rect(margin, y, contentWidth, 16).fillAndStroke(bgColor, colors.border);
 
                         let xPos = margin;
                         const valores = [
-                            (item.producto_nombre || 'Sin nombre').substring(0, 35),
+                            (item.producto_nombre || 'Sin nombre').substring(0, 38),
                             (item.cantidad_total || 0).toString(),
                             formatearMoneda(item.precio_promedio || 0),
                             `${parseFloat(item.comision_porcentaje || 0).toFixed(1)}%`,
-                            formatearMoneda(comision)
+                            formatearMoneda(item.total_comision || 0)
                         ];
 
                         valores.forEach((val, i) => {
@@ -717,7 +704,26 @@ class ComprobanteGenerator {
                 y += 35;
 
                 // ============================================================
-                // OBSERVACIONES
+                // SECCIÓN DE RECIBÍ
+                // ============================================================
+                y += 15;
+                
+                const montoEnLetras = formatearMoneda(datosPDF.monto_total);
+                const fechaCorte = formatearFechaLarga(datosPDF.fecha_inicio);
+                const fechaHoy = formatearFechaLarga(new Date());
+
+                doc.fontSize(9).fillColor(colors.text).font('Helvetica')
+                   .text(
+                       `RECIBÍ DE VIMESA LA CANTIDAD DE ${montoEnLetras} EN CONCEPTO DE COMISIONES POR VENTAS Y SERVICIOS REALIZADOS EL ${fechaCorte} DE ACUERDO AL DETALLE ANTERIOR.`,
+                       margin,
+                       y,
+                       { width: contentWidth, align: 'justify' }
+                   );
+                
+                y += 40;
+
+                // ============================================================
+                // OBSERVACIONES (si hay)
                 // ============================================================
                 if (datosPDF.observaciones) {
                     y += 10;
@@ -732,23 +738,37 @@ class ComprobanteGenerator {
                 // ============================================================
                 // FIRMAS
                 // ============================================================
-                y = Math.max(y + 30, pageHeight - 120);
+                y = Math.max(y + 30, pageHeight - 160);
 
-                // Líneas de firma
-                doc.moveTo(margin, y).lineTo(margin + 180, y).stroke(colors.border);
-                doc.moveTo(pageWidth - margin - 180, y).lineTo(pageWidth - margin, y).stroke(colors.border);
-                
-                y += 8;
-                doc.fontSize(9).fillColor(colors.text).font('Helvetica')
-                   .text('Firma Doctora', margin, y, { width: 180, align: 'center' });
-                doc.text('Firma Administrador', pageWidth - margin - 180, y, { width: 180, align: 'center' });
+                // Firma de quien recibe
+                doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('FIRMA DE QUIEN RECIBE:', margin, y);
+                y += 5;
+                doc.moveTo(margin, y).lineTo(margin + 250, y).stroke(colors.border);
+                y += 20;
+
+                doc.fontSize(9).font('Helvetica-Bold')
+                   .text('NOMBRE DE QUIEN RECIBE:', margin, y);
+                y += 5;
+                doc.moveTo(margin, y).lineTo(margin + 250, y).stroke(colors.border);
+                y += 20;
+
+                doc.fontSize(9).font('Helvetica-Bold')
+                   .text('FECHA:', margin, y);
+                y += 5;
+                doc.moveTo(margin, y).lineTo(margin + 150, y).stroke(colors.border);
+                y += 30;
 
                 // ============================================================
                 // PIE DE PÁGINA
                 // ============================================================
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                   .text(`QUETZALTENANGO, ${fechaHoy.toUpperCase()}`, margin, y, { align: 'center', width: contentWidth });
+
+                y += 25;
                 doc.fontSize(7).fillColor('#666666').font('Helvetica')
                    .text(
-                       `Generado el ${formatearFecha(new Date())} - Sistema Hidrocolon`,
+                       `Documento generado automáticamente - Sistema Hidrocolon`,
                        margin,
                        pageHeight - 30,
                        { align: 'center', width: contentWidth }
