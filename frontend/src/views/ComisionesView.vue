@@ -1,6 +1,20 @@
 <!-- frontend/src/views/ComisionesView.vue -->
 <template>
   <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
+
+
+                  <!-- Botón Volver al Dashboard -->
+      <button
+        @click="$router.push('/')"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        <span>Menú Principal</span>
+      </button>
+
+
     <!-- Header -->
     <div class="max-w-7xl mx-auto mb-6">
       <div class="flex items-center justify-between flex-wrap gap-4">

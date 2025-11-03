@@ -2,16 +2,19 @@
   <div class="servicios-module">
     <!-- Header con título y botón agregar -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-      <div class="flex items-center gap-4">
-        <!-- Botón regresar al Dashboard -->
-        <button
+                <!-- Botón Volver al Dashboard -->
+      <button
           @click="$router.push('/')"
-          class="btn-secondary flex items-center space-x-2"
-          title="Regresar al Dashboard"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
         >
-          <span>←</span>
-          <span>Dashboard</span>
-        </button>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          <span>Menú Principal</span>
+      </button>
+      
+      <div class="flex items-center gap-4">
+
         
         <div>
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">🏥 Módulo Servicios</h1>
