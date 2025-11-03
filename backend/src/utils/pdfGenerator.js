@@ -11,104 +11,130 @@ class ComprobanteGenerator {
                 });
 
                 const chunks = [];
-                
                 doc.on('data', (chunk) => chunks.push(chunk));
                 doc.on('end', () => resolve(Buffer.concat(chunks)));
                 doc.on('error', reject);
 
                 const MEDIA_CARTA_LIMITE = 396;
 
-                // ENCABEZADO
-                doc.fontSize(16)
+                // =========================
+                // ENCABEZADO (ESTILO VIMESA)
+                // =========================
+                doc.fontSize(12)
                    .font('Helvetica-Bold')
                    .text('HIDROCOLON', { align: 'center' });
-                
-                doc.moveDown(0.2);
-                
-                doc.fontSize(12)
+
+                doc.moveDown(0.1);
+
+                doc.fontSize(10)
                    .font('Helvetica')
-                   .text('COMPROBANTE DE VENTA', { align: 'center' });
-                
-                doc.moveDown(0.5);
+                   .text('VIMESA', { align: 'center' });
 
-                // INFORMACIÓN DE LA VENTA
-                const startY = doc.y;
-                
-                doc.fontSize(8)
-                   .font('Helvetica-Bold')
-                   .text('Factura:', 40, startY);
-                doc.font('Helvetica')
-                   .text(venta.numero_factura, 100, startY);
-
-                doc.font('Helvetica-Bold')
-                   .text('Fecha:', 300, startY);
-                doc.font('Helvetica')
-                   .text(new Date(venta.fecha_creacion).toLocaleString('es-GT', {
-                       day: '2-digit',
-                       month: '2-digit', 
-                       year: 'numeric',
-                       hour: '2-digit',
-                       minute: '2-digit'
-                   }), 340, startY);
-
-                doc.font('Helvetica-Bold')
-                   .text('Vendedor:', 40, startY + 12);
-                doc.font('Helvetica')
-                   .text(`${venta.vendedor_nombres} ${venta.vendedor_apellidos}`, 100, startY + 12);
-
-                doc.font('Helvetica-Bold')
-                   .text('Pago:', 300, startY + 12);
-                doc.font('Helvetica')
-                   .text(venta.metodo_pago.toUpperCase(), 340, startY + 12);
-
-                doc.moveDown(1.5);
-
-                // DATOS DEL CLIENTE
-                doc.fontSize(8)
-                   .font('Helvetica-Bold')
-                   .text('Cliente: ', { continued: true })
-                   .font('Helvetica')
-                   .text(venta.cliente_nombre + ' | NIT: ' + venta.cliente_nit);
-
-                doc.moveDown(0.5);
-
-                // TABLA DE PRODUCTOS
-                const tableTop = doc.y;
-                const col1 = 40;
-                const col2 = 75;
-                const col3 = 420;
-                const col4 = 495;
+                doc.moveDown(0.1);
 
                 doc.fontSize(7)
+                   .font('Helvetica')
+                   .text('6a. Calle D3-71 Zona 9, Los Cerezos, Quetzaltenango', { align: 'center' })
+                   .text('PBX: 7767-2167  |  5461-4822', { align: 'center' });
+
+                doc.moveDown(0.4);
+
+                // Línea superior divisoria
+                doc.moveTo(40, doc.y)
+                   .lineTo(555, doc.y)
+                   .stroke();
+                doc.moveDown(0.5);
+
+                // SERIE y NÚMERO
+                doc.fontSize(9)
                    .font('Helvetica-Bold')
-                   .text('Cant', col1, tableTop)
-                   .text('Descripción', col2, tableTop)
-                   .text('P.Unit.', col3, tableTop)
-                   .text('Total', col4, tableTop);
+                   .text('SERIE C', 40, doc.y)
+                   .font('Helvetica')
+                   .text(`No: ${venta.numero_factura.padStart(6, '0')}`, 100, doc.y);
+
+                doc.font('Helvetica-Bold')
+                   .text('DÍA', 370, doc.y)
+                   .font('Helvetica')
+                   .text(new Date(venta.fecha_creacion).getDate().toString().padStart(2, '0'), 395, doc.y);
+
+                doc.font('Helvetica-Bold')
+                   .text('MES', 430, doc.y)
+                   .font('Helvetica')
+                   .text((new Date(venta.fecha_creacion).getMonth() + 1).toString().padStart(2, '0'), 455, doc.y);
+
+                doc.font('Helvetica-Bold')
+                   .text('AÑO', 490, doc.y)
+                   .font('Helvetica')
+                   .text(new Date(venta.fecha_creacion).getFullYear().toString(), 515, doc.y);
+
+                doc.moveDown(0.6);
+
+                // NOMBRE DEL PACIENTE
+                doc.font('Helvetica-Bold')
+                   .text('NOMBRE DEL PACIENTE:', 40, doc.y);
+                doc.font('Helvetica')
+                   .text(venta.cliente_nombre || '---', 150, doc.y);
+
+                // Línea divisoria inferior
+                doc.moveDown(0.3);
+                doc.moveTo(40, doc.y)
+                   .lineTo(555, doc.y)
+                   .stroke();
+                doc.moveDown(0.3);
+
+                // Tipo de servicio
+                doc.font('Helvetica-Bold')
+                   .fontSize(8)
+                   .text('Tipo de servicio:', 40, doc.y)
+                   .text('No. de Control de Terapia:', 400, doc.y);
+
+                doc.font('Helvetica')
+                   .fontSize(8)
+                   .text(venta.tipo_servicio || 'Tratamiento', 120, doc.y)
+                   .text(venta.control_terapia || '-', 525, doc.y, { align: 'right' });
+
+                doc.moveDown(0.8);
+
+                // ======================
+                // TABLA DE CONCEPTOS
+                // ======================
+                const tableTop = doc.y;
+                const col1 = 40;   // Cantidad
+                const col2 = 100;  // Concepto
+                const col3 = 420;  // V.Unitario
+                const col4 = 500;  // Total
+
+                doc.fontSize(8)
+                   .font('Helvetica-Bold')
+                   .text('Cantidad', col1, tableTop)
+                   .text('Concepto', col2, tableTop)
+                   .text('V/Unitario', col3, tableTop)
+                   .text('TOTAL', col4, tableTop);
 
                 doc.moveTo(40, tableTop + 10)
                    .lineTo(555, tableTop + 10)
                    .stroke();
 
                 let yPosition = tableTop + 14;
-                
                 doc.font('Helvetica')
-                   .fontSize(7);
+                   .fontSize(8);
 
                 for (const item of venta.detalle) {
                     if (yPosition > MEDIA_CARTA_LIMITE - 80) {
-                        doc.fontSize(6)
+                        doc.fontSize(7)
                            .font('Helvetica-Oblique')
                            .text('(Continúa en página siguiente...)', 40, yPosition);
                         doc.addPage();
                         yPosition = 50;
-                        
-                        doc.fontSize(7)
+
+                        // Redibujar encabezados
+                        doc.fontSize(8)
                            .font('Helvetica-Bold')
-                           .text('Cant', col1, yPosition)
-                           .text('Descripción', col2, yPosition)
-                           .text('P.Unit.', col3, yPosition)
-                           .text('Total', col4, yPosition);
+                           .text('Cantidad', col1, yPosition)
+                           .text('Concepto', col2, yPosition)
+                           .text('V/Unitario', col3, yPosition)
+                           .text('TOTAL', col4, yPosition);
+
                         doc.moveTo(40, yPosition + 10)
                            .lineTo(555, yPosition + 10)
                            .stroke();
@@ -117,9 +143,10 @@ class ComprobanteGenerator {
                     }
 
                     doc.text(item.cantidad.toString(), col1, yPosition)
-                       .text(item.producto_nombre, col2, yPosition, { width: 330 })
+                       .text(item.producto_nombre, col2, yPosition, { width: 310 })
                        .text(`Q${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
                        .text(`Q${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
+
                     yPosition += 12;
                 }
 
@@ -128,52 +155,23 @@ class ComprobanteGenerator {
                    .stroke();
                 yPosition += 8;
 
+                // ======================
                 // TOTALES
+                // ======================
                 doc.fontSize(8)
-                   .font('Helvetica-Bold');
-
-                doc.text('SUBTOTAL:', 420, yPosition)
-                   .font('Helvetica')
-                   .text(`Q${parseFloat(venta.subtotal).toFixed(2)}`, 495, yPosition);
-
-                if (parseFloat(venta.descuento) > 0) {
-                    yPosition += 10;
-                    doc.font('Helvetica-Bold')
-                       .text('DESCUENTO:', 420, yPosition)
-                       .font('Helvetica')
-                       .text(`Q${parseFloat(venta.descuento).toFixed(2)}`, 495, yPosition);
-                }
-
-                yPosition += 10;
-                doc.fontSize(9)
                    .font('Helvetica-Bold')
-                   .text('TOTAL:', 420, yPosition)
+                   .text('TOTAL Q.', 420, yPosition)
+                   .font('Helvetica')
                    .text(`Q${parseFloat(venta.total).toFixed(2)}`, 495, yPosition);
 
-                // DETALLES DE PAGO
-                if (venta.metodo_pago === 'efectivo') {
-                    yPosition += 12;
-                    doc.fontSize(7)
-                       .font('Helvetica')
-                       .text(`Efectivo: Q${parseFloat(venta.efectivo_recibido).toFixed(2)} | Cambio: Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`, 420, yPosition);
-                }
+                doc.moveDown(1.5);
 
-                if (venta.metodo_pago === 'mixto') {
-                    yPosition += 12;
-                    doc.fontSize(6)
-                       .font('Helvetica');
-                    const detalles = [];
-                    if (parseFloat(venta.tarjeta_monto) > 0) detalles.push(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
-                    if (parseFloat(venta.transferencia_monto) > 0) detalles.push(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
-                    const efectivo = parseFloat(venta.total) - parseFloat(venta.tarjeta_monto) - parseFloat(venta.transferencia_monto);
-                    if (efectivo > 0) detalles.push(`Efectivo: Q${efectivo.toFixed(2)}`);
-                    doc.text(detalles.join(' | '), 420, yPosition);
-                }
-
+                // ======================
                 // PIE DE PÁGINA
+                // ======================
                 doc.fontSize(6)
                    .font('Helvetica')
-                   .text('Gracias por su compra', 40, MEDIA_CARTA_LIMITE - 15, { align: 'center', width: 515 });
+                   .text('Original: Paciente   |   Copia 1: Clínica   |   Copia 2: Administración', 40, MEDIA_CARTA_LIMITE - 20, { align: 'center', width: 515 });
 
                 doc.moveTo(40, MEDIA_CARTA_LIMITE)
                    .lineTo(555, MEDIA_CARTA_LIMITE)
