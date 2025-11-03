@@ -459,6 +459,9 @@ class PagoComision {
                 ORDER BY dv.producto_nombre
             `, [id]);
 
+            console.log('🔍 DEBUG - Ventas agrupadas encontradas:', ventasAgrupadas.length);
+            console.log('🔍 DEBUG - Datos:', JSON.stringify(ventasAgrupadas, null, 2));
+
             // Formatear datos para el PDF
             const datosPDF = {
                 // IDs
