@@ -398,6 +398,8 @@ async function confirmarPago() {
       autorizado_por_admin: false
     })
 
+    let pagoIdFinal = null
+
     // Si es pago duplicado, preguntar al admin
     if (resultado.esPagoDuplicado) {
       const autorizacion = confirm(
@@ -410,7 +412,7 @@ async function confirmarPago() {
 
       if (autorizacion) {
         // Reintentar con autorización
-        await comisionesStore.pagarComisiones({
+        const resultadoAutorizado = await comisionesStore.pagarComisiones({
           doctora_id: props.doctora.id,
           fecha_inicio: fechaInicio.value,
           fecha_fin: fechaFin.value,
@@ -418,13 +420,22 @@ async function confirmarPago() {
           turno_id: turnoActivo?.id || null,
           autorizado_por_admin: true
         })
+        pagoIdFinal = resultadoAutorizado.data?.pago_id
       } else {
         cargando.value = false
         return
       }
+    } else {
+      pagoIdFinal = resultado.data?.pago_id
     }
 
     console.log('✅ Pago registrado exitosamente')
+
+    // ✅ DESCARGAR PDF AUTOMÁTICAMENTE
+    if (pagoIdFinal) {
+      console.log('📄 Descargando PDF de comisiones...')
+      await descargarPDFComisiones(pagoIdFinal)
+    }
     
     emit('pago-exitoso', resultado)
   } catch (error) {
@@ -432,6 +443,19 @@ async function confirmarPago() {
     alert(`Error al registrar el pago:\n${error.response?.data?.message || error.message}`)
   } finally {
     cargando.value = false
+  }
+}
+
+/**
+ * Descargar PDF de comisiones desde el backend
+ */
+async function descargarPDFComisiones(pagoId) {
+  try {
+    const response = await comisionesStore.descargarPDFComision(pagoId)
+    console.log('✅ PDF descargado exitosamente')
+  } catch (error) {
+    console.error('❌ Error descargando PDF:', error)
+    alert('El pago se registró correctamente, pero hubo un error al generar el PDF.')
   }
 }
 

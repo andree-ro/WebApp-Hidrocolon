@@ -190,7 +190,7 @@ async function cerrarTurno(conAutorizacion = false) {
     const datosCierre = {
       efectivo_final_billetes: efectivoFinal.value.billetes,
       efectivo_final_monedas: efectivoFinal.value.monedas,
-      total_comisiones_pagadas: 0, // Si usas comisiones, agregar aquí
+      total_comisiones_pagadas: cuadre.value?.total_comisiones_pagadas || 0, // Si usas comisiones, agregar aquí
       observaciones: notasCierre.value || null
     }
 

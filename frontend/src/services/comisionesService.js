@@ -2,7 +2,7 @@
 import { api } from './authService'
 
 /**
- * Servicio para el mÃ³dulo de comisiones con rango de fechas
+ * Servicio para el módulo de comisiones con rango de fechas
  * Maneja todas las peticiones HTTP relacionadas con comisiones de doctoras
  */
 export default {
@@ -14,28 +14,28 @@ export default {
   async obtenerDashboard(fechaCorte = null) {
     try {
       const params = fechaCorte ? { fecha_corte: fechaCorte } : {}
-      console.log('ðŸ“Š Obteniendo dashboard de comisiones...', params)
+      console.log('📊 Obteniendo dashboard de comisiones...', params)
       
       const response = await api.get('/comisiones/dashboard', { params })
       
-      console.log('âœ… Dashboard obtenido:', response.data)
+      console.log('✅ Dashboard obtenido:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error obteniendo dashboard:', error)
+      console.error('❌ Error obteniendo dashboard:', error)
       throw error
     }
   },
 
   /**
-   * Obtiene ventas agrupadas por dÃ­a y producto para un rango de fechas
+   * Obtiene ventas agrupadas por día y producto para un rango de fechas
    * @param {number} doctoraId - ID de la doctora
    * @param {string} fechaInicio - Fecha inicio (YYYY-MM-DD)
    * @param {string} fechaFin - Fecha fin (YYYY-MM-DD)
-   * @returns {Promise} Response con ventas agrupadas y validaciÃ³n de pago
+   * @returns {Promise} Response con ventas agrupadas y validación de pago
    */
   async obtenerVentasAgrupadas(doctoraId, fechaInicio, fechaFin) {
     try {
-      console.log(`ðŸ“‹ Obteniendo ventas agrupadas para doctora ${doctoraId}:`, {
+      console.log(`📋 Obteniendo ventas agrupadas para doctora ${doctoraId}:`, {
         fechaInicio,
         fechaFin
       })
@@ -50,10 +50,10 @@ export default {
         }
       )
 
-      console.log('âœ… Ventas agrupadas obtenidas:', response.data)
+      console.log('✅ Ventas agrupadas obtenidas:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error obteniendo ventas agrupadas:', error)
+      console.error('❌ Error obteniendo ventas agrupadas:', error)
       throw error
     }
   },
@@ -71,18 +71,18 @@ export default {
    */
   async pagarComisiones(datos) {
     try {
-      console.log('ðŸ’° Registrando pago de comisiones:', datos)
+      console.log('💰 Registrando pago de comisiones:', datos)
 
       const response = await api.post('/comisiones/pagar-con-rango', datos)
 
-      console.log('âœ… Pago registrado exitosamente:', response.data)
+      console.log('✅ Pago registrado exitosamente:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error registrando pago:', error)
+      console.error('❌ Error registrando pago:', error)
       
-      // Si es error 409 (pago duplicado), re-lanzar con info especÃ­fica
+      // Si es error 409 (pago duplicado), re-lanzar con info específica
       if (error.response?.status === 409) {
-        console.warn('âš ï¸ Pago duplicado detectado:', error.response.data)
+        console.warn('⚠️ Pago duplicado detectado:', error.response.data)
       }
       
       throw error
@@ -100,35 +100,35 @@ export default {
    */
   async obtenerHistorial(filtros = {}) {
     try {
-      console.log('ðŸ“š Obteniendo historial de pagos...', filtros)
+      console.log('📚 Obteniendo historial de pagos...', filtros)
 
       const response = await api.get('/comisiones/historial', { 
         params: filtros 
       })
 
-      console.log('âœ… Historial obtenido:', response.data)
+      console.log('✅ Historial obtenido:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error obteniendo historial:', error)
+      console.error('❌ Error obteniendo historial:', error)
       throw error
     }
   },
 
   /**
-   * Obtiene un pago especÃ­fico por ID
+   * Obtiene un pago específico por ID
    * @param {number} pagoId - ID del pago
    * @returns {Promise} Response con detalles del pago
    */
   async obtenerPago(pagoId) {
     try {
-      console.log(`ðŸ” Obteniendo pago ID: ${pagoId}`)
+      console.log(`🔍 Obteniendo pago ID: ${pagoId}`)
 
       const response = await api.get(`/comisiones/pago/${pagoId}`)
 
-      console.log('âœ… Pago obtenido:', response.data)
+      console.log('✅ Pago obtenido:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error obteniendo pago:', error)
+      console.error('❌ Error obteniendo pago:', error)
       throw error
     }
   },
@@ -136,25 +136,25 @@ export default {
   /**
    * Anula un pago de comisiones (libera las ventas)
    * @param {number} pagoId - ID del pago a anular
-   * @param {string} motivo - Motivo de la anulaciÃ³n (obligatorio)
-   * @returns {Promise} Response con resultado de la anulaciÃ³n
+   * @param {string} motivo - Motivo de la anulación (obligatorio)
+   * @returns {Promise} Response con resultado de la anulación
    */
   async anularPago(pagoId, motivo) {
     try {
       if (!motivo || motivo.trim() === '') {
-        throw new Error('El motivo de anulaciÃ³n es obligatorio')
+        throw new Error('El motivo de anulación es obligatorio')
       }
 
-      console.log(`ðŸ—‘ï¸ Anulando pago ID: ${pagoId}`, { motivo })
+      console.log(`🗑️ Anulando pago ID: ${pagoId}`, { motivo })
 
       const response = await api.delete(`/comisiones/pago/${pagoId}/anular`, {
         data: { motivo }
       })
 
-      console.log('âœ… Pago anulado exitosamente:', response.data)
+      console.log('✅ Pago anulado exitosamente:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error anulando pago:', error)
+      console.error('❌ Error anulando pago:', error)
       throw error
     }
   },
@@ -165,14 +165,46 @@ export default {
    */
   async obtenerDoctoras() {
     try {
-      console.log('ðŸ‘©â€âš•ï¸ Obteniendo listado de doctoras...')
+      console.log('👩‍⚕️ Obteniendo listado de doctoras...')
 
       const response = await api.get('/doctoras')
 
-      console.log('âœ… Doctoras obtenidas:', response.data)
+      console.log('✅ Doctoras obtenidas:', response.data)
       return response.data
     } catch (error) {
-      console.error('âŒ Error obteniendo doctoras:', error)
+      console.error('❌ Error obteniendo doctoras:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Descarga el PDF de un pago de comisiones
+   * @param {number} pagoId - ID del pago
+   * @returns {Promise} Response con el PDF
+   */
+  async descargarPDFComision(pagoId) {
+    try {
+      console.log(`📄 Descargando PDF para pago ID: ${pagoId}`)
+
+      const response = await api.post(`/comisiones/pdf/${pagoId}/generar`, {}, {
+        responseType: 'blob' // Importante para recibir el PDF
+      })
+
+      // Crear blob y descargar
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Comisiones_Pago_${pagoId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      console.log('✅ PDF descargado exitosamente')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Error descargando PDF:', error)
       throw error
     }
   }

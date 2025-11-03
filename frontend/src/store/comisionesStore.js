@@ -296,6 +296,24 @@ export const useComisionesStore = defineStore('comisiones', () => {
     }
   }
 
+
+  /**
+   * Descarga el PDF de un pago de comisiones
+   * @param {number} pagoId - ID del pago
+   */
+  async function descargarPDFComision(pagoId) {
+    try {
+      console.log('📄 [Store] Descargando PDF de comisión...')
+      
+      await comisionesService.descargarPDFComision(pagoId)
+      
+      console.log('✅ [Store] PDF descargado')
+    } catch (err) {
+      console.error('❌ [Store] Error descargando PDF:', err)
+      throw err
+    }
+  }
+
   /**
    * Limpia el error actual
    */
@@ -364,6 +382,7 @@ export const useComisionesStore = defineStore('comisiones', () => {
     cargarPago,
     anularPago,
     cargarDoctoras,
+    descargarPDFComision, 
     limpiarError,
     limpiarMensaje,
     limpiarVentasAgrupadas,

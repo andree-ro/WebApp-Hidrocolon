@@ -291,7 +291,7 @@
         <span class="text-3xl">💰</span>
         Efectivo en Caja Actual
       </h3>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div class="bg-white bg-opacity-20 rounded-lg p-4">
           <p class="text-sm text-green-100 mb-1">Efectivo Inicial</p>
           <p class="text-2xl font-bold">Q{{ formatearNumero(resumen.turno?.efectivo_inicial_total || 0) }}</p>
@@ -303,6 +303,10 @@
         <div class="bg-white bg-opacity-20 rounded-lg p-4">
           <p class="text-sm text-green-100 mb-1">- Gastos</p>
           <p class="text-2xl font-bold">Q{{ formatearNumero(calcularTotalGastos()) }}</p>
+        </div>
+        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+          <p class="text-sm text-green-100 mb-1">- Comisiones</p>
+          <p class="text-2xl font-bold">Q{{ formatearNumero(resumen.total_comisiones_pagadas || 0) }}</p>
         </div>
         <div class="bg-white bg-opacity-30 rounded-lg p-4 border-2 border-white">
           <p class="text-sm text-green-100 mb-1">= Total en Caja</p>
@@ -386,8 +390,9 @@ function calcularEfectivoEnCaja() {
   const inicial = props.resumen.turno?.efectivo_inicial_total || 0
   const ventasEfectivo = props.resumen.ventas?.efectivo || 0
   const gastos = calcularTotalGastos()
+  const comisiones = props.resumen.total_comisiones_pagadas || 0
   
-  return inicial + ventasEfectivo - gastos
+  return inicial + ventasEfectivo - gastos - comisiones
 }
 
 // ============================================================================
