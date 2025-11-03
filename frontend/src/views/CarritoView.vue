@@ -5,7 +5,7 @@
   <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
     <!-- Header -->
     <div class="max-w-7xl mx-auto mb-6">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between justify-between relative">
       <!-- Botón Volver al Dashboard -->
       <button
         @click="$router.push('/')"
@@ -17,9 +17,9 @@
         <span>Menú Principal</span>
       </button>
 
-        <div>
+        <div class="absolute left-1/2 transform -translate-x-1/2 text-center">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">🛒 Sistema de Ventas</h1>
-          <p class="text-gray-600 mt-1">Gestión de ventas y facturación</p>
+          <p class="text-gray-600 mt-1">Gestión de ventas y comprobantes</p>
         </div>
 
         
@@ -29,18 +29,6 @@
           <div class="text-sm text-green-800">
             <div class="font-semibold">✅ Turno Activo #{{ turnoActivo.id }}</div>
             <div class="text-xs mt-1">{{ turnoActivo.usuario_nombre }}</div>
-          </div>
-        </div>
-        
-        <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2">
-          <div class="text-sm text-yellow-800">
-            <div class="font-semibold">⚠️ Modo Testing (Sin Turno)</div>
-            <button 
-              @click="mostrarModalAbrirTurno = true"
-              class="text-xs text-yellow-600 hover:text-yellow-800 underline mt-1"
-            >
-              Abrir turno
-            </button>
           </div>
         </div>
       </div>
