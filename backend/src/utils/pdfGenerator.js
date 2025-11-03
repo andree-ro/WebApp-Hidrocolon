@@ -18,16 +18,27 @@ class ComprobanteGenerator {
 
                 const MEDIA_CARTA_LIMITE = 396;
 
-                // ENCABEZADO
-                doc.fontSize(16)
-                   .font('Helvetica-Bold')
-                   .text('VIMESA', { align: 'center' });
+                // ENCABEZADO ACTUALIZADO
+                doc.fontSize(18)
+                .font('Helvetica-Bold')
+                .text('VIMESA', { align: 'center' });
                 
-                doc.moveDown(0.2);
+                doc.moveDown(0.3);
+                
+                doc.fontSize(8)
+                .font('Helvetica')
+                .text('6a. Calle D3-71 Zona 9, Los Cerezos, Quetzaltenango.', { align: 'center' });
+                
+                doc.moveDown(0.1);
+                
+                doc.fontSize(8)
+                .text('PBX: 7767-2167  WHATSAPP: 5461 - 4822', { align: 'center' });
+                
+                doc.moveDown(0.5);
                 
                 doc.fontSize(12)
-                   .font('Helvetica')
-                   .text('COMPROBANTE DE VENTA', { align: 'center' });
+                .font('Helvetica-Bold')
+                .text('COMPROBANTE DE VENTA', { align: 'center' });
                 
                 doc.moveDown(0.5);
 
@@ -35,40 +46,40 @@ class ComprobanteGenerator {
                 const startY = doc.y;
                 
                 doc.fontSize(8)
-                   .font('Helvetica-Bold')
-                   .text('Factura:', 40, startY);
+                .font('Helvetica-Bold')
+                .text('Factura:', 40, startY);
                 doc.font('Helvetica')
-                   .text(venta.numero_factura, 100, startY);
+                .text(venta.numero_factura, 100, startY);
 
                 doc.font('Helvetica-Bold')
-                   .text('Fecha:', 300, startY);
+                .text('Fecha:', 300, startY);
                 doc.font('Helvetica')
-                   .text(new Date(venta.fecha_creacion).toLocaleString('es-GT', {
-                       day: '2-digit',
-                       month: '2-digit', 
-                       year: 'numeric',
-                       hour: '2-digit',
-                       minute: '2-digit'
-                   }), 340, startY);
+                .text(new Date(venta.fecha_creacion).toLocaleString('es-GT', {
+                    day: '2-digit',
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }), 340, startY);
 
                 doc.font('Helvetica-Bold')
-                   .text('Vendedor:', 40, startY + 12);
+                .text('Vendedor:', 40, startY + 12);
                 doc.font('Helvetica')
-                   .text(`${venta.vendedor_nombres} ${venta.vendedor_apellidos}`, 100, startY + 12);
+                .text(`${venta.vendedor_nombres} ${venta.vendedor_apellidos}`, 100, startY + 12);
 
                 doc.font('Helvetica-Bold')
-                   .text('Pago:', 300, startY + 12);
+                .text('Pago:', 300, startY + 12);
                 doc.font('Helvetica')
-                   .text(venta.metodo_pago.toUpperCase(), 340, startY + 12);
+                .text(venta.metodo_pago.toUpperCase(), 340, startY + 12);
 
                 doc.moveDown(1.5);
 
                 // DATOS DEL CLIENTE
                 doc.fontSize(8)
-                   .font('Helvetica-Bold')
-                   .text('Cliente: ', { continued: true })
-                   .font('Helvetica')
-                   .text(venta.cliente_nombre + ' | NIT: ' + venta.cliente_nit);
+                .font('Helvetica-Bold')
+                .text('Cliente: ', { continued: true })
+                .font('Helvetica')
+                .text(venta.cliente_nombre + ' | NIT: ' + venta.cliente_nit);
 
                 doc.moveDown(0.5);
 
@@ -80,88 +91,88 @@ class ComprobanteGenerator {
                 const col4 = 495;
 
                 doc.fontSize(7)
-                   .font('Helvetica-Bold')
-                   .text('Cant', col1, tableTop)
-                   .text('Descripción', col2, tableTop)
-                   .text('P.Unit.', col3, tableTop)
-                   .text('Total', col4, tableTop);
+                .font('Helvetica-Bold')
+                .text('Cant', col1, tableTop)
+                .text('Descripción', col2, tableTop)
+                .text('P.Unit.', col3, tableTop)
+                .text('Total', col4, tableTop);
 
                 doc.moveTo(40, tableTop + 10)
-                   .lineTo(555, tableTop + 10)
-                   .stroke();
+                .lineTo(555, tableTop + 10)
+                .stroke();
 
                 let yPosition = tableTop + 14;
                 
                 doc.font('Helvetica')
-                   .fontSize(7);
+                .fontSize(7);
 
                 for (const item of venta.detalle) {
                     if (yPosition > MEDIA_CARTA_LIMITE - 80) {
                         doc.fontSize(6)
-                           .font('Helvetica-Oblique')
-                           .text('(Continúa en página siguiente...)', 40, yPosition);
+                        .font('Helvetica-Oblique')
+                        .text('(Continúa en página siguiente...)', 40, yPosition);
                         doc.addPage();
                         yPosition = 50;
                         
                         doc.fontSize(7)
-                           .font('Helvetica-Bold')
-                           .text('Cant', col1, yPosition)
-                           .text('Descripción', col2, yPosition)
-                           .text('P.Unit.', col3, yPosition)
-                           .text('Total', col4, yPosition);
+                        .font('Helvetica-Bold')
+                        .text('Cant', col1, yPosition)
+                        .text('Descripción', col2, yPosition)
+                        .text('P.Unit.', col3, yPosition)
+                        .text('Total', col4, yPosition);
                         doc.moveTo(40, yPosition + 10)
-                           .lineTo(555, yPosition + 10)
-                           .stroke();
+                        .lineTo(555, yPosition + 10)
+                        .stroke();
                         yPosition += 14;
                         doc.font('Helvetica');
                     }
 
                     doc.text(item.cantidad.toString(), col1, yPosition)
-                       .text(item.producto_nombre, col2, yPosition, { width: 330 })
-                       .text(`Q${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
-                       .text(`Q${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
+                    .text(item.producto_nombre, col2, yPosition, { width: 330 })
+                    .text(`Q${parseFloat(item.precio_unitario).toFixed(2)}`, col3, yPosition)
+                    .text(`Q${parseFloat(item.precio_total).toFixed(2)}`, col4, yPosition);
                     yPosition += 12;
                 }
 
                 doc.moveTo(40, yPosition + 2)
-                   .lineTo(555, yPosition + 2)
-                   .stroke();
+                .lineTo(555, yPosition + 2)
+                .stroke();
                 yPosition += 8;
 
                 // TOTALES
                 doc.fontSize(8)
-                   .font('Helvetica-Bold');
+                .font('Helvetica-Bold');
 
                 doc.text('SUBTOTAL:', 420, yPosition)
-                   .font('Helvetica')
-                   .text(`Q${parseFloat(venta.subtotal).toFixed(2)}`, 495, yPosition);
+                .font('Helvetica')
+                .text(`Q${parseFloat(venta.subtotal).toFixed(2)}`, 495, yPosition);
 
                 if (parseFloat(venta.descuento) > 0) {
                     yPosition += 10;
                     doc.font('Helvetica-Bold')
-                       .text('DESCUENTO:', 420, yPosition)
-                       .font('Helvetica')
-                       .text(`Q${parseFloat(venta.descuento).toFixed(2)}`, 495, yPosition);
+                    .text('DESCUENTO:', 420, yPosition)
+                    .font('Helvetica')
+                    .text(`Q${parseFloat(venta.descuento).toFixed(2)}`, 495, yPosition);
                 }
 
                 yPosition += 10;
                 doc.fontSize(9)
-                   .font('Helvetica-Bold')
-                   .text('TOTAL:', 420, yPosition)
-                   .text(`Q${parseFloat(venta.total).toFixed(2)}`, 495, yPosition);
+                .font('Helvetica-Bold')
+                .text('TOTAL:', 420, yPosition)
+                .text(`Q${parseFloat(venta.total).toFixed(2)}`, 495, yPosition);
 
                 // DETALLES DE PAGO
                 if (venta.metodo_pago === 'efectivo') {
                     yPosition += 12;
                     doc.fontSize(7)
-                       .font('Helvetica')
-                       .text(`Efectivo: Q${parseFloat(venta.efectivo_recibido).toFixed(2)} | Cambio: Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`, 420, yPosition);
+                    .font('Helvetica')
+                    .text(`Efectivo: Q${parseFloat(venta.efectivo_recibido).toFixed(2)} | Cambio: Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`, 420, yPosition);
                 }
 
                 if (venta.metodo_pago === 'mixto') {
                     yPosition += 12;
                     doc.fontSize(6)
-                       .font('Helvetica');
+                    .font('Helvetica');
                     const detalles = [];
                     if (parseFloat(venta.tarjeta_monto) > 0) detalles.push(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
                     if (parseFloat(venta.transferencia_monto) > 0) detalles.push(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
@@ -172,13 +183,13 @@ class ComprobanteGenerator {
 
                 // PIE DE PÁGINA
                 doc.fontSize(6)
-                   .font('Helvetica')
-                   .text('Gracias por su compra', 40, MEDIA_CARTA_LIMITE - 15, { align: 'center', width: 515 });
+                .font('Helvetica')
+                .text('Gracias por su compra', 40, MEDIA_CARTA_LIMITE - 15, { align: 'center', width: 515 });
 
                 doc.moveTo(40, MEDIA_CARTA_LIMITE)
-                   .lineTo(555, MEDIA_CARTA_LIMITE)
-                   .dash(5, { space: 3 })
-                   .stroke();
+                .lineTo(555, MEDIA_CARTA_LIMITE)
+                .dash(5, { space: 3 })
+                .stroke();
 
                 doc.end();
             } catch (error) {
