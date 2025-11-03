@@ -765,15 +765,6 @@ class ComprobanteGenerator {
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
                    .text(`QUETZALTENANGO, ${fechaHoy.toUpperCase()}`, margin, y, { align: 'center', width: contentWidth });
 
-                y += 25;
-                doc.fontSize(7).fillColor('#666666').font('Helvetica')
-                   .text(
-                       `Documento generado automáticamente - Sistema Hidrocolon`,
-                       margin,
-                       pageHeight - 30,
-                       { align: 'center', width: contentWidth }
-                   );
-
                 doc.end();
             } catch (error) {
                 console.error('❌ Error generando PDF de comisiones:', error);
