@@ -453,7 +453,7 @@ class PagoComision {
                     dv.porcentaje_comision as comision_porcentaje,
                     SUM(dv.monto_comision) as total_comision
                 FROM detalle_ventas dv
-                INNER JOIN pagos_comisiones_detalles pcd ON pcd.detalle_venta_id = dv.id
+                INNER JOIN detalle_pagos_comisiones pcd ON pcd.detalle_venta_id = dv.id
                 WHERE pcd.pago_comision_id = ?
                 GROUP BY dv.producto_id, dv.producto_nombre, dv.tipo_producto, dv.porcentaje_comision
                 ORDER BY dv.producto_nombre
