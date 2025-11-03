@@ -15,7 +15,7 @@
               </svg>
             </button>
             <h1 class="ml-2 lg:ml-0 text-lg sm:text-2xl font-bold text-gray-900">
-              Sistema Hidrocolon
+              Sistema Hidrocolon/Vimesa
             </h1>
           </div>
 

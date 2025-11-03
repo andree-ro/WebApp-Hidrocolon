@@ -305,15 +305,6 @@
                     📦
                   </button>
 
-                  <!-- Agregar al carrito -->
-                  <button
-                    @click="agregarCarrito(medicamento)"
-                    class="btn-icon btn-orange"
-                    title="Agregar al carrito"
-                  >
-                    🛒
-                  </button>
-
                   <!-- Eliminar -->
                   <button
                     @click="eliminarMedicamento(medicamento)"

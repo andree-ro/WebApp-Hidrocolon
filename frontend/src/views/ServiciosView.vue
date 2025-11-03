@@ -305,15 +305,7 @@
                   >
                     💊
                   </button>
-
-                  <button
-                    @click="agregarAlCarrito(servicio)"
-                    class="btn-icon btn-orange"
-                    title="Agregar al carrito"
-                  >
-                    🛒
-                  </button>
-                  
+                
                   <button
                     @click="eliminarServicio(servicio)"
                     class="btn-icon btn-red"
