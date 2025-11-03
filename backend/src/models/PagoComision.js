@@ -742,7 +742,10 @@ class PagoComision {
         }
     }
 
-// ============================================================================
+    
+
+
+    // ============================================================================
     // REGISTRAR PAGO CON RANGO DE FECHAS (NUEVO FORMATO)
     // ============================================================================
     static async registrarPagoConRango(datos) {
@@ -830,10 +833,8 @@ class PagoComision {
                     dv.id as detalle_venta_id,
                     dv.venta_id,
                     v.fecha_creacion as fecha_venta,
-                    dv.producto_id,
                     dv.producto_nombre,
                     dv.cantidad,
-                    dv.precio_unitario,
                     dv.precio_total as monto_venta,
                     dv.porcentaje_comision,
                     dv.monto_comision
@@ -856,23 +857,19 @@ class PagoComision {
                         detalle_venta_id,
                         venta_id,
                         fecha_venta,
-                        producto_id,
                         producto_nombre,
                         cantidad,
-                        precio_unitario,
                         monto_venta,
                         porcentaje_comision,
                         monto_comision
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         pagoComisionId,
                         detalle.detalle_venta_id,
                         detalle.venta_id,
                         detalle.fecha_venta,
-                        detalle.producto_id,
                         detalle.producto_nombre,
                         detalle.cantidad,
-                        detalle.precio_unitario,
                         detalle.monto_venta,
                         detalle.porcentaje_comision,
                         detalle.monto_comision
