@@ -742,7 +742,7 @@ class PagoComision {
         }
     }
 
-    // ============================================================================
+// ============================================================================
     // REGISTRAR PAGO CON RANGO DE FECHAS (NUEVO FORMATO)
     // ============================================================================
     static async registrarPagoConRango(datos) {
@@ -821,6 +821,66 @@ class PagoComision {
             );
 
             const pagoComisionId = resultPago.insertId;
+
+            // ✅ INSERTAR DETALLES EN detalle_pagos_comisiones
+            console.log('📝 Insertando detalles en detalle_pagos_comisiones...');
+            
+            const [detallesVentas] = await connection.execute(
+                `SELECT 
+                    dv.id as detalle_venta_id,
+                    dv.venta_id,
+                    v.fecha_creacion as fecha_venta,
+                    dv.producto_id,
+                    dv.producto_nombre,
+                    dv.cantidad,
+                    dv.precio_unitario,
+                    dv.precio_total as monto_venta,
+                    dv.porcentaje_comision,
+                    dv.monto_comision
+                FROM detalle_ventas dv
+                INNER JOIN ventas v ON dv.venta_id = v.id
+                WHERE dv.doctora_id = ?
+                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND dv.monto_comision > 0
+                AND dv.pago_comision_id IS NULL`,
+                [datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
+            );
+
+            console.log(`📝 ${detallesVentas.length} detalles encontrados para insertar`);
+
+            // Insertar cada detalle
+            for (const detalle of detallesVentas) {
+                await connection.execute(
+                    `INSERT INTO detalle_pagos_comisiones (
+                        pago_comision_id,
+                        detalle_venta_id,
+                        venta_id,
+                        fecha_venta,
+                        producto_id,
+                        producto_nombre,
+                        cantidad,
+                        precio_unitario,
+                        monto_venta,
+                        porcentaje_comision,
+                        monto_comision
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        pagoComisionId,
+                        detalle.detalle_venta_id,
+                        detalle.venta_id,
+                        detalle.fecha_venta,
+                        detalle.producto_id,
+                        detalle.producto_nombre,
+                        detalle.cantidad,
+                        detalle.precio_unitario,
+                        detalle.monto_venta,
+                        detalle.porcentaje_comision,
+                        detalle.monto_comision
+                    ]
+                );
+            }
+
+            console.log(`✅ ${detallesVentas.length} detalles insertados en detalle_pagos_comisiones`);
 
             // Marcar todas las ventas como pagadas
             await connection.execute(
