@@ -39,6 +39,22 @@ router.put('/:id/stock', simpleAuth, ExtrasController.actualizarStock);
 // DELETE /api/extras/:id - Eliminar extra (admin)
 router.delete('/:id', simpleAuth, ExtrasController.eliminarExtra);
 
+
+// =====================================
+// RUTAS PARA RELACIÓN CON SERVICIOS
+// =====================================
+
+// GET /api/servicios/:id/extras - Obtener extras de un servicio
+router.get('/servicios/:id/extras', simpleAuth, ExtrasController.getExtrasDeServicio);
+
+// POST /api/servicios/:id/extras - Vincular extra con servicio
+router.post('/servicios/:id/extras', simpleAuth, ExtrasController.vincularExtraConServicio);
+
+// DELETE /api/servicios/:id/extras/:extraId - Desvincular extra de servicio
+router.delete('/servicios/:id/extras/:extraId', simpleAuth, ExtrasController.desvincularExtraDeServicio);
+
+
+
 // =====================================
 // MIDDLEWARE DE VALIDACIÓN Y LOGGING
 // =====================================

@@ -171,6 +171,30 @@ async function runMigration() {
         `);
         console.log('âœ… Tabla creada: servicios_medicamentos');
 
+
+        // ============================================================================
+        // TABLA: SERVICIOS_EXTRAS (Relación muchos a muchos)
+        // ============================================================================
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS servicios_extras (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                servicio_id INT NOT NULL,
+                extra_id INT NOT NULL,
+                cantidad_requerida INT DEFAULT 1,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (servicio_id) REFERENCES servicios(id) ON DELETE CASCADE,
+                FOREIGN KEY (extra_id) REFERENCES extras(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_servicio_extra (servicio_id, extra_id),
+                INDEX idx_servicio (servicio_id),
+                INDEX idx_extra (extra_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        console.log('✅ Tabla creada: servicios_extras');
+
+
+
+
+
         // 10. TABLA JORNADAS_ULTRASONIDOS
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS jornadas_ultrasonidos (

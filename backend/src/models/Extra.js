@@ -372,6 +372,100 @@ class Extra {
         }
     }
 
+
+
+
+    // =============================================
+    // MÉTODOS PARA RELACIÓN CON SERVICIOS
+    // =============================================
+
+    /**
+     * Obtener extras vinculados a un servicio
+     */
+    static async getExtrasByServicio(servicioId) {
+        try {
+            const [rows] = await pool.execute(
+            `SELECT 
+                e.id,
+                e.nombre,
+                e.descripcion,
+                e.existencias,
+                e.stock_minimo,
+                e.precio_unitario AS costo_unitario,
+                e.activo,
+                se.cantidad_requerida,
+                se.fecha_creacion AS fecha_vinculacion
+            FROM extras e
+            INNER JOIN servicios_extras se ON e.id = se.extra_id
+            WHERE se.servicio_id = ?
+            AND e.activo = 1
+            ORDER BY e.nombre ASC`,
+            [servicioId]
+            );
+            
+            return rows;
+        } catch (error) {
+            console.error('Error obteniendo extras del servicio:', error);
+            throw error;
+        }
+        }
+
+        /**
+         * Vincular un extra con un servicio
+         */
+        static async vincularConServicio(servicioId, extraId, cantidadRequerida = 1) {
+        try {
+            // Verificar que el servicio existe
+            const [servicios] = await pool.execute(
+            'SELECT id FROM servicios WHERE id = ?',
+            [servicioId]
+            );
+            
+            if (servicios.length === 0) {
+            throw new Error('Servicio no encontrado');
+            }
+            
+            // Verificar que el extra existe
+            const [extras] = await pool.execute(
+            'SELECT id FROM extras WHERE id = ?',
+            [extraId]
+            );
+            
+            if (extras.length === 0) {
+            throw new Error('Extra no encontrado');
+            }
+            
+            // Insertar vinculación (o actualizar si ya existe)
+            await pool.execute(
+            `INSERT INTO servicios_extras (servicio_id, extra_id, cantidad_requerida)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE cantidad_requerida = ?`,
+            [servicioId, extraId, cantidadRequerida, cantidadRequerida]
+            );
+            
+            return true;
+        } catch (error) {
+            console.error('Error vinculando extra con servicio:', error);
+            throw error;
+        }
+        }
+
+        /**
+         * Desvincular un extra de un servicio
+         */
+        static async desvincularDeServicio(servicioId, extraId) {
+        try {
+            const [result] = await pool.execute(
+            'DELETE FROM servicios_extras WHERE servicio_id = ? AND extra_id = ?',
+            [servicioId, extraId]
+            );
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error desvinculando extra del servicio:', error);
+            throw error;
+        }
+    }
     // =====================================
     // ESTADÍSTICAS Y UTILIDADES
     // =====================================

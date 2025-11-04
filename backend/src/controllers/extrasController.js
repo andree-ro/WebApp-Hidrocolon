@@ -461,6 +461,137 @@ class ExtrasController {
       });
     }
   }
+
+
+
+  // ===================================== 
+  // ENDPOINTS PARA RELACIÓN CON SERVICIOS
+  // ===================================== 
+
+  // GET /api/servicios/:id/extras - Obtener extras de un servicio
+  static async getExtrasDeServicio(req, res) {
+    try {
+      const { id } = req.params;
+      const servicioId = parseInt(id);
+      
+      console.log('🔗 GET extras de servicio endpoint hit');
+      console.log('🔗 Servicio ID:', servicioId);
+      
+      if (isNaN(servicioId) || servicioId < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de servicio inválido'
+        });
+      }
+      
+      const extras = await Extra.getExtrasByServicio(servicioId);
+      
+      res.json({
+        success: true,
+        data: extras,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo extras de servicio:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error obteniendo extras del servicio',
+        error: error.message
+      });
+    }
+  }
+
+  // POST /api/servicios/:id/extras - Vincular extra con servicio
+  static async vincularExtraConServicio(req, res) {
+    try {
+      const { id } = req.params;
+      const { extra_id, cantidad_requerida } = req.body;
+      const servicioId = parseInt(id);
+      
+      console.log('🔗 POST vincular extra con servicio endpoint hit');
+      console.log('🔗 Servicio:', servicioId, 'Extra:', extra_id);
+      
+      if (isNaN(servicioId) || servicioId < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de servicio inválido'
+        });
+      }
+      
+      if (!extra_id || isNaN(extra_id) || extra_id < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de extra inválido'
+        });
+      }
+      
+      await Extra.vincularConServicio(
+        servicioId,
+        parseInt(extra_id),
+        parseInt(cantidad_requerida) || 1
+      );
+      
+      res.json({
+        success: true,
+        message: 'Extra vinculado con servicio exitosamente',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('❌ Error vinculando extra:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error vinculando extra con servicio',
+        error: error.message
+      });
+    }
+  }
+
+  // DELETE /api/servicios/:id/extras/:extraId - Desvincular extra de servicio
+  static async desvincularExtraDeServicio(req, res) {
+    try {
+      const { id, extraId } = req.params;
+      const servicioId = parseInt(id);
+      const extraIdInt = parseInt(extraId);
+      
+      console.log('🔗 DELETE desvincular extra de servicio endpoint hit');
+      console.log('🔗 Servicio:', servicioId, 'Extra:', extraIdInt);
+      
+      if (isNaN(servicioId) || servicioId < 1 || isNaN(extraIdInt) || extraIdInt < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'IDs inválidos'
+        });
+      }
+      
+      const resultado = await Extra.desvincularDeServicio(servicioId, extraIdInt);
+      
+      if (!resultado) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vinculación no encontrada'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Extra desvinculado del servicio exitosamente',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('❌ Error desvinculando extra:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error desvinculando extra del servicio',
+        error: error.message
+      });
+    }
+  }
+
+
+
 }
 
 module.exports = ExtrasController;
