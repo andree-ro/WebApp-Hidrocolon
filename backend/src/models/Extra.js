@@ -404,7 +404,7 @@ class Extra {
             `;
 
             const [rows] = await connection.execute(query, [servicioId]);
-            
+
             return rows;
         } catch (error) {
             console.error('❌ Error obteniendo extras del servicio:', error);
@@ -412,11 +412,11 @@ class Extra {
         } finally {
             await connection.end();
         }
-        }
+    }
 
-        /**
-         * Vincular un extra con un servicio
-         */
+    /**
+     * Vincular un extra con un servicio
+     */
     async vincularConServicio(servicioId, extraId, cantidadRequerida = 1) {
         const connection = await this.getConnection();
         try {
@@ -425,21 +425,21 @@ class Extra {
                 'SELECT id FROM servicios WHERE id = ?',
                 [servicioId]
             );
-            
+
             if (servicios.length === 0) {
-                throw new Error('Servicio no encontrado');           
+                throw new Error('Servicio no encontrado');
             }
-            
+
             // Verificar que el extra existe
             const [extras] = await connection.execute(
                 'SELECT id FROM extras WHERE id = ?',
                 [extraId]
             );
-            
+
             if (extras.length === 0) {
-            throw new Error('Extra no encontrado');
+                throw new Error('Extra no encontrado');
             }
-            
+
             // Insertar vinculación (o actualizar si ya existe)
             await connection.execute(
                 `INSERT INTO servicios_extras (servicio_id, extra_id, cantidad_requerida)
@@ -448,12 +448,12 @@ class Extra {
                 [servicioId, extraId, cantidadRequerida]
             );
 
-                console.log('✅ Extra vinculado con servicio:', {
+            console.log('✅ Extra vinculado con servicio:', {
                 servicioId,
                 extraId,
                 cantidadRequerida
             });
-            
+
             return true;
         } catch (error) {
             console.error('❌ Error vinculando extra con servicio:', error);
@@ -461,8 +461,7 @@ class Extra {
         } finally {
             await connection.end();
         }
-        }
-    
+    }
 
     /**
      * Desvincular un extra de un servicio
@@ -481,7 +480,7 @@ class Extra {
                 servicioId,
                 extraId
             });
-            
+
             return result.affectedRows > 0;
         } catch (error) {
             console.error('❌ Error desvinculando extra del servicio:', error);

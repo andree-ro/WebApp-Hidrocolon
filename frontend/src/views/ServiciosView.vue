@@ -219,6 +219,9 @@
                 Medicamentos
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Extras
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -267,10 +270,32 @@
                   <span class="text-sm">{{ servicio.total_medicamentos || 0 }}</span>
                 </div>
               </td>
+              <!-- Extras -->
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <button
+                    @click="servicio.requiere_extras ? verExtrasVinculados(servicio) : null"
+                    :disabled="!servicio.requiere_extras"
+                    :class="[
+                      'btn-icon',
+                      servicio.requiere_extras
+                        ? (servicio.total_extras > 0 ? 'btn-orange' : 'btn-gray')
+                        : 'btn-gray opacity-50 cursor-not-allowed'
+                    ]"
+                    title="Gestionar extras vinculados"
+                  >
+                    🧰
+                  </button>
+                  <span class="text-sm">
+                    {{ servicio.requiere_extras ? servicio.total_extras || 0 : '-' }}
+                  </span>
+                </div>
+              </td>
+
 
               <!-- Estado -->
               <td class="px-6 py-4">
-                <span 
+                <span
                   :class="servicio.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                   class="px-2 py-1 text-xs font-medium rounded-full"
                 >
@@ -457,6 +482,61 @@
               <p class="text-gray-600 text-sm">Este servicio no requiere medicamentos específicos</p>
             </div>
 
+            <!-- Extras vinculados -->
+            <div v-if="servicioParaDetalles.requiere_extras" class="border-t pt-4 mt-4">
+              <h4 class="font-medium text-gray-900 mb-3">Extras / Materiales Requeridos</h4>
+
+              <div v-if="detallesExtras && detallesExtras.length" class="space-y-3">
+                <div
+                  v-for="extra in detallesExtras"
+                  :key="extra.id"
+                  class="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-lg p-4"
+                >
+                  <div class="flex items-center space-x-3">
+                    <div class="text-2xl">🧰</div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">{{ extra.nombre }}</p>
+                      <p v-if="extra.descripcion" class="text-xs text-gray-600">
+                        {{ extra.descripcion }}
+                      </p>
+                      <p class="text-xs text-orange-600">
+                        Cantidad requerida: {{ extra.cantidad_requerida || 1 }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        Existencias actuales: {{ extra.existencias ?? 'N/D' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="text-right">
+                    <p class="text-xs text-gray-500">Costo unitario estimado</p>
+                    <p class="text-sm font-semibold text-orange-600">
+                      {{ formatearPrecio(extra.costo_unitario) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="cargandoExtras" class="text-center py-4">
+                <div class="spinner mr-2"></div>
+                <span class="text-sm text-gray-600">Cargando extras...</span>
+              </div>
+
+              <div v-else class="text-center py-6 bg-gray-50 rounded-lg">
+                <p class="text-gray-600 text-sm">No hay extras configurados para este servicio</p>
+                <button
+                  @click="abrirExtrasDesdeDetalle"
+                  class="mt-2 text-orange-600 hover:underline text-sm"
+                >
+                  Configurar extras
+                </button>
+              </div>
+            </div>
+
+            <div v-else class="bg-gray-50 rounded-lg p-4 mt-4">
+              <p class="text-gray-600 text-sm">Este servicio no requiere materiales adicionales</p>
+            </div>
+
             <!-- Fechas -->
             <div class="text-xs text-gray-500 border-t pt-4">
               <div><span class="font-medium">Creado:</span> {{ formatearFecha(servicioParaDetalles.fecha_creacion) }}</div>
@@ -477,6 +557,13 @@
               class="btn-secondary"
             >
               💊 Gestionar Medicamentos
+            </button>
+            <button
+              v-if="servicioParaDetalles.requiere_extras"
+              @click="abrirExtrasDesdeDetalle"
+              class="btn-secondary"
+            >
+              🧰 Gestionar Extras
             </button>
             <button @click="editarDesdeDetalle" class="btn-primary">
               ✏️ Editar Servicio
@@ -502,6 +589,7 @@
       @updated="onMedicamentosActualizados"
     />
 
+
     <ExtrasVinculadosServiciosModal
       :visible="mostrarModalExtras && servicioParaExtras"
       :servicio="servicioParaExtras || {}"
@@ -513,6 +601,7 @@
 
 <script>
 import serviciosService from '@/services/serviciosService'
+import extrasService from '@/services/extrasService'
 import ServiciosModal from '@/components/ServiciosModal.vue'
 import MedicamentosVinculadosModal from '@/components/MedicamentosVinculadosModal.vue'
 import ExtrasVinculadosServiciosModal from '@/components/ExtrasVinculadosServiciosModal.vue'
@@ -554,7 +643,9 @@ export default {
       servicioParaExtras: null,
       servicioParaDetalles: null,
       detallesMedicamentos: [],
+      detallesExtras: [],
       cargandoDetalles: false,
+      cargandoExtras: false,
       modoModal: 'crear',
       
       // Timeouts
@@ -673,7 +764,8 @@ export default {
             total_servicios: this.servicios.length,
             servicios_activos: this.servicios.filter(s => s.activo).length,
             precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
-            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length
+            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length,
+            con_extras: this.servicios.filter(s => s.requiere_extras).length
           }
           console.log('📊 Estadísticas calculadas localmente:', this.stats)
         }
@@ -686,7 +778,8 @@ export default {
             total_servicios: this.servicios.length,
             servicios_activos: this.servicios.filter(s => s.activo).length,
             precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
-            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length
+            con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length,
+            con_extras: this.servicios.filter(s => s.requiere_extras).length            
           }
         }
       }
@@ -834,6 +927,9 @@ export default {
         this.servicioParaDetalles = servicio
         this.mostrarModalDetalles = true
         this.detallesMedicamentos = []
+        this.detallesExtras = []
+        this.cargandoDetalles = false
+        this.cargandoExtras = false
         
         // Si el servicio requiere medicamentos, cargar la lista
         if (servicio.requiere_medicamentos) {
@@ -852,6 +948,23 @@ export default {
             this.cargandoDetalles = false
           }
         }
+        if (servicio.requiere_extras) {
+          this.cargandoExtras = true
+
+          try {
+            const response = await extrasService.getExtrasDeServicio(servicio.id)
+
+            if (response.success) {
+              this.detallesExtras = response.data || []
+              console.log(`🧰 ${this.detallesExtras.length} extras cargados para detalles`)
+            }
+          } catch (error) {
+            console.error('❌ Error cargando extras para detalles:', error)
+          } finally {
+            this.cargandoExtras = false
+          }
+        }
+
 
       } catch (error) {
         console.error('❌ Error abriendo detalles:', error)
@@ -863,12 +976,17 @@ export default {
       this.mostrarModalDetalles = false
       this.servicioParaDetalles = null
       this.detallesMedicamentos = []
+      this.detallesExtras = []
     },
 
     abrirMedicamentosDesdeDetalle() {
       // Cerrar modal detalles y abrir medicamentos
       this.mostrarModalDetalles = false
       this.verMedicamentosVinculados(this.servicioParaDetalles)
+    },
+        abrirExtrasDesdeDetalle() {
+      this.mostrarModalDetalles = false
+      this.verExtrasVinculados(this.servicioParaDetalles)
     },
 
     editarDesdeDetalle() {
