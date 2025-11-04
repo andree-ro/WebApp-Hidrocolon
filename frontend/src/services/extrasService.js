@@ -174,6 +174,64 @@ const extrasService = {
     }
   },
 
+
+
+  // =============================================
+  // MÉTODOS PARA RELACIÓN CON SERVICIOS
+  // =============================================
+
+  /**
+   * Obtener extras vinculados a un servicio
+   */
+  async getExtrasDeServicio(servicioId) {
+    try {
+      console.log('📞 Obteniendo extras del servicio:', servicioId)
+      const response = await api.get(`/servicios/${servicioId}/extras`)
+      console.log('✅ Extras del servicio obtenidos:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ Error obteniendo extras del servicio:', error)
+      throw new Error(error.response?.data?.message || 'Error en la operación')
+    }
+  },
+
+  /**
+   * Vincular un extra con un servicio
+   */
+  async vincularExtraConServicio(servicioId, extraId, cantidadRequerida = 1) {
+    try {
+      console.log('🔗 Vinculando extra con servicio:', { servicioId, extraId, cantidadRequerida })
+      const response = await api.post(`/servicios/${servicioId}/extras`, {
+        extra_id: extraId,
+        cantidad_requerida: cantidadRequerida
+      })
+      console.log('✅ Extra vinculado con servicio')
+      return response.data
+    } catch (error) {
+      console.error('❌ Error vinculando extra con servicio:', error)
+      throw new Error(error.response?.data?.message || 'Error en la operación')
+    }
+  },
+
+  /**
+   * Desvincular un extra de un servicio
+   */
+  async desvincularExtraDeServicio(servicioId, extraId) {
+    try {
+      console.log('🔗 Desvinculando extra de servicio:', { servicioId, extraId })
+      const response = await api.delete(`/servicios/${servicioId}/extras/${extraId}`)
+      console.log('✅ Extra desvinculado de servicio')
+      return response.data
+    } catch (error) {
+      console.error('❌ Error desvinculando extra de servicio:', error)
+      throw new Error(error.response?.data?.message || 'Error en la operación')
+    }
+  },
+
+
+
+
+
   // =====================================
   // UTILIDADES Y VALIDACIONES
   // =====================================

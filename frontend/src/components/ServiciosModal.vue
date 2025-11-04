@@ -82,7 +82,14 @@
             </div>
           </div>
 
-          <!-- Configuración de medicamentos y estado -->
+
+
+
+
+
+
+
+          <!-- Configuración de medicamentos, extras y estado -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-3">
               <!-- Checkbox requiere medicamentos -->
@@ -92,12 +99,13 @@
                   type="checkbox"
                   id="requiere_medicamentos"
                   class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  @change="form.requiere_extras = false"
                 />
                 <label for="requiere_medicamentos" class="ml-2 text-sm text-gray-700">
                   Requiere medicamentos específicos
                 </label>
               </div>
-
+              
               <!-- Botón gestionar medicamentos -->
               <div v-if="form.requiere_medicamentos && editando">
                 <button
@@ -115,7 +123,7 @@
                   Los extras se toman automáticamente de cada medicamento
                 </p>
               </div>
-
+              
               <div v-else-if="form.requiere_medicamentos && !editando">
                 <p class="text-xs text-gray-500">
                   Podrás gestionar los medicamentos después de crear el servicio
@@ -124,7 +132,47 @@
                   Los extras se toman automáticamente de cada medicamento
                 </p>
               </div>
+
+              <!-- ✅ NUEVO: Checkbox requiere extras -->
+              <div class="flex items-center mt-3">
+                <input
+                  v-model="form.requiere_extras"
+                  type="checkbox"
+                  id="requiere_extras"
+                  class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  @change="form.requiere_medicamentos = false"
+                />
+                <label for="requiere_extras" class="ml-2 text-sm text-gray-700">
+                  Requiere extras directamente (sin medicamentos)
+                </label>
+              </div>
+              
+              <!-- ✅ NUEVO: Botón gestionar extras -->
+              <div v-if="form.requiere_extras && editando">
+                <button
+                  type="button"
+                  @click="abrirModalExtras"
+                  class="btn-secondary text-sm flex items-center space-x-2"
+                >
+                  <span>🧰</span>
+                  <span>Gestionar Extras</span>
+                </button>
+                <p class="text-xs text-gray-500 mt-1">
+                  {{ extrasVinculados.length }} extra(s) configurado(s)
+                </p>
+              </div>
+              
+              <div v-else-if="form.requiere_extras && !editando">
+                <p class="text-xs text-gray-500">
+                  Podrás gestionar los extras después de crear el servicio
+                </p>
+              </div>
             </div>
+
+
+
+
+
 
             <div class="space-y-3">
               <!-- Estado activo -->
@@ -178,18 +226,33 @@
       @close="cerrarModalMedicamentos"
       @updated="recargarMedicamentos"
     />
+
+
+    <!-- ✅ NUEVO: Modal Extras Vinculados -->
+    <ExtrasVinculadosServiciosModal
+      v-if="modalExtras.visible"
+      :visible="modalExtras.visible"
+      :servicio="servicio"
+      @close="cerrarModalExtras"
+      @updated="recargarExtras"
+    />
+
+
   </div>
 </template>
 
 <script>
 import serviciosService from '@/services/serviciosService'
 import MedicamentosVinculadosModal from '@/components/MedicamentosVinculadosModal.vue'
+import ExtrasVinculadosServiciosModal from '@/components/ExtrasVinculadosServiciosModal.vue'
+import extrasService from '@/services/extrasService'
 
 export default {
   name: 'ServiciosModal',
   
   components: {
-    MedicamentosVinculadosModal
+    MedicamentosVinculadosModal,
+    ExtrasVinculadosServiciosModal
   },
   
   props: {
@@ -213,7 +276,11 @@ export default {
     return {
       guardando: false,
       medicamentosVinculados: [],
+      extrasVinculados: [],
       modalMedicamentos: {
+        visible: false
+      },
+      modalExtras: {  // ✅ NUEVO
         visible: false
       },
       form: {
@@ -223,6 +290,7 @@ export default {
         monto_minimo: 0,
         porcentaje_comision: 0,
         requiere_medicamentos: false,
+        requiere_extras: false,
         activo: true
       }
     }
@@ -262,12 +330,16 @@ export default {
           monto_minimo: parseFloat(this.servicio.monto_minimo) || 0,
           porcentaje_comision: parseFloat(this.servicio.porcentaje_comision) || parseFloat(this.servicio.comision_venta) || 0,
           requiere_medicamentos: Boolean(this.servicio.requiere_medicamentos),
+          requiere_extras: Boolean(this.servicio.requiere_extras),
           activo: this.servicio.activo !== undefined ? Boolean(this.servicio.activo) : true
         }
         
         // Cargar medicamentos vinculados si los hay
         if (this.form.requiere_medicamentos) {
           this.cargarMedicamentosVinculados()
+        }
+        if (this.form.requiere_extras) {
+          this.cargarExtrasVinculados()
         }
       } else {
         // Modo crear - formulario limpio
@@ -310,6 +382,33 @@ export default {
     async recargarMedicamentos() {
       await this.cargarMedicamentosVinculados()
     },
+
+        // ✅ NUEVO: Métodos para gestión de extras
+    abrirModalExtras() {
+      this.modalExtras.visible = true
+    },
+
+    cerrarModalExtras() {
+      this.modalExtras.visible = false
+    },
+
+    async cargarExtrasVinculados() {
+      try {
+        if (!this.servicio || !this.servicio.id) return
+        
+        const response = await extrasService.getExtrasDeServicio(this.servicio.id)
+        this.extrasVinculados = response.data || []
+        console.log('Extras vinculados cargados:', this.extrasVinculados.length)
+      } catch (error) {
+        console.error('Error cargando extras vinculados:', error)
+        this.extrasVinculados = []
+      }
+    },
+
+    async recargarExtras() {
+      await this.cargarExtrasVinculados()
+    },
+
     
     async guardarServicio() {
       try {
@@ -338,6 +437,7 @@ export default {
           monto_minimo: parseFloat(this.form.monto_minimo) || 0,
           comision_venta: parseFloat(this.form.porcentaje_comision) || 0,
           requiere_medicamentos: Boolean(this.form.requiere_medicamentos),
+          requiere_extras: Boolean(this.form.requiere_extras),
           activo: Boolean(this.form.activo)
         }
         
