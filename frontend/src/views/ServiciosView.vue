@@ -297,14 +297,7 @@
                   >
                     ✏️
                   </button>
-                  
-                  <button
-                    @click="verMedicamentosVinculados(servicio)"
-                    class="btn-icon btn-purple"
-                    title="Gestionar medicamentos"
-                  >
-                    💊
-                  </button>
+    
                 
                   <button
                     @click="eliminarServicio(servicio)"
@@ -1045,7 +1038,18 @@ export default {
       })
       
       return csvCompleto
+    },
+
+    verExtrasVinculados(servicio) {
+      console.log('🧰 Abriendo modal extras para servicio:', servicio)
+      // Similar al de medicamentos pero para extras
+      // Aquí necesitarías un componente similar a MedicamentosVinculadosModal
+      // pero para extras (ExtrasVinculadosServiciosModal)
+      alert('Modal de extras vinculados - por implementar')
     }
+
+
+
   }
 }
 </script>

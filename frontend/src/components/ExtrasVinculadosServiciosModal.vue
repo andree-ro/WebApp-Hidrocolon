@@ -186,7 +186,7 @@
 import extrasService from '@/services/extrasService'
 
 export default {
-  name: 'ExtrasVinculadosModal',
+  name: 'ExtrasVinculadosServiciosModal',
   
   props: {
     visible: {
@@ -290,7 +290,7 @@ export default {
             limit: 20
           })
           
-          const todosExtras = response.data?.extras || []
+          const todosExtras = response.extras || []
           
           // Filtrar extras que ya están vinculados
           const idsVinculados = this.extrasVinculados.map(e => e.id)
@@ -334,12 +334,18 @@ export default {
           e => e.id !== extra.id
         )
         
+        // Limpiar búsqueda
+        this.busquedaExtra = ''
+        
         this.cambiosRealizados = true
         console.log('Extra vinculado exitosamente')
         
+        // ✅ NUEVO: Mostrar alerta de éxito
+        alert(`✅ "${extra.nombre}" agregado exitosamente al servicio`)
+        
       } catch (error) {
         console.error('Error vinculando extra:', error)
-        alert(`Error: ${error.message}`)
+        alert(`❌ Error: ${error.message}`)
       } finally {
         this.vinculando = null
       }
@@ -368,9 +374,12 @@ export default {
         this.cambiosRealizados = true
         console.log('Extra desvinculado exitosamente')
         
+        // ✅ NUEVO: Mostrar alerta de éxito
+        alert(`✅ "${extra.nombre}" eliminado del servicio`)
+        
       } catch (error) {
         console.error('Error desvinculando extra:', error)
-        alert(`Error: ${error.message}`)
+        alert(`❌ Error: ${error.message}`)
       } finally {
         this.desvinculando = null
       }
@@ -407,14 +416,23 @@ export default {
         this.cambiosRealizados = true
         console.log('Cantidad actualizada exitosamente')
         
+        // ✅ NUEVO: Mostrar alerta de éxito
+        alert(`✅ Cantidad de "${extra.nombre}" actualizada a ${nuevaCantidad}`)
+        
       } catch (error) {
         console.error('Error cambiando cantidad:', error)
-        alert(`Error: ${error.message}`)
+        alert(`❌ Error: ${error.message}`)
       }
     },
     
     guardarCambios() {
       console.log('Cambios guardados en extras vinculados')
+      
+      // ✅ NUEVO: Mensaje de confirmación antes de cerrar
+      if (this.cambiosRealizados) {
+        alert(`✅ Cambios guardados correctamente\n\n${this.extrasVinculados.length} extra(s) configurado(s) para este servicio`)
+      }
+      
       this.$emit('updated')
       this.$emit('close')
     }

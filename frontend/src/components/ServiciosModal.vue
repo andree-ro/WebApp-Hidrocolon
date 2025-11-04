@@ -330,7 +330,7 @@ export default {
           monto_minimo: parseFloat(this.servicio.monto_minimo) || 0,
           porcentaje_comision: parseFloat(this.servicio.porcentaje_comision) || parseFloat(this.servicio.comision_venta) || 0,
           requiere_medicamentos: Boolean(this.servicio.requiere_medicamentos),
-          requiere_extras: Boolean(this.servicio.requiere_extras),
+          requiere_extras: Boolean(this.servicio.requiere_extras), // ✅ CRÍTICO
           activo: this.servicio.activo !== undefined ? Boolean(this.servicio.activo) : true
         }
         
@@ -338,6 +338,8 @@ export default {
         if (this.form.requiere_medicamentos) {
           this.cargarMedicamentosVinculados()
         }
+        
+        // ✅ NUEVO: Cargar extras vinculados si los hay
         if (this.form.requiere_extras) {
           this.cargarExtrasVinculados()
         }
@@ -350,9 +352,11 @@ export default {
           monto_minimo: 0,
           porcentaje_comision: 0,
           requiere_medicamentos: false,
+          requiere_extras: false, // ✅ CRÍTICO
           activo: true
         }
         this.medicamentosVinculados = []
+        this.extrasVinculados = []
       }
     },
     
@@ -385,6 +389,7 @@ export default {
 
         // ✅ NUEVO: Métodos para gestión de extras
     abrirModalExtras() {
+      console.log('🧰 Abriendo modal de extras')
       this.modalExtras.visible = true
     },
 
@@ -451,12 +456,20 @@ export default {
           response = await serviciosService.crearServicio(datos)
           alert('Servicio creado exitosamente')
           
-          // Si requiere medicamentos y es nuevo, preguntar si quiere configurarlos
+          // ✅ NUEVO: Si requiere medicamentos y es nuevo
           if (datos.requiere_medicamentos && response.data?.id) {
             const configurarMedicamentos = confirm('¿Deseas configurar los medicamentos requeridos para este servicio ahora?')
             if (configurarMedicamentos) {
-              // Emitir guardado y cerrar modal
               this.$emit('guardado', { abrirMedicamentos: response.data })
+              return
+            }
+          }
+          
+          // ✅ NUEVO: Si requiere extras y es nuevo
+          if (datos.requiere_extras && response.data?.id) {
+            const configurarExtras = confirm('¿Deseas configurar los extras requeridos para este servicio ahora?')
+            if (configurarExtras) {
+              this.$emit('guardado', { abrirExtras: response.data })
               return
             }
           }
