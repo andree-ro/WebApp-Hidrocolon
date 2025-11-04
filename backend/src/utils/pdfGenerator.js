@@ -237,40 +237,25 @@ class ComprobanteGenerator {
                     return `Q${parseFloat(monto).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
                 };
 
-                // ⭐ NUEVO: Formatear fecha con zona horaria de Guatemala (GMT-6)
                 const formatearFecha = (fecha) => {
-                    if (!fecha) return 'N/A';
-                    
-                    try {
-                        const date = new Date(fecha);
-                        
-                        // Opciones para Guatemala (GMT-6)
-                        const opciones = {
-                            timeZone: 'America/Guatemala',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false // ⭐ Usar formato 24 horas
-                        };
-                        
-                        return date.toLocaleString('es-GT', opciones);
-                    } catch (error) {
-                        console.error('Error formateando fecha:', error);
-                        return 'Fecha inválida';
-                    }
+                    return new Date(fecha).toLocaleString('es-GT', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 };
 
                 const agregarSeccionHeader = (titulo, yPos) => {
                     doc.rect(margin, yPos, contentWidth, 25).fillAndStroke(colors.primary, colors.primary);
                     doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
-                    .text(titulo, margin + 10, yPos + 8);
+                       .text(titulo, margin + 10, yPos + 8);
                     return yPos + 25;
                 };
 
                 const nuevaPaginaSiNecesario = (espacioNecesario) => {
-                    if (y + espacioNecesario > pageHeight - margin) { // ⭐ Cambiado de 60 a margin
+                    if (y + espacioNecesario > pageHeight - 60) {
                         doc.addPage();
                         return margin;
                     }
@@ -281,7 +266,7 @@ class ComprobanteGenerator {
                 // ENCABEZADO
                 // ============================================================
                 doc.fontSize(18).fillColor(colors.primary).font('Helvetica-Bold')
-                .text('HIDROCOLON XELA - VIMESA ZONA 9', margin, y, { align: 'center', width: contentWidth });
+                   .text('HIDROCOLON XELA - VIMESA ZONA 9', margin, y, { align: 'center', width: contentWidth });
                 y += 25;
                 doc.fontSize(16).text('REPORTE DE CIERRE DE TURNO', margin, y, { align: 'center', width: contentWidth });
                 y += 30;
@@ -325,6 +310,7 @@ class ComprobanteGenerator {
                     });
                     y += 18;
 
+                    // ⭐ CRÍTICO: Cambiar color a negro para productos
                     doc.fontSize(7).fillColor(colors.text).font('Helvetica');
                     
                     datosReporte.productos_vendidos.forEach((prod, idx) => {
@@ -356,7 +342,7 @@ class ComprobanteGenerator {
                     y += 10;
                 } else {
                     doc.fontSize(9).fillColor(colors.secondary).font('Helvetica')
-                    .text('No hay productos vendidos en este turno', margin, y);
+                       .text('No hay productos vendidos en este turno', margin, y);
                     y += 20;
                 }
 
@@ -369,7 +355,7 @@ class ComprobanteGenerator {
 
                 // Datos de entrada
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Datos de Entrada:', margin, y);
+                   .text('Datos de Entrada:', margin, y);
                 y += 18;
 
                 const datosEntrada = [
@@ -393,7 +379,7 @@ class ComprobanteGenerator {
 
                 // Resultados del cierre crudo
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Resultados del Cierre Crudo:', margin, y);
+                   .text('Resultados del Cierre Crudo:', margin, y);
                 y += 18;
 
                 const ventaBruta = datosReporte.resumen_ventas.venta_total;
@@ -429,7 +415,7 @@ class ComprobanteGenerator {
 
                 // Ingresos netos
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Ingresos Netos:', margin, y);
+                   .text('Ingresos Netos:', margin, y);
                 y += 18;
 
                 const ingresosNetos = [
@@ -456,7 +442,7 @@ class ComprobanteGenerator {
 
                 // Gastos y deducciones
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Gastos y Deducciones:', margin, y);
+                   .text('Gastos y Deducciones:', margin, y);
                 y += 18;
 
                 const totalGastos = parseFloat(datosReporte.gastos_resumen.total) || 0;
@@ -494,12 +480,12 @@ class ComprobanteGenerator {
 
                 // Resultado final
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Resultado Final:', margin, y);
+                   .text('Resultado Final:', margin, y);
                 y += 18;
 
                 doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke('#ecfdf5', '#10b981');
                 doc.fontSize(11).fillColor(colors.success).font('Helvetica-Bold')
-                .text('RESULTADO NETO', margin + 25, y + 5, { width: 200 });
+                   .text('RESULTADO NETO', margin + 25, y + 5, { width: 200 });
                 doc.fontSize(12).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 5, { width: 100, align: 'right' });
                 y += 30;
 
@@ -524,6 +510,7 @@ class ComprobanteGenerator {
                     });
                     y += 18;
 
+                    // ⭐ CRÍTICO: Cambiar color a negro para gastos
                     doc.fontSize(7).fillColor(colors.text).font('Helvetica');
                     
                     datosReporte.gastos.forEach((gasto, idx) => {
@@ -538,7 +525,7 @@ class ComprobanteGenerator {
                             gasto.categoria.substring(0, 18),
                             gasto.descripcion.substring(0, 45),
                             formatearMoneda(gasto.monto),
-                            new Date(gasto.fecha).toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' })
+                            new Date(gasto.fecha).toLocaleDateString('es-GT')
                         ];
 
                         vals.forEach((val, i) => {
@@ -552,12 +539,18 @@ class ComprobanteGenerator {
                     // Total de gastos
                     doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
                     doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
-                    .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
+                       .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
                     doc.text(formatearMoneda(datosReporte.gastos_resumen.total), pageWidth - margin - 90, y + 4, { width: 80, align: 'right' });
                     y += 30;
                 }
 
-                // ⭐ ELIMINADO: Todo el pie de página
+                // ============================================================
+                // PIE DE PÁGINA
+                // ============================================================
+                doc.fontSize(8).fillColor(colors.secondary).font('Helvetica')
+                   .text(`Reporte generado: ${formatearFecha(new Date())}`, margin, pageHeight - 60);
+                doc.text('Sistema Hidrocolon v1.0', margin, pageHeight - 45);
+                doc.text('Este documento es válido como comprobante de cierre de turno', margin, pageHeight - 30);
 
                 doc.end();
             } catch (error) {
