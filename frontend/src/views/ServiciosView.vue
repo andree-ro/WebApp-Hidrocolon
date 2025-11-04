@@ -501,6 +501,13 @@
       @close="cerrarModalMedicamentos"
       @updated="onMedicamentosActualizados"
     />
+
+    <ExtrasVinculadosServiciosModal
+      :visible="mostrarModalExtras && servicioParaExtras"
+      :servicio="servicioParaExtras || {}"
+      @close="cerrarModalExtras"
+      @updated="onExtrasActualizados"
+    />
   </div>
 </template>
 
@@ -508,12 +515,14 @@
 import serviciosService from '@/services/serviciosService'
 import ServiciosModal from '@/components/ServiciosModal.vue'
 import MedicamentosVinculadosModal from '@/components/MedicamentosVinculadosModal.vue'
+import ExtrasVinculadosServiciosModal from '@/components/ExtrasVinculadosServiciosModal.vue'
 
 export default {
   name: 'ServiciosView',
   components: {
     ServiciosModal,
-    MedicamentosVinculadosModal
+    MedicamentosVinculadosModal,
+    ExtrasVinculadosServiciosModal
   },
 
   data() {
@@ -538,9 +547,11 @@ export default {
       // Modales
       mostrarModal: false,
       mostrarModalMedicamentos: false,
+      mostrarModalExtras: false,
       mostrarModalDetalles: false,
       servicioSeleccionado: null,
       servicioParaMedicamentos: null,
+      servicioParaExtras: null,
       servicioParaDetalles: null,
       detallesMedicamentos: [],
       cargandoDetalles: false,
@@ -784,10 +795,23 @@ export default {
       // Si se creó un servicio nuevo y requiere medicamentos, abrir modal medicamentos
       if (resultado?.abrirMedicamentos) {
         // Buscar el servicio recién creado
-        const servicioNuevo = this.servicios.find(s => s.id === resultado.abrirMedicamentos.id)
+        const servicioNuevo =
+          this.servicios.find(s => s.id === resultado.abrirMedicamentos.id) ||
+          resultado.abrirMedicamentos
         if (servicioNuevo) {
           setTimeout(() => {
             this.verMedicamentosVinculados(servicioNuevo)
+          }, 500)
+        }
+      }
+
+      if (resultado?.abrirExtras) {
+        const servicioNuevo =
+          this.servicios.find(s => s.id === resultado.abrirExtras.id) ||
+          resultado.abrirExtras
+        if (servicioNuevo) {
+          setTimeout(() => {
+            this.verExtrasVinculados(servicioNuevo)
           }, 500)
         }
       }
@@ -875,6 +899,24 @@ export default {
       this.cerrarModalMedicamentos()
       
       // Recargar datos
+      await this.cargarServicios()
+    },
+
+
+    verExtrasVinculados(servicio) {
+      console.log('🧰 Abriendo modal extras para servicio:', servicio)
+      this.servicioParaExtras = servicio
+      this.mostrarModalExtras = true
+    },
+
+    cerrarModalExtras() {
+      this.mostrarModalExtras = false
+      this.servicioParaExtras = null
+    },
+
+    async onExtrasActualizados() {
+      console.log('✅ Extras actualizados, cerrando modal...')
+      this.cerrarModalExtras()
       await this.cargarServicios()
     },
 
@@ -1039,16 +1081,6 @@ export default {
       
       return csvCompleto
     },
-
-    verExtrasVinculados(servicio) {
-      console.log('🧰 Abriendo modal extras para servicio:', servicio)
-      // Similar al de medicamentos pero para extras
-      // Aquí necesitarías un componente similar a MedicamentosVinculadosModal
-      // pero para extras (ExtrasVinculadosServiciosModal)
-      alert('Modal de extras vinculados - por implementar')
-    }
-
-
 
   }
 }
