@@ -723,7 +723,6 @@ async function procesarVenta() {
     const resultadoTurno = await turnosService.obtenerTurnoActivo()
     
     if (!resultadoTurno.success || !resultadoTurno.data) {
-      // ❌ NO HAY TURNO ACTIVO
       console.log('⚠️ No hay turno activo')
       
       const abrirTurnoAhora = confirm(
@@ -736,10 +735,9 @@ async function procesarVenta() {
         mostrarModalAbrirTurno.value = true
       }
       
-      return // Detener el proceso de venta
+      return
     }
     
-    // ✅ HAY TURNO ACTIVO
     turnoActivo.value = resultadoTurno.data
     console.log('✅ Turno activo encontrado:', turnoActivo.value.id)
     
@@ -759,7 +757,6 @@ async function procesarVenta() {
   procesandoVenta.value = true
   
   try {
-    // Obtener usuario
     const usuario = authService.getUser()
     console.log('👤 Usuario para venta:', usuario)
     
@@ -767,7 +764,6 @@ async function procesarVenta() {
       throw new Error('No se pudo obtener información del usuario. Por favor inicie sesión nuevamente.')
     }
     
-    // Preparar datos de venta con el turno activo
     const datosVenta = carritoStore.obtenerDatosVenta(turnoActivo.value.id, usuario.id)
     
     if (!datosVenta.success) {
@@ -778,12 +774,52 @@ async function procesarVenta() {
     const response = await ventasService.crearVenta(datosVenta.data)
     
     if (response.success) {
-      alert('✅ Venta exitosa!\n\nFactura: ' + response.data.numero_factura)
+      console.log('✅ Venta exitosa:', response.data)
       
-      const verComprobante = confirm('¿Ver comprobante?')
-      if (verComprobante) {
-        await ventasService.generarComprobante(response.data.id)
+      // ✅ DESCARGA AUTOMÁTICA DEL PDF
+      if (response.data.pdf) {
+        console.log('📄 Descargando PDF automáticamente...')
+        
+        try {
+          // Convertir base64 a blob
+          const byteCharacters = atob(response.data.pdf)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: 'application/pdf' })
+          
+          // Crear enlace de descarga
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `Comprobante-${response.data.numero_factura}.pdf`
+          document.body.appendChild(a)
+          a.click()
+          
+          // Limpiar
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+          }, 100)
+          
+          console.log('✅ PDF descargado automáticamente')
+          
+        } catch (pdfError) {
+          console.error('❌ Error descargando PDF:', pdfError)
+          alert('⚠️ Venta exitosa pero hubo un error al descargar el PDF.\nPuede generarlo desde el historial de ventas.')
+        }
       }
+      
+      // Mostrar mensaje de éxito
+      alert(
+        '✅ Venta realizada exitosamente!\n\n' +
+        `📋 Factura: ${response.data.numero_factura}\n` +
+        `💰 Total: Q${parseFloat(response.data.total).toFixed(2)}\n` +
+        `💳 Método: ${response.data.metodo_pago.toUpperCase()}\n\n` +
+        '📄 El comprobante se descargó automáticamente'
+      )
       
       // Limpiar carrito y formulario
       carritoStore.vaciarCarrito()
@@ -794,17 +830,10 @@ async function procesarVenta() {
     
   } catch (error) {
     console.error('❌ Error completo:', error)
-    console.error('📋 Detalles:', {
-      message: error.message,
-      response: error.response,
-      config: error.config
-    })
     
-    // Mensaje más específico según el error
     let mensajeError = error.message
     
     if (error.response?.status === 403) {
-      // Error 403 - Sin turno o sin permisos
       const errorData = error.response.data
       if (errorData.codigo === 'TURNO_NO_ABIERTO') {
         mensajeError = '⚠️ ' + errorData.message + '\n\n' + 

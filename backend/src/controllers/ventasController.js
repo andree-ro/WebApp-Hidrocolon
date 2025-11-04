@@ -130,7 +130,7 @@ const crearVenta = async (req, res) => {
         // Validar montos según método de pago
         if (metodo_pago === 'efectivo') {
             const efectivo = parseFloat(efectivo_recibido || 0);
-            if (efectivo < total) {  // ✅ BIEN - usa total
+            if (efectivo < total) {
                 return res.status(400).json({
                     success: false,
                     message: `Efectivo insuficiente. Total: Q${total.toFixed(2)}, Recibido: Q${efectivo.toFixed(2)}`
@@ -163,9 +163,9 @@ const crearVenta = async (req, res) => {
         // ============================================================================
         
         const ventaData = {
-            turno_id: req.turno.id, // Viene del middleware
+            turno_id: req.turno.id,
             paciente_id: paciente_id || null,
-            usuario_vendedor_id: req.user.id, // Usuario logueado
+            usuario_vendedor_id: req.user.id,
             metodo_pago,
             subtotal,
             descuento,
@@ -193,13 +193,37 @@ const crearVenta = async (req, res) => {
 
         console.log('✅ Venta creada exitosamente:', resultado);
 
-        // Obtener la venta completa para devolverla
+        // Obtener la venta completa para devolverla Y generar el PDF
         const ventaCompleta = await Venta.findById(resultado.venta_id);
 
+        // ============================================================================
+        // ✅ GENERAR PDF AUTOMÁTICAMENTE
+        // ============================================================================
+        
+        let pdfBase64 = null;
+        
+        try {
+            console.log('📄 Generando PDF automáticamente...');
+            const PDFGenerator = require('../utils/pdfGenerator');
+            const pdfBuffer = await PDFGenerator.generar(ventaCompleta);
+            pdfBase64 = pdfBuffer.toString('base64');
+            console.log('✅ PDF generado correctamente');
+        } catch (pdfError) {
+            console.error('⚠️ Error generando PDF (no crítico):', pdfError);
+            // No detenemos el proceso si falla el PDF
+        }
+
+        // ============================================================================
+        // RESPUESTA CON VENTA Y PDF
+        // ============================================================================
+        
         res.status(201).json({
             success: true,
             message: 'Venta registrada exitosamente',
-            data: ventaCompleta
+            data: {
+                ...ventaCompleta,
+                pdf: pdfBase64 // ✅ Agregar PDF en base64
+            }
         });
 
     } catch (error) {
@@ -211,6 +235,8 @@ const crearVenta = async (req, res) => {
         });
     }
 };
+
+
 
 // ============================================================================
 // OBTENER VENTA POR ID
