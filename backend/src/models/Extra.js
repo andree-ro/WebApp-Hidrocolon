@@ -374,6 +374,111 @@ class Extra {
 
 
 
+    // =====================================
+    // RELACIÓN CON SERVICIOS
+    // =====================================
+
+    // Obtener extras de un servicio
+    async getExtrasByServicio(servicioId) {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                SELECT 
+                    e.id,
+                    e.nombre,
+                    e.descripcion,
+                    e.existencias,
+                    e.stock_minimo,
+                    e.costo_unitario,
+                    se.cantidad_requerida,
+                    se.fecha_creacion as fecha_vinculacion
+                FROM extras e
+                INNER JOIN servicios_extras se ON e.id = se.extra_id
+                WHERE se.servicio_id = ? AND e.activo = 1
+                ORDER BY e.nombre ASC
+            `;
+
+            const [rows] = await connection.execute(query, [servicioId]);
+
+            console.log(`✅ ${rows.length} extras encontrados para servicio ${servicioId}`);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error obteniendo extras de servicio:', error);
+            throw new Error('Error obteniendo extras del servicio');
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Vincular extra con servicio
+    async vincularConServicio(servicioId, extraId, cantidadRequerida = 1) {
+        const connection = await this.getConnection();
+        try {
+            // Verificar que el servicio existe
+            const [servicios] = await connection.execute(
+                'SELECT id FROM servicios WHERE id = ?',
+                [servicioId]
+            );
+            
+            if (servicios.length === 0) {
+                throw new Error('Servicio no encontrado');
+            }
+            
+            // Verificar que el extra existe
+            const [extras] = await connection.execute(
+                'SELECT id FROM extras WHERE id = ? AND activo = 1',
+                [extraId]
+            );
+            
+            if (extras.length === 0) {
+                throw new Error('Extra no encontrado');
+            }
+
+            const query = `
+                INSERT INTO servicios_extras (servicio_id, extra_id, cantidad_requerida)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE cantidad_requerida = VALUES(cantidad_requerida)
+            `;
+
+            await connection.execute(query, [servicioId, extraId, cantidadRequerida]);
+
+            console.log('✅ Extra vinculado con servicio:', {
+                servicioId,
+                extraId,
+                cantidadRequerida
+            });
+
+            return true;
+        } catch (error) {
+            console.error('❌ Error vinculando extra con servicio:', error);
+            throw error;
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Desvincular extra de servicio
+    async desvincularDeServicio(servicioId, extraId) {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                DELETE FROM servicios_extras 
+                WHERE servicio_id = ? AND extra_id = ?
+            `;
+
+            const [result] = await connection.execute(query, [servicioId, extraId]);
+
+            console.log('✅ Extra desvinculado de servicio');
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error desvinculando extra de servicio:', error);
+            throw new Error('Error desvinculando extra de servicio');
+        } finally {
+            await connection.end();
+        }
+    }
+
+
 
     // =============================================
     // MÉTODOS PARA RELACIÓN CON SERVICIOS

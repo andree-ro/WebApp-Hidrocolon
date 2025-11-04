@@ -7,65 +7,37 @@ const ExtrasController = require('../controllers/extrasController');
 
 // ✅ IMPORT CORRECTO DEL MIDDLEWARE
 const authMiddleware = require('../middleware/authMiddleware');
-// Usar el método authenticate() del middleware existente
 const simpleAuth = authMiddleware.authenticate();
 
 // =====================================
-// RUTAS PÚBLICAS (con autenticación básica)
+// RUTAS DE EXTRAS
 // =====================================
 
-// GET /api/extras - Listar todos los extras
-router.get('/', simpleAuth, ExtrasController.getExtras);
-
-// GET /api/extras/stats - Estadísticas de extras
+// GET /api/extras/stats - Estadísticas (ANTES de /:id)
 router.get('/stats', simpleAuth, ExtrasController.getStats);
 
-// GET /api/extras/:id - Obtener extra específico
+// GET /api/extras - Listar todos
+router.get('/', simpleAuth, ExtrasController.getExtras);
+
+// GET /api/extras/:id - Extra específico
 router.get('/:id', simpleAuth, ExtrasController.getExtra);
 
-// =====================================
-// RUTAS ADMINISTRATIVAS
-// =====================================
-
-// POST /api/extras - Crear nuevo extra (admin)
+// POST /api/extras - Crear extra
 router.post('/', simpleAuth, ExtrasController.crearExtra);
 
-// PUT /api/extras/:id - Actualizar extra (admin)
+// PUT /api/extras/:id - Actualizar extra
 router.put('/:id', simpleAuth, ExtrasController.actualizarExtra);
 
-// PUT /api/extras/:id/stock - Actualizar stock de extra (admin)
+// PUT /api/extras/:id/stock - Actualizar stock
 router.put('/:id/stock', simpleAuth, ExtrasController.actualizarStock);
 
-// DELETE /api/extras/:id - Eliminar extra (admin)
+// DELETE /api/extras/:id - Eliminar extra
 router.delete('/:id', simpleAuth, ExtrasController.eliminarExtra);
 
-
 // =====================================
-// RUTAS PARA RELACIÓN CON SERVICIOS
-// =====================================
-
-// GET /api/servicios/:id/extras - Obtener extras de un servicio
-router.get('/servicios/:id/extras', simpleAuth, ExtrasController.getExtrasDeServicio);
-
-// POST /api/servicios/:id/extras - Vincular extra con servicio
-router.post('/servicios/:id/extras', simpleAuth, ExtrasController.vincularExtraConServicio);
-
-// DELETE /api/servicios/:id/extras/:extraId - Desvincular extra de servicio
-router.delete('/servicios/:id/extras/:extraId', simpleAuth, ExtrasController.desvincularExtraDeServicio);
-
-
-
-// =====================================
-// MIDDLEWARE DE VALIDACIÓN Y LOGGING
+// MIDDLEWARE DE MANEJO DE ERRORES
 // =====================================
 
-// Middleware para logging de todas las requests
-router.use((req, res, next) => {
-  console.log(`📝 [${new Date().toISOString()}] ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
-  next();
-});
-
-// Middleware de manejo de errores
 router.use((error, req, res, next) => {
   console.error('❌ Error en rutas de extras:', error);
   
@@ -91,13 +63,6 @@ router.use((error, req, res, next) => {
   });
 });
 
-console.log('🧰 Rutas de extras configuradas:');
-console.log(' GET /api/extras - Listar extras');
-console.log(' GET /api/extras/stats - Estadísticas');
-console.log(' GET /api/extras/:id - Extra específico');
-console.log(' POST /api/extras - Crear extra');
-console.log(' PUT /api/extras/:id - Actualizar extra');
-console.log(' PUT /api/extras/:id/stock - Actualizar stock');
-console.log(' DELETE /api/extras/:id - Eliminar extra');
+console.log('🧰 Rutas de extras configuradas');
 
 module.exports = router;

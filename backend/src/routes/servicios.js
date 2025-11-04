@@ -9,13 +9,23 @@ const simpleAuth = authMiddleware.authenticate();
 
 console.log('🏥 Servicios routes cargadas');
 
-// Obtener controlador
+// Obtener controladores
 let serviciosController;
+let ExtrasController; // ✅ NUEVO
+
 try {
     serviciosController = require('../controllers/serviciosController');
     console.log('✅ Controlador serviciosController cargado exitosamente');
 } catch (error) {
     console.error('❌ Error cargando controlador serviciosController:', error);
+}
+
+// ✅ NUEVO: Cargar ExtrasController
+try {
+    ExtrasController = require('../controllers/extrasController');
+    console.log('✅ Controlador ExtrasController cargado exitosamente');
+} catch (error) {
+    console.error('❌ Error cargando controlador ExtrasController:', error);
 }
 
 // ============================================================================
@@ -251,6 +261,77 @@ router.delete('/:id/medicamentos/:medicamento_id', simpleAuth, async (req, res) 
 });
 
 // ============================================================================
+// RUTAS DE GESTIÓN DE EXTRAS VINCULADOS
+// ============================================================================
+
+// GET /api/servicios/:id/extras - Obtener extras vinculados
+router.get('/:id/extras', simpleAuth, async (req, res) => {
+    console.log(`🧰 GET /api/servicios/${req.params.id}/extras endpoint hit`);
+    
+    try {
+        if (!ExtrasController) {
+            throw new Error('Controlador ExtrasController no disponible');
+        }
+        
+        await ExtrasController.getExtrasDeServicio(req, res);
+        
+    } catch (error) {
+        console.error('❌ Error en GET /servicios/:id/extras:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo extras vinculados',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// POST /api/servicios/:id/extras - Vincular extra a servicio
+router.post('/:id/extras', simpleAuth, async (req, res) => {
+    console.log(`🔗 POST /api/servicios/${req.params.id}/extras endpoint hit`);
+    console.log('📥 Body data:', req.body);
+    
+    try {
+        if (!ExtrasController) {
+            throw new Error('Controlador ExtrasController no disponible');
+        }
+        
+        await ExtrasController.vincularExtraConServicio(req, res);
+        
+    } catch (error) {
+        console.error('❌ Error en POST /servicios/:id/extras:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error vinculando extra',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// DELETE /api/servicios/:id/extras/:extra_id - Desvincular extra
+router.delete('/:id/extras/:extra_id', simpleAuth, async (req, res) => {
+    console.log(`🔗 DELETE /api/servicios/${req.params.id}/extras/${req.params.extra_id} endpoint hit`);
+    
+    try {
+        if (!ExtrasController) {
+            throw new Error('Controlador ExtrasController no disponible');
+        }
+        
+        await ExtrasController.desvincularExtraDeServicio(req, res);
+        
+    } catch (error) {
+        console.error('❌ Error en DELETE /servicios/:id/extras/:extra_id:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error desvinculando extra',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// ============================================================================
 // ENDPOINTS DE DEBUGGING (SOLO EN DESARROLLO)
 // ============================================================================
 
@@ -339,5 +420,8 @@ console.log('   GET    /api/servicios/export/excel              - Exportar Excel
 console.log('   GET    /api/servicios/:id/medicamentos          - Medicamentos vinculados');
 console.log('   POST   /api/servicios/:id/medicamentos          - Vincular medicamento');
 console.log('   DELETE /api/servicios/:id/medicamentos/:med_id  - Desvincular medicamento');
+console.log('   GET    /api/servicios/:id/extras                - Extras vinculados');
+console.log('   POST   /api/servicios/:id/extras                - Vincular extra');
+console.log('   DELETE /api/servicios/:id/extras/:extra_id      - Desvincular extra');
 
 module.exports = router;
