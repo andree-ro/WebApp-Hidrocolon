@@ -952,47 +952,205 @@ export default {
 
     const exportarExcel = async () => {
       try {
+        console.log('📊 Exportando pacientes...')
         loading.value = true
-        const response = await pacientesService.exportarExcel()
         
-        if (response.success && response.data) {
-          // Crear CSV manualmente para descarga
-          const headers = response.headers || ['ID', 'Nombres', 'Apellidos', 'Teléfono', 'DPI', 'Primera Cita', 'Próxima Cita', 'Cumpleaños']
-          const csvContent = [
-            headers.join(','),
-            ...response.data.map(paciente => [
-              paciente.id,
-              `"${paciente.nombre}"`,
-              `"${paciente.apellido}"`, 
-              `"${paciente.telefono}"`,
-              `"${paciente.dpi}"`,
-              `"${paciente.fecha_primer_cita}"`,
-              `"${paciente.proxima_cita}"`,
-              `"${paciente.cumpleanos}"`
-            ].join(','))
-          ].join('\n')
-
-          // Descargar archivo
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-          const link = document.createElement('a')
-          const url = URL.createObjectURL(blob)
-          link.setAttribute('href', url)
-          link.setAttribute('download', `pacientes_${new Date().toISOString().split('T')[0]}.csv`)
-          link.style.visibility = 'hidden'
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          
-          mensaje.value = `Exportados ${response.data.length} pacientes correctamente`
-        } else {
-          error.value = 'Error preparando la exportación'
+        // Obtener todos los pacientes para exportar
+        const params = pacientesService.construirParametrosFiltro({
+          limit: 1000, // Obtener muchos pacientes
+          search: filtros.search,
+          filtro: filtros.filtro
+        })
+        
+        const response = await pacientesService.getPacientes(params)
+        
+        if (!response.success || !response.data || response.data.length === 0) {
+          alert('❌ No hay pacientes para exportar')
+          return
         }
+        
+        // Generar CSV
+        const csvContent = generarCSV(response.data)
+        
+        // ✅ CRÍTICO: Agregar BOM para UTF-8
+        const BOM = '\uFEFF'
+        
+        // Crear blob con BOM
+        const blob = new Blob([BOM + csvContent], { 
+          type: 'text/csv;charset=utf-8;' 
+        })
+        
+        // Descargar archivo
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', `pacientes_${new Date().toISOString().split('T')[0]}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        
+        console.log('✅ Pacientes exportados exitosamente')
+        mensaje.value = `✅ Excel exportado: ${response.data.length} pacientes`
+        
+        setTimeout(() => {
+          alert(`✅ Excel exportado: ${response.data.length} pacientes\n\n💡 Si las columnas no se separan:\n1. Abre en Excel\n2. Selecciona columna A\n3. Datos > Texto en columnas\n4. Delimitado > Punto y coma`)
+        }, 100)
+        
       } catch (err) {
         error.value = pacientesService.procesarError(err)
-        console.error('Error exportando:', err)
+        console.error('❌ Error exportando:', err)
+        alert(`❌ Error exportando: ${error.value}`)
       } finally {
         loading.value = false
       }
+    }
+
+    const generarCSV = (pacientes) => {
+      // ✅ Separador: punto y coma para Excel en español
+      const SEPARADOR = ';'
+      
+      // ✅ Headers
+      const headers = [
+        'ID',
+        'Nombres',
+        'Apellidos',
+        'Nombre Completo',
+        'Teléfono',
+        'DPI',
+        'Edad',
+        'Menor de Edad',
+        'Fecha Nacimiento',
+        'Primera Cita',
+        'Próxima Cita',
+        'Estado Cita',
+        'Fecha Registro',
+        'Última Actualización'
+      ]
+      
+      // ✅ Escapar valores
+      const escaparValor = (valor) => {
+        if (valor === null || valor === undefined) return ''
+        let valorStr = String(valor).trim()
+        valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
+        
+        if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
+          valorStr = valorStr.replace(/"/g, '""')
+          return `"${valorStr}"`
+        }
+        return valorStr
+      }
+      
+      // ✅ Formatear fecha
+      const formatearFecha = (fecha) => {
+        if (!fecha) return ''
+        try {
+          const date = new Date(fecha)
+          const dia = String(date.getDate()).padStart(2, '0')
+          const mes = String(date.getMonth() + 1).padStart(2, '0')
+          const anio = date.getFullYear()
+          return `${dia}/${mes}/${anio}`
+        } catch {
+          return ''
+        }
+      }
+      
+      // ✅ Formatear fecha con hora
+      const formatearFechaHora = (fecha) => {
+        if (!fecha) return ''
+        try {
+          const date = new Date(fecha)
+          const dia = String(date.getDate()).padStart(2, '0')
+          const mes = String(date.getMonth() + 1).padStart(2, '0')
+          const anio = date.getFullYear()
+          const hora = String(date.getHours()).padStart(2, '0')
+          const minuto = String(date.getMinutes()).padStart(2, '0')
+          return `${dia}/${mes}/${anio} ${hora}:${minuto}`
+        } catch {
+          return ''
+        }
+      }
+      
+      // ✅ Calcular edad
+      const calcularEdad = (fechaNacimiento) => {
+        if (!fechaNacimiento) return ''
+        try {
+          const hoy = new Date()
+          const nacimiento = new Date(fechaNacimiento)
+          let edad = hoy.getFullYear() - nacimiento.getFullYear()
+          const mes = hoy.getMonth() - nacimiento.getMonth()
+          if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--
+          }
+          return edad
+        } catch {
+          return ''
+        }
+      }
+      
+      // ✅ Obtener estado de cita
+      const obtenerEstadoCita = (proximaCita) => {
+        if (!proximaCita) return 'Sin cita'
+        
+        try {
+          const hoy = new Date()
+          hoy.setHours(0, 0, 0, 0)
+          const cita = new Date(proximaCita)
+          cita.setHours(0, 0, 0, 0)
+          
+          const diffTime = cita - hoy
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          
+          if (diffDays < 0) return 'Vencida'
+          if (diffDays === 0) return 'Hoy'
+          if (diffDays === 1) return 'Mañana'
+          if (diffDays <= 7) return 'Esta semana'
+          if (diffDays <= 30) return 'Este mes'
+          return 'Programada'
+        } catch {
+          return 'Sin cita'
+        }
+      }
+      
+      // ✅ Crear línea de headers
+      const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
+      
+      // ✅ Crear líneas de datos
+      const lineasDatos = pacientes.map(paciente => {
+        const edad = calcularEdad(paciente.fecha_nacimiento || paciente.cumpleanos)
+        const esMenor = edad !== '' && edad < 18
+        
+        const valores = [
+          paciente.id || '',
+          paciente.nombres || paciente.nombre || '',
+          paciente.apellidos || paciente.apellido || '',
+          paciente.nombre_completo || `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim(),
+          paciente.telefono || '',
+          paciente.dpi || 'No registrado',
+          edad,
+          esMenor ? 'Sí' : 'No',
+          formatearFecha(paciente.fecha_nacimiento || paciente.cumpleanos),
+          formatearFecha(paciente.fecha_primer_cita),
+          formatearFecha(paciente.proxima_cita),
+          obtenerEstadoCita(paciente.proxima_cita),
+          formatearFechaHora(paciente.fecha_creacion),
+          formatearFechaHora(paciente.fecha_actualizacion)
+        ]
+        
+        return valores.map(v => escaparValor(v)).join(SEPARADOR)
+      })
+      
+      // ✅ Combinar todo con saltos de línea CRLF (Windows)
+      const csvCompleto = [lineaHeaders, ...lineasDatos].join('\r\n')
+      
+      console.log('📊 CSV de pacientes generado:', {
+        separador: SEPARADOR,
+        headers: headers.length,
+        filas: lineasDatos.length
+      })
+      
+      return csvCompleto
     }
 
     // Utilidades usando el servicio

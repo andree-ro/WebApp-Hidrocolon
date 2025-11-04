@@ -949,12 +949,28 @@ export default {
 
     async exportarDatos() {
       try {
-        // Crear CSV con todos los extras
+        console.log('📊 Exportando extras...')
+        
+        // Cargar todos los extras
         const todosExtras = await extrasService.getExtras({ limit: 1000 })
-        const csvData = this.generarCSV(todosExtras.extras || [])
+        
+        if (!todosExtras.extras || todosExtras.extras.length === 0) {
+          alert('❌ No hay extras para exportar')
+          return
+        }
+        
+        // Generar CSV
+        const csvData = this.generarCSV(todosExtras.extras)
+        
+        // ✅ CRÍTICO: Agregar BOM para UTF-8
+        const BOM = '\uFEFF'
+        
+        // Crear blob con BOM
+        const blob = new Blob([BOM + csvData], { 
+          type: 'text/csv;charset=utf-8;' 
+        })
         
         // Descargar archivo
-        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement('a')
         const url = URL.createObjectURL(blob)
         link.setAttribute('href', url)
@@ -963,33 +979,100 @@ export default {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        URL.revokeObjectURL(url)
         
-        console.log('✅ Datos exportados exitosamente')
+        console.log('✅ Extras exportados exitosamente')
+        alert(`✅ Excel exportado: ${todosExtras.extras.length} extras\n\n💡 Si las columnas no se separan:\n1. Abre en Excel\n2. Selecciona columna A\n3. Datos > Texto en columnas\n4. Delimitado > Punto y coma`)
         
       } catch (error) {
         console.error('❌ Error exportando datos:', error)
-        alert('Error exportando datos')
+        alert(`❌ Error exportando: ${error.message}`)
       }
     },
 
     generarCSV(extras) {
-      const headers = ['ID', 'Nombre', 'Descripción', 'Existencias', 'Stock Mínimo', 'Precio Unitario', 'Estado Stock', 'Fecha Creación']
-      const csvHeaders = headers.join(',')
+      // ✅ Separador: punto y coma para Excel en español
+      const SEPARADOR = ';'
       
-      const csvRows = extras.map(extra => 
-        [
-          extra.id,
-          `"${extra.nombre}"`,
-          `"${extra.descripcion || ''}"`,
-          extra.existencias,
-          extra.stock_minimo,
-          extra.costo_unitario,
-          extrasService.getStockStatus(extra.existencias, extra.stock_minimo).estado,
-          extrasService.formatDate(extra.fecha_creacion)
-        ].join(',')
-      )
+      // ✅ Headers
+      const headers = [
+        'ID',
+        'Nombre',
+        'Descripción',
+        'Existencias',
+        'Stock Mínimo',
+        'Precio Unitario',
+        'Valor Total',
+        'Estado Stock',
+        'Fecha Creación'
+      ]
       
-      return [csvHeaders, ...csvRows].join('\n')
+      // ✅ Escapar valores
+      const escaparValor = (valor) => {
+        if (valor === null || valor === undefined) return ''
+        let valorStr = String(valor).trim()
+        valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
+        
+        if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
+          valorStr = valorStr.replace(/"/g, '""')
+          return `"${valorStr}"`
+        }
+        return valorStr
+      }
+      
+      // ✅ Formatear fecha
+      const formatearFecha = (fecha) => {
+        if (!fecha) return ''
+        try {
+          const date = new Date(fecha)
+          const dia = String(date.getDate()).padStart(2, '0')
+          const mes = String(date.getMonth() + 1).padStart(2, '0')
+          const anio = date.getFullYear()
+          return `${dia}/${mes}/${anio}`
+        } catch {
+          return ''
+        }
+      }
+      
+      // ✅ Formatear decimales con coma
+      const formatearDecimal = (numero) => {
+        if (numero === null || numero === undefined) return '0,00'
+        return parseFloat(numero || 0).toFixed(2).replace('.', ',')
+      }
+      
+      // ✅ Crear línea de headers
+      const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
+      
+      // ✅ Crear líneas de datos
+      const lineasDatos = extras.map(extra => {
+        const valorTotal = (extra.existencias || 0) * (extra.costo_unitario || 0)
+        const estadoStock = extrasService.getStockStatus(extra.existencias, extra.stock_minimo).badge
+        
+        const valores = [
+          extra.id || '',
+          extra.nombre || '',
+          extra.descripcion || 'Sin descripción',
+          extra.existencias || 0,
+          extra.stock_minimo || 0,
+          formatearDecimal(extra.costo_unitario),
+          formatearDecimal(valorTotal),
+          estadoStock,
+          formatearFecha(extra.fecha_creacion)
+        ]
+        
+        return valores.map(v => escaparValor(v)).join(SEPARADOR)
+      })
+      
+      // ✅ Combinar todo con saltos de línea CRLF (Windows)
+      const csvCompleto = [lineaHeaders, ...lineasDatos].join('\r\n')
+      
+      console.log('📊 CSV de extras generado:', {
+        separador: SEPARADOR,
+        headers: headers.length,
+        filas: lineasDatos.length
+      })
+      
+      return csvCompleto
     }
   }
 }

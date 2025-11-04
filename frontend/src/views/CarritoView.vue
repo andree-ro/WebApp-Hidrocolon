@@ -138,7 +138,8 @@
             <div
               v-for="producto in productosEncontrados"
               :key="`${tipoProductoSeleccionado}-${producto.id}`"
-              class="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-colors"
+              @click="agregarAlCarrito(producto)"
+              class="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
             >
               <div class="flex items-center justify-between">
                 <div class="flex-1">
@@ -147,29 +148,18 @@
                     <span v-if="tipoProductoSeleccionado === 'medicamento'" class="mr-3">
                       📦 Stock: {{ producto.existencias || 0 }}
                     </span>
-                    <span class="text-green-700 font-medium">Q{{ producto.precio_efectivo }}</span>
-                    <span class="text-blue-700 font-medium ml-2">/ Q{{ producto.precio_tarjeta }}</span>
+                    <span class="text-blue-700 font-semibold text-base">Q{{ producto.precio_tarjeta }}</span>
                   </div>
                 </div>
                 
-                <div class="flex gap-2">
-                  <button
-                    @click="agregarAlCarrito(producto, 'efectivo')"
-                    class="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                  >
-                    + Efectivo
-                  </button>
-                  <button
-                    @click="agregarAlCarrito(producto, 'tarjeta')"
-                    class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                  >
-                    + Tarjeta
-                  </button>
+                <!-- Indicador visual de click -->
+                <div class="text-blue-600 text-xl">
+                  ➕
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div v-else-if="busquedaProducto" class="mt-3 text-center text-gray-500 py-4">
             No se encontraron productos
           </div>
@@ -591,19 +581,20 @@ async function buscarProductos() {
 }
 
 // Gestión del carrito
-function agregarAlCarrito(producto, tipoPrecio) {
-  const precioUnitario = tipoPrecio === 'efectivo' ? producto.precio_efectivo : producto.precio_tarjeta
+function agregarAlCarrito(producto) {
+  // ✅ Siempre usar precio de TARJETA
+  const precioUnitario = producto.precio_tarjeta
   
-  // 🔧 FIX: Normalizar nombre del producto
+  // 🔧 Normalizar nombre del producto
   const nombreProducto = producto.nombre || producto.nombre_servicio || producto.nombre_medicamento || producto.nombre_extra
   
   const productoParaCarrito = {
     tipo_producto: tipoProductoSeleccionado.value,
     producto_id: producto.id,
-    producto_nombre: nombreProducto, // ✅ Usar nombre normalizado
+    producto_nombre: nombreProducto,
     cantidad: 1,
     precio_unitario: precioUnitario,
-    precio_tipo: tipoPrecio,
+    precio_tipo: 'tarjeta', // ✅ Siempre tarjeta
     comision_porcentaje: producto.porcentaje_comision || producto.comision_venta || 0,
     presentacion: producto.presentacion_nombre || null,
     laboratorio: producto.laboratorio_nombre || null,
@@ -616,6 +607,8 @@ function agregarAlCarrito(producto, tipoPrecio) {
   
   if (resultado.success) {
     console.log('✅ Producto agregado al carrito')
+    // Opcional: mostrar feedback visual
+    // Puedes agregar una notificación toast aquí si quieres
   } else {
     console.error('❌ Error agregando producto:', resultado.message)
     alert('❌ ' + resultado.message)

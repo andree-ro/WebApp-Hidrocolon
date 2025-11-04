@@ -1455,18 +1455,36 @@ export default {
           return
         }
         
-        const csvContent = this.convertirCSV(this.medicamentos)
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        // ✅ Generar CSV con el separador correcto para Excel
+        const csvContent = this.convertirCSVMejorado(this.medicamentos)
+        
+        // ✅ CRÍTICO: Agregar BOM (Byte Order Mark) para UTF-8
+        const BOM = '\uFEFF'
+        
+        // ✅ Crear Blob con BOM + contenido
+        // Usar 'text/csv' para que Excel lo reconozca automáticamente
+        const blob = new Blob([BOM + csvContent], { 
+          type: 'text/csv;charset=utf-8;' 
+        })
+        
+        // ✅ Crear link de descarga
         const link = document.createElement('a')
         const url = URL.createObjectURL(blob)
+        
         link.setAttribute('href', url)
         link.setAttribute('download', `medicamentos_${new Date().toISOString().split('T')[0]}.csv`)
         link.style.visibility = 'hidden'
+        
+        // ✅ Trigger descarga
         document.body.appendChild(link)
         link.click()
+        
+        // ✅ Cleanup
         document.body.removeChild(link)
+        URL.revokeObjectURL(url)
         
         console.log('✅ Excel exportado exitosamente')
+        alert(`✅ Excel exportado: ${this.medicamentos.length} medicamentos\n\n💡 Si las columnas no se separan automáticamente:\n1. Abre el archivo en Excel\n2. Selecciona toda la columna A\n3. Ve a "Datos" > "Texto en columnas"\n4. Selecciona "Delimitado" > Siguiente\n5. Marca "Coma" como delimitador > Finalizar`)
         
       } catch (error) {
         console.error('❌ Error exportando Excel:', error)
@@ -1475,39 +1493,89 @@ export default {
     },
 
     // Convertir datos a CSV
-    convertirCSV(datos) {
-      const headers = [
-        'ID', 'Nombre', 'Presentación', 'Laboratorio', 'Existencias',
-        'Fecha Vencimiento', 'Precio Tarjeta', 'Precio Efectivo', 'Costo Compra',
-        'Indicaciones', 'Contraindicaciones', 'Dosis', 'Comisión (%)', 'Requiere Extras'
-      ]
-      
-      const csvHeaders = headers.join(',')
-      const csvRows = datos.map(med => 
-        [
-          med.id,
-          med.nombre,
-          med.presentacion_nombre,
-          med.laboratorio_nombre,
-          med.existencias,
-          med.fecha_vencimiento,
-          med.precio_tarjeta,
-          med.precio_efectivo,
-          med.costo_compra,
-          med.indicaciones,
-          med.contraindicaciones,
-          med.dosis,
-          med.porcentaje_comision,
-          med.requiere_extras ? 'Sí' : 'No'
-        ].map(value => 
-          typeof value === 'string' && value.includes(',') 
-            ? `"${value.replace(/"/g, '""')}"` 
-            : value
-        ).join(',')
-      )
-      
-      return [csvHeaders, ...csvRows].join('\n')
-    },
+    convertirCSVMejorado(datos) {
+  // ✅ Separador: punto y coma para Excel en español
+  const SEPARADOR = ';'
+  
+  // ✅ Headers
+  const headers = [
+    'ID',
+    'Nombre',
+    'Presentación',
+    'Laboratorio',
+    'Existencias',
+    'Fecha Vencimiento',
+    'Precio Tarjeta',
+    'Precio Efectivo',
+    'Costo Compra',
+    'Indicaciones',
+    'Contraindicaciones',
+    'Dosis',
+    'Comisión (%)',
+    'Requiere Extras'
+  ]
+  
+  // ✅ Escapar valores
+  const escaparValor = (valor) => {
+    if (valor === null || valor === undefined) return ''
+    let valorStr = String(valor).trim()
+    valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
+    
+    if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
+      valorStr = valorStr.replace(/"/g, '""')
+      return `"${valorStr}"`
+    }
+    return valorStr
+  }
+  
+  // ✅ Formatear fecha
+  const formatearFecha = (fecha) => {
+    if (!fecha) return ''
+    try {
+      const date = new Date(fecha)
+      const dia = String(date.getDate()).padStart(2, '0')
+      const mes = String(date.getMonth() + 1).padStart(2, '0')
+      const anio = date.getFullYear()
+      return `${dia}/${mes}/${anio}`
+    } catch {
+      return ''
+    }
+  }
+  
+  // ✅ Formatear decimales con coma
+  const formatearDecimal = (numero) => {
+    if (numero === null || numero === undefined) return '0,00'
+    return parseFloat(numero || 0).toFixed(2).replace('.', ',')
+  }
+  
+  // ✅ Headers
+  const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
+  
+  // ✅ Datos
+  const lineasDatos = datos.map(med => {
+    const valores = [
+      med.id || '',
+      med.nombre || '',
+      med.presentacion_nombre || '',
+      med.laboratorio_nombre || '',
+      med.existencias || 0,
+      formatearFecha(med.fecha_vencimiento),
+      formatearDecimal(med.precio_tarjeta),
+      formatearDecimal(med.precio_efectivo),
+      formatearDecimal(med.costo_compra),
+      (med.indicaciones || '').trim(),
+      (med.contraindicaciones || '').trim(),
+      (med.dosis || '').trim(),
+      formatearDecimal(med.porcentaje_comision),
+      med.requiere_extras ? 'Sí' : 'No'
+    ]
+    
+    return valores.map(v => escaparValor(v)).join(SEPARADOR)
+  })
+  
+  // ✅ Resultado final
+  return [lineaHeaders, ...lineasDatos].join('\r\n')
+},
 
     // Formatear fecha para mostrar
     formatearFecha(fecha) {

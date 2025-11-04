@@ -925,18 +925,126 @@ export default {
       try {
         console.log('📊 Exportando servicios...')
         
-        const filtrosExport = { ...this.filtros }
-        delete filtrosExport.page
-        delete filtrosExport.limit
+        if (!this.servicios.length) {
+          alert('❌ No hay servicios para exportar')
+          return
+        }
         
-        await serviciosService.exportarExcel(filtrosExport)
+        // Generar CSV con los servicios actuales
+        const csvContent = this.generarCSV(this.servicios)
+        
+        // ✅ CRÍTICO: Agregar BOM para UTF-8
+        const BOM = '\uFEFF'
+        
+        // Crear blob con BOM
+        const blob = new Blob([BOM + csvContent], { 
+          type: 'text/csv;charset=utf-8;' 
+        })
+        
+        // Descargar archivo
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', `servicios_${new Date().toISOString().split('T')[0]}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
         
         console.log('✅ Servicios exportados exitosamente')
+        alert(`✅ Excel exportado: ${this.servicios.length} servicios\n\n💡 Si las columnas no se separan:\n1. Abre en Excel\n2. Selecciona columna A\n3. Datos > Texto en columnas\n4. Delimitado > Punto y coma`)
         
       } catch (error) {
         console.error('❌ Error exportando servicios:', error)
         this.error = error.message
+        alert(`❌ Error exportando: ${error.message}`)
       }
+    },
+
+
+    generarCSV(servicios) {
+      // ✅ Separador: punto y coma para Excel en español
+      const SEPARADOR = ';'
+      
+      // ✅ Headers
+      const headers = [
+        'ID',
+        'Nombre Servicio',
+        'Precio Efectivo',
+        'Precio Tarjeta',
+        'Monto Mínimo',
+        'Comisión (%)',
+        'Requiere Medicamentos',
+        'Total Medicamentos',
+        'Estado',
+        'Fecha Creación'
+      ]
+      
+      // ✅ Escapar valores
+      const escaparValor = (valor) => {
+        if (valor === null || valor === undefined) return ''
+        let valorStr = String(valor).trim()
+        valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
+        
+        if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
+          valorStr = valorStr.replace(/"/g, '""')
+          return `"${valorStr}"`
+        }
+        return valorStr
+      }
+      
+      // ✅ Formatear fecha
+      const formatearFecha = (fecha) => {
+        if (!fecha) return ''
+        try {
+          const date = new Date(fecha)
+          const dia = String(date.getDate()).padStart(2, '0')
+          const mes = String(date.getMonth() + 1).padStart(2, '0')
+          const anio = date.getFullYear()
+          return `${dia}/${mes}/${anio}`
+        } catch {
+          return ''
+        }
+      }
+      
+      // ✅ Formatear decimales con coma
+      const formatearDecimal = (numero) => {
+        if (numero === null || numero === undefined) return '0,00'
+        return parseFloat(numero || 0).toFixed(2).replace('.', ',')
+      }
+      
+      // ✅ Crear línea de headers
+      const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
+      
+      // ✅ Crear líneas de datos
+      const lineasDatos = servicios.map(servicio => {
+        const valores = [
+          servicio.id || '',
+          servicio.nombre || servicio.nombre_servicio || '',
+          formatearDecimal(servicio.precio_efectivo),
+          formatearDecimal(servicio.precio_tarjeta),
+          formatearDecimal(servicio.monto_minimo),
+          formatearDecimal(servicio.porcentaje_comision || servicio.comision_venta || 0),
+          servicio.requiere_medicamentos ? 'Sí' : 'No',
+          servicio.total_medicamentos || 0,
+          servicio.activo ? 'Activo' : 'Inactivo',
+          formatearFecha(servicio.fecha_creacion)
+        ]
+        
+        return valores.map(v => escaparValor(v)).join(SEPARADOR)
+      })
+      
+      // ✅ Combinar todo con saltos de línea CRLF (Windows)
+      const csvCompleto = [lineaHeaders, ...lineasDatos].join('\r\n')
+      
+      console.log('📊 CSV de servicios generado:', {
+        separador: SEPARADOR,
+        headers: headers.length,
+        filas: lineasDatos.length
+      })
+      
+      return csvCompleto
     }
   }
 }
