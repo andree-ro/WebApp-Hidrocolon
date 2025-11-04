@@ -286,13 +286,6 @@
                       ✏️
                     </button>
                     <button
-                      @click="verHistorial(paciente)"
-                      class="w-8 h-8 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700 flex items-center justify-center transition-colors"
-                      title="Ver historial"
-                    >
-                      📊
-                    </button>
-                    <button
                       @click="eliminarPaciente(paciente)"
                       class="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-700 flex items-center justify-center transition-colors"
                       title="Eliminar paciente"
@@ -660,24 +653,6 @@
               >
                 <span>✏️</span>
                 <span>Editar Paciente</span>
-              </button>
-              
-              <button
-                @click="verHistorial(pacienteDetalle); cerrarModalDetalle()"
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors"
-              >
-                <span>📊</span>
-                <span>Ver Historial</span>
-              </button>
-              
-              <!-- Placeholder para futuras acciones -->
-              <button
-                disabled
-                class="bg-gray-300 text-gray-500 px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 cursor-not-allowed"
-                title="Disponible cuando se implemente el módulo de ventas"
-              >
-                <span>🛒</span>
-                <span>Nueva Venta</span>
               </button>
             </div>
             
