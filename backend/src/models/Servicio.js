@@ -14,6 +14,7 @@ class Servicio {
         this.fecha_creacion = data.fecha_creacion;
         this.fecha_actualizacion = data.fecha_actualizacion;
         this.total_medicamentos = parseInt(data.total_medicamentos) || 0; // CAMBIO AQUÍ
+        this.total_extras = parseInt(data.total_extras) || 0;
     }
 
     static async getConnection() {
@@ -83,8 +84,9 @@ class Servicio {
 
             // ===== PASO 3: CONSTRUCCIÓN DE QUERIES CON FILTROS Y MEDICAMENTOS =====
             let baseQuery = `
-                SELECT s.*, 
-                    COALESCE(COUNT(sm.medicamento_id), 0) as total_medicamentos
+                SELECT s.*,
+                    COALESCE(COUNT(DISTINCT sm.medicamento_id), 0) as total_medicamentos,
+                    COALESCE((SELECT COUNT(*) FROM servicios_extras se WHERE se.servicio_id = s.id), 0) as total_extras
                 FROM servicios s
                 LEFT JOIN servicios_medicamentos sm ON s.id = sm.servicio_id
                 WHERE 1=1
@@ -235,7 +237,18 @@ class Servicio {
         let connection;
         try {
             connection = await this.getConnection();
-            const [rows] = await connection.execute('SELECT * FROM servicios WHERE id = ?', [id]);
+            const [rows] = await connection.execute(
+                `SELECT s.*, 
+                        COALESCE((SELECT COUNT(DISTINCT sm.medicamento_id)
+                                  FROM servicios_medicamentos sm
+                                  WHERE sm.servicio_id = s.id), 0) AS total_medicamentos,
+                        COALESCE((SELECT COUNT(*)
+                                  FROM servicios_extras se
+                                  WHERE se.servicio_id = s.id), 0) AS total_extras
+                 FROM servicios s
+                 WHERE s.id = ?`,
+                [id]
+            );
             
             if (rows.length === 0) {
                 return null;

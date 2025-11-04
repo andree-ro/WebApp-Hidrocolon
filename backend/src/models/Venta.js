@@ -88,8 +88,8 @@ class Venta {
                 // 4. Actualizar inventario según tipo de producto
                 if (item.tipo_producto === 'medicamento') {
                     await connection.query(
-                        `UPDATE medicamentos 
-                         SET existencias = existencias - ? 
+                        `UPDATE medicamentos
+                         SET existencias = existencias - ?
                          WHERE id = ?`,
                         [item.cantidad, item.producto_id]
                     );
@@ -137,6 +137,30 @@ class Venta {
                             await connection.query(
                                 `UPDATE extras 
                                  SET existencias = existencias - ? 
+                                 WHERE id = ?`,
+                                [cantidadTotal, extra.extra_id]
+                            );
+                        }
+                    }
+                } else if (item.tipo_producto === 'servicio') {
+                    const [servicio] = await connection.query(
+                        `SELECT requiere_extras FROM servicios WHERE id = ?`,
+                        [item.producto_id]
+                    );
+
+                    if (servicio.length > 0 && servicio[0].requiere_extras) {
+                        const [extrasServicio] = await connection.query(
+                            `SELECT extra_id, cantidad_requerida
+                             FROM servicios_extras
+                             WHERE servicio_id = ?`,
+                            [item.producto_id]
+                        );
+
+                        for (const extra of extrasServicio) {
+                            const cantidadTotal = extra.cantidad_requerida * item.cantidad;
+                            await connection.query(
+                                `UPDATE extras
+                                 SET existencias = existencias - ?
                                  WHERE id = ?`,
                                 [cantidadTotal, extra.extra_id]
                             );

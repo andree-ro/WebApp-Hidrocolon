@@ -6,7 +6,8 @@ const mapearServicio = (servicio) => ({
     ...servicio,
     nombre_servicio: servicio.nombre,
     comision_venta: servicio.porcentaje_comision,
-    activo: Boolean(servicio.activo)
+    activo: Boolean(servicio.activo),
+    total_extras: parseInt(servicio.total_extras ?? 0, 10)
 });
 
 // ============================================================================
@@ -109,7 +110,8 @@ const crearServicio = async (req, res) => {
             comision_venta = 0,
             descripcion = '',
             activo = true,
-            requiere_medicamentos = false
+            requiere_medicamentos = false,
+            requiere_extras = false
         } = req.body;
 
         // Validaciones obligatorias
@@ -160,7 +162,8 @@ const crearServicio = async (req, res) => {
             porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',
             activo: Boolean(activo) ? 1 : 0,
-            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0
+            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0,
+            requiere_extras: Boolean(requiere_extras) ? 1 : 0
         };
 
         const nuevoServicio = await Servicio.create(datosServicio);
@@ -220,7 +223,8 @@ const actualizarServicio = async (req, res) => {
             comision_venta,
             descripcion,
             activo,
-            requiere_medicamentos
+            requiere_medicamentos,
+            requiere_extras
         } = req.body;
 
         // Validaciones similares al crear
@@ -262,7 +266,8 @@ const actualizarServicio = async (req, res) => {
             porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',
             activo: Boolean(activo) ? 1 : 0,
-            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0
+            requiere_medicamentos: Boolean(requiere_medicamentos) ? 1 : 0,
+            requiere_extras: Boolean(requiere_extras) ? 1 : 0
         };
 
         const servicioActualizado = await Servicio.update(servicioId, datosActualizacion);
