@@ -379,7 +379,7 @@ class Extra {
     // =====================================
 
     // Obtener extras de un servicio
-    async getExtrasByServicio(servicioId) {
+    static async getExtrasByServicio(servicioId) {
         const connection = await this.getConnection();
         try {
             const query = `
@@ -411,7 +411,7 @@ class Extra {
     }
 
     // Vincular extra con servicio
-    async vincularConServicio(servicioId, extraId, cantidadRequerida = 1) {
+    static async vincularConServicio(servicioId, extraId, cantidadRequerida = 1) {
         const connection = await this.getConnection();
         try {
             // Verificar que el servicio existe
@@ -458,7 +458,7 @@ class Extra {
     }
 
     // Desvincular extra de servicio
-    async desvincularDeServicio(servicioId, extraId) {
+    static async desvincularDeServicio(servicioId, extraId) {
         const connection = await this.getConnection();
         try {
             const query = `
