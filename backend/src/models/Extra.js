@@ -392,7 +392,7 @@ class Extra {
                     e.descripcion,
                     e.existencias,
                     e.stock_minimo,
-                    e.precio_unitario AS costo_unitario,
+                    e.costo_unitario,
                     e.activo,
                     se.cantidad_requerida,
                     se.fecha_creacion AS fecha_vinculacion
