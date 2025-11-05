@@ -262,51 +262,6 @@
               </button>
             </div>
           </div>
-
-          <!-- Alertas y Notificaciones -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Estado del Sistema -->
-            <div class="card p-4 sm:p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <span class="mr-2">🔧</span>
-                Estado del Sistema
-              </h3>
-              
-              <div class="space-y-3">
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Frontend Conectado</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Operativo</span>
-                </div>
-                
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">API Backend - Railway</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Conectado</span>
-                </div>
-                
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Autenticación JWT</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Activa</span>
-                </div>
-
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Módulo Servicios</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Funcional</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
