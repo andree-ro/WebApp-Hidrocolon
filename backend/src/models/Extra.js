@@ -392,7 +392,7 @@ class Extra {
                     e.descripcion,
                     e.existencias,
                     e.stock_minimo,
-                    e.costo_unitario,
+                    e.costo_unitario AS costo_unitario,
                     e.activo,
                     se.cantidad_requerida,
                     se.fecha_creacion AS fecha_vinculacion
@@ -405,7 +405,10 @@ class Extra {
 
             const [rows] = await connection.execute(query, [servicioId]);
 
-            return rows;
+            return rows.map((extra) => ({
+                ...extra,
+                precio_unitario: extra.costo_unitario
+            }));
         } catch (error) {
             console.error('❌ Error obteniendo extras del servicio:', error);
             throw new Error('Error obteniendo extras del servicio');
