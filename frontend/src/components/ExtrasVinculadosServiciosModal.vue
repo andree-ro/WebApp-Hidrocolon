@@ -54,26 +54,7 @@
                   </div>
                 </div>
 
-                <div class="flex items-center space-x-2">
-                  <!-- Cambiar cantidad -->
-                  <button
-                    @click="cambiarCantidad(extra)"
-                    class="btn-icon btn-blue"
-                    title="Cambiar cantidad"
-                  >
-                    📝
-                  </button>
-                  <!-- Desvincular -->
-                  <button
-                    @click="desvincularExtra(extra)"
-                    class="btn-icon btn-red"
-                    title="Quitar extra"
-                    :disabled="desvinculando === extra.id"
-                  >
-                    <span v-if="desvinculando === extra.id" class="spinner-small"></span>
-                    <span v-else>❌</span>
-                  </button>
-                </div>
+
               </div>
             </div>
 
