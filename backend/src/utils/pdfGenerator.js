@@ -364,7 +364,7 @@ class ComprobanteGenerator {
                 // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
                 // ============================================================
                 y = nuevaPaginaSiNecesario(200);
-                y = agregarSeccionHeader('CIERRE SIN IMPUESTOS', y);
+                y = agregarSeccionHeader('CIERRE (CON IMPUESTOS)', y);
                 y += 15;
 
                 // Datos de entrada
@@ -424,7 +424,7 @@ class ComprobanteGenerator {
                 // SECCIÓN 3: CIERRE NETO (CON IMPUESTOS)
                 // ============================================================
                 y = nuevaPaginaSiNecesario(250);
-                y = agregarSeccionHeader('CIERRE NETO (CON IMPUESTOS)', y);
+                y = agregarSeccionHeader('CIERRE NETO (SIN IMPUESTOS)', y);
                 y += 15;
 
                 // Ingresos netos
