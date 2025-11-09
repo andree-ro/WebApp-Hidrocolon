@@ -7,12 +7,12 @@ class PagoComision {
     // ============================================================================
     static async obtenerComisionesPendientes(doctoraId, fechaCorte = null) {
         try {
-            console.log(`💰 Calculando comisiones pendientes para doctora ID: ${doctoraId}`);
+            console.log(`ðŸ’° Calculando comisiones pendientes para doctora ID: ${doctoraId}`);
 
             // Si no se especifica fecha de corte, usar la fecha actual
             const fechaLimite = fechaCorte || new Date().toISOString().split('T')[0];
 
-            // Obtener todas las ventas con comisión de esta doctora que NO han sido pagadas
+            // Obtener todas las ventas con comisiÃ³n de esta doctora que NO han sido pagadas
             const [detalles] = await pool.execute(
                 `SELECT 
                     dv.id as detalle_venta_id,
@@ -38,7 +38,7 @@ class PagoComision {
             const montoTotal = detalles.reduce((sum, d) => sum + parseFloat(d.monto_comision), 0);
             const cantidadVentas = new Set(detalles.map(d => d.venta_id)).size;
 
-            console.log(`✅ Comisiones pendientes calculadas: Q${montoTotal.toFixed(2)}`);
+            console.log(`âœ… Comisiones pendientes calculadas: Q${montoTotal.toFixed(2)}`);
 
             return {
                 detalles,
@@ -52,7 +52,7 @@ class PagoComision {
             };
 
         } catch (error) {
-            console.error('❌ Error obteniendo comisiones pendientes:', error);
+            console.error('âŒ Error obteniendo comisiones pendientes:', error);
             throw error;
         }
     }
@@ -62,7 +62,7 @@ class PagoComision {
     // ============================================================================
     static async obtenerTodasComisionesPendientes(fechaCorte = null) {
         try {
-            console.log('💰 Obteniendo comisiones pendientes de todas las doctoras...');
+            console.log('ðŸ’° Obteniendo comisiones pendientes de todas las doctoras...');
 
             const fechaLimite = fechaCorte || new Date().toISOString().split('T')[0];
 
@@ -75,10 +75,11 @@ class PagoComision {
                     MIN(v.fecha_creacion) as fecha_primera_venta,
                     MAX(v.fecha_creacion) as fecha_ultima_venta
                 FROM doctoras d
-                LEFT JOIN detalle_ventas dv ON d.id = dv.doctora_id 
+                INNER JOIN detalle_ventas dv ON d.id = dv.doctora_id 
+                    AND dv.doctora_id IS NOT NULL 
                     AND dv.pago_comision_id IS NULL 
                     AND dv.monto_comision > 0
-                LEFT JOIN ventas v ON dv.venta_id = v.id 
+                INNER JOIN ventas v ON dv.venta_id = v.id 
                     AND DATE(v.fecha_creacion) <= ?
                 WHERE d.activo = 1
                 GROUP BY d.id, d.nombre
@@ -87,7 +88,7 @@ class PagoComision {
                 [fechaLimite]
             );
 
-            console.log(`✅ ${doctoras.length} doctoras con comisiones pendientes`);
+            console.log(`âœ… ${doctoras.length} doctoras con comisiones pendientes`);
 
             return doctoras.map(d => ({
                 doctora_id: d.id,
@@ -99,7 +100,7 @@ class PagoComision {
             }));
 
         } catch (error) {
-            console.error('❌ Error obteniendo todas las comisiones pendientes:', error);
+            console.error('âŒ Error obteniendo todas las comisiones pendientes:', error);
             throw error;
         }
     }
@@ -111,7 +112,7 @@ class PagoComision {
         let connection;
         
         try {
-            console.log(`💳 Registrando pago de comisiones para doctora ID: ${datos.doctora_id}`);
+            console.log(`ðŸ’³ Registrando pago de comisiones para doctora ID: ${datos.doctora_id}`);
 
             connection = await pool.getConnection();
             await connection.beginTransaction();
@@ -224,7 +225,7 @@ class PagoComision {
 
             await connection.commit();
 
-            console.log(`✅ Pago de comisiones registrado exitosamente (ID: ${pagoComisionId})`);
+            console.log(`âœ… Pago de comisiones registrado exitosamente (ID: ${pagoComisionId})`);
 
             // Obtener el pago completo creado
             const pagoCreado = await this.obtenerPorId(pagoComisionId);
@@ -242,7 +243,7 @@ class PagoComision {
             if (connection) {
                 await connection.rollback();
             }
-            console.error('❌ Error registrando pago de comisiones:', error);
+            console.error('âŒ Error registrando pago de comisiones:', error);
             throw error;
         } finally {
             if (connection) {
@@ -256,7 +257,7 @@ class PagoComision {
     // ============================================================================
     static async obtenerPorId(id) {
         try {
-            console.log(`🔍 Obteniendo pago de comisión ID: ${id}`);
+            console.log(`ðŸ” Obteniendo pago de comisiÃ³n ID: ${id}`);
 
             const [pagos] = await pool.execute(
                 `SELECT 
@@ -287,12 +288,12 @@ class PagoComision {
 
             pago.detalles = detalles;
 
-            console.log(`✅ Pago obtenido: Q${pago.monto_total}`);
+            console.log(`âœ… Pago obtenido: Q${pago.monto_total}`);
 
             return pago;
 
         } catch (error) {
-            console.error(`❌ Error obteniendo pago ID ${id}:`, error);
+            console.error(`âŒ Error obteniendo pago ID ${id}:`, error);
             throw error;
         }
     }
@@ -302,7 +303,7 @@ class PagoComision {
     // ============================================================================
     static async obtenerHistorial(filtros = {}) {
         try {
-            console.log('📋 Obteniendo historial de pagos de comisiones...');
+            console.log('ðŸ“‹ Obteniendo historial de pagos de comisiones...');
 
             let whereConditions = ['1=1'];
             let queryParams = [];
@@ -344,22 +345,22 @@ class PagoComision {
                 queryParams
             );
 
-            console.log(`✅ ${pagos.length} pagos encontrados en el historial`);
+            console.log(`âœ… ${pagos.length} pagos encontrados en el historial`);
 
             return pagos;
 
         } catch (error) {
-            console.error('❌ Error obteniendo historial de pagos:', error);
+            console.error('âŒ Error obteniendo historial de pagos:', error);
             throw error;
         }
     }
 
     // ============================================================================
-    // OBTENER ESTADÍSTICAS DE COMISIONES
+    // OBTENER ESTADÃSTICAS DE COMISIONES
     // ============================================================================
     static async obtenerEstadisticas(filtros = {}) {
         try {
-            console.log('📊 Obteniendo estadísticas de comisiones...');
+            console.log('ðŸ“Š Obteniendo estadÃ­sticas de comisiones...');
 
             let whereConditions = ['1=1'];
             let queryParams = [];
@@ -385,7 +386,7 @@ class PagoComision {
                 queryParams
             );
 
-            console.log('✅ Estadísticas calculadas');
+            console.log('âœ… EstadÃ­sticas calculadas');
 
             return {
                 total_pagos: stats[0].total_pagos,
@@ -398,7 +399,7 @@ class PagoComision {
             };
 
         } catch (error) {
-            console.error('❌ Error obteniendo estadísticas:', error);
+            console.error('âŒ Error obteniendo estadÃ­sticas:', error);
             throw error;
         }
     }
@@ -408,7 +409,7 @@ class PagoComision {
     // ============================================================================
     static async marcarPDFGenerado(id, pdfUrl = null) {
         try {
-            console.log(`📄 Marcando PDF como generado para pago ID: ${id}`);
+            console.log(`ðŸ“„ Marcando PDF como generado para pago ID: ${id}`);
 
             await pool.execute(
                 `UPDATE pagos_comisiones 
@@ -419,12 +420,12 @@ class PagoComision {
                 [pdfUrl, id]
             );
 
-            console.log('✅ PDF marcado como generado');
+            console.log('âœ… PDF marcado como generado');
 
             return { success: true };
 
         } catch (error) {
-            console.error('❌ Error marcando PDF como generado:', error);
+            console.error('âŒ Error marcando PDF como generado:', error);
             throw error;
         }
     }
@@ -434,7 +435,7 @@ class PagoComision {
     // ============================================================================
     static async obtenerDatosParaPDF(id) {
         try {
-            console.log(`📄 Obteniendo datos para generar PDF del pago ID: ${id}`);
+            console.log(`ðŸ“„ Obteniendo datos para generar PDF del pago ID: ${id}`);
 
             const pago = await this.obtenerPorId(id);
 
@@ -459,8 +460,8 @@ class PagoComision {
                 ORDER BY dv.producto_nombre
             `, [id]);
 
-            console.log('🔍 DEBUG - Ventas agrupadas encontradas:', ventasAgrupadas.length);
-            console.log('🔍 DEBUG - Datos:', JSON.stringify(ventasAgrupadas, null, 2));
+            console.log('DEBUG - Ventas agrupadas encontradas:', ventasAgrupadas.length);
+            console.log('DEBUG - Datos:', JSON.stringify(ventasAgrupadas, null, 2));
 
             // Formatear datos para el PDF
             const datosPDF = {
@@ -468,7 +469,7 @@ class PagoComision {
                 pago_id: pago.id,
                 turno_id: pago.turno_id,
                 
-                // Información del pago
+                // InformaciÃ³n del pago
                 doctora_nombre: pago.doctora_nombre,
                 fecha_pago: pago.fecha_pago,
                 fecha_inicio: pago.fecha_corte, // Usar fecha_corte como fecha_inicio
@@ -489,12 +490,12 @@ class PagoComision {
                     total_comision: parseFloat(v.total_comision)
                 })),
                 
-                // Información adicional
+                // InformaciÃ³n adicional
                 observaciones: pago.observaciones,
                 usuario_registro: `${pago.usuario_nombres} ${pago.usuario_apellidos}`
             };
 
-            console.log('✅ Datos para PDF preparados:', {
+            console.log('âœ… Datos para PDF preparados:', {
                 pago_id: datosPDF.pago_id,
                 productos: datosPDF.ventas_agrupadas.length,
                 monto: datosPDF.monto_total
@@ -503,7 +504,7 @@ class PagoComision {
             return datosPDF;
 
         } catch (error) {
-            console.error('❌ Error obteniendo datos para PDF:', error);
+            console.error('âŒ Error obteniendo datos para PDF:', error);
             throw error;
         }
     }
@@ -515,7 +516,7 @@ class PagoComision {
         let connection;
         
         try {
-            console.log(`🗑️ Anulando pago de comisiones ID: ${id}`);
+            console.log(`ðŸ—‘ï¸ Anulando pago de comisiones ID: ${id}`);
 
             connection = await pool.getConnection();
             await connection.beginTransaction();
@@ -528,7 +529,7 @@ class PagoComision {
             }
 
             if (pago.estado === 'anulado') {
-                throw new Error('El pago ya está anulado');
+                throw new Error('El pago ya estÃ¡ anulado');
             }
 
             // Desmarcar todos los detalles de venta asociados
@@ -561,7 +562,7 @@ class PagoComision {
 
             await connection.commit();
 
-            console.log('✅ Pago anulado exitosamente');
+            console.log('âœ… Pago anulado exitosamente');
 
             return {
                 success: true,
@@ -572,7 +573,7 @@ class PagoComision {
             if (connection) {
                 await connection.rollback();
             }
-            console.error('❌ Error anulando pago:', error);
+            console.error('âŒ Error anulando pago:', error);
             throw error;
         } finally {
             if (connection) {
@@ -582,14 +583,14 @@ class PagoComision {
     }
 
     // ============================================================================
-    // OBTENER VENTAS AGRUPADAS POR DÍA Y PRODUCTO (PARA REPORTE)
+    // OBTENER VENTAS AGRUPADAS POR DÃA Y PRODUCTO (PARA REPORTE)
     // ============================================================================
     static async obtenerVentasAgrupadasPorDiaYProducto(doctoraId, fechaInicio, fechaFin) {
         try {
-            console.log(`📊 Obteniendo ventas agrupadas para doctora ID: ${doctoraId}`);
+            console.log(`ðŸ“Š Obteniendo ventas agrupadas para doctora ID: ${doctoraId}`);
             console.log(`   Rango: ${fechaInicio} a ${fechaFin}`);
 
-            // Obtener todas las ventas del período
+            // Obtener todas las ventas del perÃ­odo
             const [ventas] = await pool.execute(
                 `SELECT 
                     dv.producto_nombre,
@@ -626,7 +627,7 @@ class PagoComision {
             // Verificar si alguna venta ya fue pagada
             const tiene_pagos_previos = ventas.some(v => v.pago_comision_id !== null);
 
-            // Obtener fechas únicas ordenadas
+            // Obtener fechas Ãºnicas ordenadas
             const fechasUnicas = [...new Set(ventas.map(v => v.fecha_venta))].sort();
             
             // Agrupar por producto
@@ -679,7 +680,7 @@ class PagoComision {
                 total_comisiones: productos.reduce((sum, p) => sum + p.total_comision, 0)
             };
 
-            console.log(`✅ Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} días`);
+            console.log(`âœ… Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} dÃ­as`);
 
             return {
                 productos,
@@ -692,7 +693,7 @@ class PagoComision {
             };
 
         } catch (error) {
-            console.error('❌ Error obteniendo ventas agrupadas:', error);
+            console.error('âŒ Error obteniendo ventas agrupadas:', error);
             throw error;
         }
     }
@@ -737,7 +738,7 @@ class PagoComision {
             };
 
         } catch (error) {
-            console.error('❌ Error validando pago duplicado:', error);
+            console.error('âŒ Error validando pago duplicado:', error);
             throw error;
         }
     }
@@ -752,7 +753,7 @@ class PagoComision {
         let connection;
         
         try {
-            console.log(`💳 Registrando pago de comisiones con rango de fechas`);
+            console.log(`ðŸ’³ Registrando pago de comisiones con rango de fechas`);
             console.log(`   Doctora ID: ${datos.doctora_id}`);
             console.log(`   Rango: ${datos.fecha_inicio} a ${datos.fecha_fin}`);
 
@@ -765,7 +766,7 @@ class PagoComision {
             if (!datos.fecha_fin) throw new Error('La fecha de fin es requerida');
             if (!datos.usuario_registro_id) throw new Error('El ID del usuario es requerido');
 
-            // Validar que no exista un pago previo (a menos que tenga autorización)
+            // Validar que no exista un pago previo (a menos que tenga autorizaciÃ³n)
             if (!datos.autorizado_por_admin) {
                 const validacion = await this.validarPagoDuplicado(
                     datos.doctora_id,
@@ -775,9 +776,9 @@ class PagoComision {
 
                 if (validacion.existe_pago) {
                     throw new Error(
-                        `Ya existe un pago registrado para este período. ` +
+                        `Ya existe un pago registrado para este perÃ­odo. ` +
                         `Pago ID: ${validacion.pago.id}, Fecha: ${validacion.pago.fecha_pago}. ` +
-                        `Se requiere autorización de administrador.`
+                        `Se requiere autorizaciÃ³n de administrador.`
                     );
                 }
             }
@@ -825,8 +826,8 @@ class PagoComision {
 
             const pagoComisionId = resultPago.insertId;
 
-            // ✅ INSERTAR DETALLES EN detalle_pagos_comisiones
-            console.log('📝 Insertando detalles en detalle_pagos_comisiones...');
+            // âœ… INSERTAR DETALLES EN detalle_pagos_comisiones
+            console.log('ðŸ“ Insertando detalles en detalle_pagos_comisiones...');
             
             const [detallesVentas] = await connection.execute(
                 `SELECT 
@@ -847,7 +848,7 @@ class PagoComision {
                 [datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
             );
 
-            console.log(`📝 ${detallesVentas.length} detalles encontrados para insertar`);
+            console.log(`ðŸ“ ${detallesVentas.length} detalles encontrados para insertar`);
 
             // Insertar cada detalle
             for (const detalle of detallesVentas) {
@@ -877,7 +878,7 @@ class PagoComision {
                 );
             }
 
-            console.log(`✅ ${detallesVentas.length} detalles insertados en detalle_pagos_comisiones`);
+            console.log(`${detallesVentas.length} detalles insertados en detalle_pagos_comisiones`);
 
             // Marcar todas las ventas como pagadas
             await connection.execute(
@@ -903,7 +904,7 @@ class PagoComision {
 
             await connection.commit();
 
-            console.log(`✅ Pago registrado exitosamente - ID: ${pagoComisionId}`);
+            console.log(`âœ… Pago registrado exitosamente - ID: ${pagoComisionId}`);
 
             return {
                 pago_id: pagoComisionId,
@@ -915,7 +916,7 @@ class PagoComision {
 
         } catch (error) {
             if (connection) await connection.rollback();
-            console.error('❌ Error registrando pago con rango:', error);
+            console.error('âŒ Error registrando pago con rango:', error);
             throw error;
         } finally {
             if (connection) connection.release();
