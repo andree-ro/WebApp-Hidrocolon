@@ -377,7 +377,7 @@
 
             <!-- Precio Unitario -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Precio Unitario (Q) *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Costo Unitario (Q) *</label>
               <input
                 v-model.number="modalFormulario.datos.precio_unitario"
                 type="number"

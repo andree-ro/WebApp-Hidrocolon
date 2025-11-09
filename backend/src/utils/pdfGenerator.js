@@ -181,11 +181,6 @@ class ComprobanteGenerator {
                     doc.text(detalles.join(' | '), 420, yPosition);
                 }
 
-                // PIE DE PÁGINA
-                doc.fontSize(6)
-                .font('Helvetica')
-                .text('Gracias por su compra', 40, MEDIA_CARTA_LIMITE - 15, { align: 'center', width: 515 });
-
                 doc.moveTo(40, MEDIA_CARTA_LIMITE)
                 .lineTo(555, MEDIA_CARTA_LIMITE)
                 .dash(5, { space: 3 })
