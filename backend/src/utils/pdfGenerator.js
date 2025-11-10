@@ -753,24 +753,30 @@ class ComprobanteGenerator {
                 // ============================================================
                 y = Math.max(y + 30, pageHeight - 160);
 
+                // Ajuste de posición vertical de los textos (subirlos un poco)
+                const ajusteY = -3;
+
                 // Firma de quien recibe
                 doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
-                   .text('FIRMA DE QUIEN RECIBE:', margin, y);
+                .text('FIRMA DE QUIEN RECIBE:', margin, y + ajusteY);
                 y += 5;
                 doc.moveTo(margin, y).lineTo(margin + 250, y).stroke(colors.border);
                 y += 20;
 
+                // Nombre de quien recibe
                 doc.fontSize(9).font('Helvetica-Bold')
-                   .text('NOMBRE DE QUIEN RECIBE:', margin, y);
+                .text('NOMBRE DE QUIEN RECIBE:', margin, y + ajusteY);
                 y += 5;
                 doc.moveTo(margin, y).lineTo(margin + 250, y).stroke(colors.border);
                 y += 20;
 
+                // Fecha
                 doc.fontSize(9).font('Helvetica-Bold')
-                   .text('FECHA:', margin, y);
+                .text('FECHA:', margin, y + ajusteY);
                 y += 5;
                 doc.moveTo(margin, y).lineTo(margin + 150, y).stroke(colors.border);
                 y += 30;
+
 
                 // ============================================================
                 // PIE DE PÁGINA

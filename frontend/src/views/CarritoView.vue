@@ -120,7 +120,7 @@
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               ]"
             >
-              {{ tipo === 'medicamento' ? '💊 Medicamentos' : tipo === 'servicio' ? '🏥 Servicios' : '🧰 Extras' }}
+              {{ tipo === 'medicamento' ? '💊 Medicamentos' : tipo === 'servicio' ? '🏥 Servicios' : '' }}
             </button>
           </div>
           
