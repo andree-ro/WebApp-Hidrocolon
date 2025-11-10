@@ -39,7 +39,6 @@
             <option value="servicios">🔌 Servicios (luz, agua, internet)</option>
             <option value="compras">📦 Compras y suministros</option>
             <option value="mantenimiento">🔧 Mantenimiento</option>
-            <option value="personal">👥 Personal (salarios, comisiones)</option>
             <option value="administrativo">📋 Administrativo</option>
             <option value="otros">📌 Otros</option>
           </select>
@@ -84,35 +83,6 @@
           <p class="text-xs text-gray-500 mt-1">
             Ingresa el monto exacto del gasto
           </p>
-        </div>
-
-        <!-- Método de Pago -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Método de Pago *
-          </label>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="gasto.metodo_pago = 'efectivo'"
-              class="px-4 py-3 border-2 rounded-lg font-medium transition-all"
-              :class="gasto.metodo_pago === 'efectivo' 
-                ? 'bg-green-500 text-white border-green-500' 
-                : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'"
-            >
-              💵 Efectivo
-            </button>
-            <button
-              type="button"
-              @click="gasto.metodo_pago = 'transferencia'"
-              class="px-4 py-3 border-2 rounded-lg font-medium transition-all"
-              :class="gasto.metodo_pago === 'transferencia' 
-                ? 'bg-purple-500 text-white border-purple-500' 
-                : 'bg-white text-gray-700 border-gray-300 hover:border-purple-500'"
-            >
-              🏦 Transferencia
-            </button>
-          </div>
         </div>
 
         <!-- Nota sobre efectivo -->

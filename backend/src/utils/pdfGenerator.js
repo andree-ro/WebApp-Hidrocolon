@@ -354,6 +354,59 @@ class ComprobanteGenerator {
                     .text('No hay productos vendidos en este turno', margin, y);
                     y += 20;
                 }
+                                // ============================================================
+                // SECCIÓN 4: GASTOS DETALLADOS
+                // ============================================================
+                if (datosReporte.gastos && datosReporte.gastos.length > 0) {
+                    y = nuevaPaginaSiNecesario(150);
+                    y = agregarSeccionHeader('GASTOS DEL TURNO', y);
+                    y += 10;
+
+                    const colW = [40, 100, 250, 80, 62];
+                    const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
+                    
+                    doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
+                    
+                    let xPos = margin;
+                    doc.fontSize(7).font('Helvetica-Bold');
+                    headersGastos.forEach((header, i) => {
+                        doc.fillColor('#ffffff').text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
+                        xPos += colW[i];
+                    });
+                    y += 18;
+
+                    doc.fontSize(7).fillColor(colors.text).font('Helvetica');
+                    
+                    datosReporte.gastos.forEach((gasto, idx) => {
+                        y = nuevaPaginaSiNecesario(14);
+                        
+                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
+                        doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
+
+                        let xPos = margin;
+                        const vals = [
+                            (idx + 1).toString(),
+                            gasto.categoria.substring(0, 18),
+                            gasto.descripcion.substring(0, 45),
+                            formatearMoneda(gasto.monto),
+                            new Date(gasto.fecha).toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' })
+                        ];
+
+                        vals.forEach((val, i) => {
+                            doc.fillColor(colors.text).text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
+                            xPos += colW[i];
+                        });
+                        
+                        y += 14;
+                    });
+
+                    // Total de gastos
+                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
+                    doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
+                    .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
+                    doc.text(formatearMoneda(datosReporte.gastos_resumen.total), pageWidth - margin - 90, y + 4, { width: 80, align: 'right' });
+                    y += 30;
+                }
 
                 // ============================================================
                 // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
@@ -498,59 +551,7 @@ class ComprobanteGenerator {
                 doc.fontSize(12).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 5, { width: 100, align: 'right' });
                 y += 30;
 
-                // ============================================================
-                // SECCIÓN 4: GASTOS DETALLADOS
-                // ============================================================
-                if (datosReporte.gastos && datosReporte.gastos.length > 0) {
-                    y = nuevaPaginaSiNecesario(150);
-                    y = agregarSeccionHeader('GASTOS DEL TURNO', y);
-                    y += 10;
 
-                    const colW = [40, 100, 250, 80, 62];
-                    const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
-                    
-                    doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
-                    
-                    let xPos = margin;
-                    doc.fontSize(7).font('Helvetica-Bold');
-                    headersGastos.forEach((header, i) => {
-                        doc.fillColor('#ffffff').text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
-                        xPos += colW[i];
-                    });
-                    y += 18;
-
-                    doc.fontSize(7).fillColor(colors.text).font('Helvetica');
-                    
-                    datosReporte.gastos.forEach((gasto, idx) => {
-                        y = nuevaPaginaSiNecesario(14);
-                        
-                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
-                        doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
-
-                        let xPos = margin;
-                        const vals = [
-                            (idx + 1).toString(),
-                            gasto.categoria.substring(0, 18),
-                            gasto.descripcion.substring(0, 45),
-                            formatearMoneda(gasto.monto),
-                            new Date(gasto.fecha).toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' })
-                        ];
-
-                        vals.forEach((val, i) => {
-                            doc.fillColor(colors.text).text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
-                            xPos += colW[i];
-                        });
-                        
-                        y += 14;
-                    });
-
-                    // Total de gastos
-                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
-                    doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
-                    .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
-                    doc.text(formatearMoneda(datosReporte.gastos_resumen.total), pageWidth - margin - 90, y + 4, { width: 80, align: 'right' });
-                    y += 30;
-                }
 
                 // ⭐ ELIMINADO: Todo el pie de página
 
