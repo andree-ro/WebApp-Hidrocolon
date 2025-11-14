@@ -423,6 +423,9 @@ const calcularCuadrePrevio = async (req, res) => {
                 total_vouchers: totalesVouchers,
                 total_transferencias: totalesTransferencias,
                 diferencias: diferencias,
+                diferencia_efectivo: diferencias.efectivo,
+                diferencia_vouchers: diferencias.vouchers,
+                diferencia_transferencias: diferencias.transferencias,
                 requiere_autorizacion: requiereAutorizacion,
                 puede_cerrar: !requiereAutorizacion,
                 alertas: {

@@ -88,18 +88,15 @@
           <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Preview de Ventas</h3>
 
           <!-- Alerta si existe pago previo -->
-          <div v-if="ventasAgrupadas.validacion_pago?.existe_pago" class="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div class="flex items-start">
-              <span class="text-2xl mr-3">⚠️</span>
+          <div v-if="ventasAgrupadas.validacion_pago?.existe_pago" class="mb-4 bg-red-50 border-2 border-red-400 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🚫</span>
               <div>
-                <p class="font-medium text-yellow-900">Ya existe un pago para este período</p>
-                <p class="text-sm text-yellow-700 mt-1">
-                  Pago ID: {{ ventasAgrupadas.validacion_pago.pago.id }} | 
-                  Monto: Q{{ ventasAgrupadas.validacion_pago.pago.monto_total }} |
-                  Fecha: {{ formatearFecha(ventasAgrupadas.validacion_pago.pago.fecha_pago) }}
+                <p class="font-bold text-red-900 text-base">
+                  Este rango de fechas ya fue pagado anteriormente
                 </p>
-                <p class="text-sm text-yellow-600 mt-2">
-                  Si continúa, necesitará autorización de administrador.
+                <p class="text-sm text-red-700 mt-1">
+                  Seleccione fechas diferentes
                 </p>
               </div>
             </div>
@@ -402,10 +399,13 @@ async function confirmarPago() {
 
     // Si es pago duplicado, preguntar al admin
     if (resultado.esPagoDuplicado) {
+      const pagoInfo = resultado.pagoExistente || resultado.detalles || {}
+      const pagoId = pagoInfo.pago_id || pagoInfo.id || 'N/A'
+      const pagoMonto = pagoInfo.monto_total || pagoInfo.monto || 'N/A'
+      
       const autorizacion = confirm(
         '⚠️ YA EXISTE UN PAGO PARA ESTE PERÍODO\n\n' +
-        `Pago ID: ${resultado.pagoExistente.id}\n` +
-        `Monto: Q${resultado.pagoExistente.monto_total}\n\n` +
+        resultado.mensaje + '\n\n' +
         '¿Desea continuar de todas formas?\n' +
         '(Requiere autorización de administrador)'
       )
