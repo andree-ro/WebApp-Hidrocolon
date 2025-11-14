@@ -603,7 +603,8 @@ class ComprobanteGenerator {
                     return new Date(fecha).toLocaleDateString('es-GT', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: 'numeric'
+                        year: 'numeric',
+                        timeZone: 'America/Guatemala'
                     });
                 };
 
@@ -612,7 +613,8 @@ class ComprobanteGenerator {
                     return new Date(fecha).toLocaleDateString('es-GT', {
                         day: 'numeric',
                         month: 'long',
-                        year: 'numeric'
+                        year: 'numeric',
+                        timeZone: 'America/Guatemala'
                     });
                 };
 
