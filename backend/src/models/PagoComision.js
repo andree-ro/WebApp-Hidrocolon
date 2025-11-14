@@ -460,6 +460,23 @@ class PagoComision {
                 ORDER BY dv.producto_nombre
             `, [id]);
 
+            // Obtener rango real de fechas de las ventas incluidas
+
+            const [rangoFechas] = await pool.execute(`
+                SELECT 
+                    MIN(DATE(v.fecha_creacion)) as fecha_min,
+                    MAX(DATE(v.fecha_creacion)) as fecha_max
+                FROM detalle_ventas dv
+                INNER JOIN ventas v ON dv.venta_id = v.id
+                INNER JOIN detalle_pagos_comisiones pcd ON pcd.detalle_venta_id = dv.id
+                WHERE pcd.pago_comision_id = ?
+            `, [id]);
+
+            const fechaInicio = rangoFechas[0]?.fecha_min || pago.fecha_corte;
+            const fechaFin = rangoFechas[0]?.fecha_max || pago.fecha_pago;
+
+            console.log('DEBUG - Rango de fechas real:', { fechaInicio, fechaFin });
+
             console.log('DEBUG - Ventas agrupadas encontradas:', ventasAgrupadas.length);
             console.log('DEBUG - Datos:', JSON.stringify(ventasAgrupadas, null, 2));
 
@@ -472,8 +489,10 @@ class PagoComision {
                 // InformaciÃ³n del pago
                 doctora_nombre: pago.doctora_nombre,
                 fecha_pago: pago.fecha_pago,
-                fecha_inicio: pago.fecha_corte, // Usar fecha_corte como fecha_inicio
-                fecha_fin: pago.fecha_pago,     // Usar fecha_pago como fecha_fin
+                fecha_corte: pago.fecha_corte,
+                // Buscar fechas reales de las ventas
+                fecha_inicio: fechaInicio, // Se llenará abajo
+                fecha_fin: fechaFin,    // Se llenará abajo
                 
                 // Totales
                 monto_total: parseFloat(pago.monto_total),
@@ -856,7 +875,7 @@ class PagoComision {
                 FROM detalle_ventas dv
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL`,
                 [datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]

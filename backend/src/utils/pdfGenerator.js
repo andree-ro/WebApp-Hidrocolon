@@ -620,20 +620,24 @@ class ComprobanteGenerator {
                 // ENCABEZADO
                 // ============================================================
                 doc.fontSize(16).fillColor(colors.primary).font('Helvetica-Bold')
-                   .text('HIDROCOLON XELA - VIMESA', margin, y, { align: 'center', width: contentWidth });
+                .text('HIDROCOLON XELA - VIMESA', margin, y, { align: 'center', width: contentWidth });
                 y += 22;
-                
+
                 doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
                 y += 20;
-                
+
+                // RANGO DE FECHAS EN MAYÚSCULAS
+                const fechaInicioStr = formatearFechaLarga(datosPDF.fecha_inicio).toUpperCase();
+                const fechaFinStr = formatearFechaLarga(datosPDF.fecha_fin).toUpperCase();
+
                 doc.fontSize(11).fillColor(colors.text).font('Helvetica')
-                   .text(`DEL ${formatearFechaLarga(datosPDF.fecha_pago)}`, margin, y, { align: 'center', width: contentWidth });
+                .text(`DEL ${fechaInicioStr} AL ${fechaFinStr}`, margin, y, { align: 'center', width: contentWidth });
                 y += 18;
-                
+
                 doc.fontSize(12).font('Helvetica-Bold')
-                   .text(datosPDF.doctora_nombre.toUpperCase(), margin, y, { align: 'center', width: contentWidth });
+                .text(datosPDF.doctora_nombre.toUpperCase(), margin, y, { align: 'center', width: contentWidth });
                 y += 30;
-                
+
                 doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke(colors.border);
                 y += 20;
 
@@ -723,12 +727,13 @@ class ComprobanteGenerator {
                 y += 15;
                 
                 const montoEnLetras = formatearMoneda(datosPDF.monto_total);
-                const fechaCorte = formatearFechaLarga(datosPDF.fecha_inicio);
+                const fechaInicioTexto = formatearFechaLarga(datosPDF.fecha_inicio).toUpperCase();
+                const fechaFinTexto = formatearFechaLarga(datosPDF.fecha_fin).toUpperCase();
                 const fechaHoy = formatearFechaLarga(new Date());
 
                 doc.fontSize(9).fillColor(colors.text).font('Helvetica')
                    .text(
-                       `RECIBÍ DE VIMESA LA CANTIDAD DE ${montoEnLetras} EN CONCEPTO DE COMISIONES POR VENTAS Y SERVICIOS REALIZADOS EL ${fechaCorte} DE ACUERDO AL DETALLE ANTERIOR.`,
+                       `RECIBÍ DE VIMESA LA CANTIDAD DE ${montoEnLetras} EN CONCEPTO DE COMISIONES POR VENTAS Y SERVICIOS REALIZADOS DEL ${fechaInicioTexto} AL ${fechaFinTexto} DE ACUERDO AL DETALLE ANTERIOR.`,
                        margin,
                        y,
                        { width: contentWidth, align: 'justify' }
