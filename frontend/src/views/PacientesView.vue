@@ -679,11 +679,15 @@
 
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCarritoStore } from '@/store/carritoStore'
 import pacientesService from '@/services/pacientesService'
 
 export default {
   name: 'PacientesView',
   setup() {
+    const router = useRouter()
+    const carritoStore = useCarritoStore()
     // Estado reactivo
     const pacientes = ref([])
     const loading = ref(false)
@@ -830,10 +834,19 @@ export default {
 
         if (response.success) {
           mensaje.value = response.message
+          
+          // Si es un paciente nuevo (no es edición), regresar al carrito
+          if (!modalEditando.value) {
+            carritoStore.setPaciente(response.data)
+            alert('✅ Paciente creado exitosamente y seleccionado en el carrito')
+            router.push('/carrito')
+            return
+          }
+          
+          // Si es edición, comportamiento normal
           cerrarModal()
           await cargarPacientes()
           await cargarEstadisticas()
-          // Limpiar cache después de cambios
           pacientesService.limpiarCache()
         } else {
           error.value = response.message || 'Error guardando paciente'

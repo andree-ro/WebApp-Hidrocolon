@@ -67,6 +67,13 @@
                 </button>
               </div>
             </div>
+
+            <button 
+              @click="$router.push('/pacientes')"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              + Nuevo Cliente
+            </button>
             
             <button 
               v-if="carritoStore.pacienteSeleccionado"
@@ -128,6 +135,7 @@
           <input
             v-model="busquedaProducto"
             @input="buscarProductos"
+            :disabled="!carritoStore.pacienteSeleccionado"
             type="text"
             placeholder="Buscar productos..."
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -194,14 +202,14 @@
                 
                 <div class="flex items-center gap-2">
                   <button
-                    @click="carritoStore.actualizarCantidad(item.id, item.cantidad - 1)"
+                    @click="cambiarCantidad(item.id, item.cantidad - 1)"
                     class="w-8 h-8 bg-gray-100 rounded hover:bg-gray-200"
                   >
                     -
                   </button>
                   <span class="w-12 text-center font-medium">{{ item.cantidad }}</span>
                   <button
-                    @click="carritoStore.actualizarCantidad(item.id, item.cantidad + 1)"
+                    @click="cambiarCantidad(item.id, item.cantidad + 1)"
                     class="w-8 h-8 bg-gray-100 rounded hover:bg-gray-200"
                   >
                     +
@@ -218,7 +226,7 @@
               
               <div class="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
                 <span class="text-sm text-gray-600">Subtotal:</span>
-                <span class="font-semibold text-gray-900">Q{{ item.subtotal.toFixed(2) }}</span>
+                <span class="font-semibold text-gray-900">Q{{ formatearNumero(item.subtotal) }}</span>
               </div>
             </div>
           </div>
@@ -239,7 +247,7 @@
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-gray-600">Subtotal:</span>
-              <span class="font-medium">Q{{ carritoStore.subtotal.toFixed(2) }}</span>
+              <span class="font-medium">Q{{ formatearNumero(carritoStore.subtotal) }}</span>
             </div>
             
             <!-- FIX: Descuento requiere contraseña admin -->
@@ -262,7 +270,7 @@
             <div class="border-t border-gray-200 pt-2 mt-2">
               <div class="flex justify-between text-lg font-bold">
                 <span class="text-gray-900">Total:</span>
-                <span class="text-blue-600">Q{{ carritoStore.total.toFixed(2) }}</span>
+                <span class="text-blue-600">Q{{ formatearNumero(carritoStore.total) }}</span>
               </div>
             </div>
           </div>
@@ -287,13 +295,16 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Efectivo recibido</label>
               <input
                 v-model.number="carritoStore.montoEfectivo"
-                type="number"
-                step="0.01"
+                type="text"
+                @input="formatearInputEfectivo"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 placeholder="0.00"
               />
-              <div v-if="carritoStore.montoEfectivo >= carritoStore.total" class="mt-1 text-sm text-green-600">
-                Cambio: Q{{ (carritoStore.montoEfectivo - carritoStore.total).toFixed(2) }}
+              <div v-if="carritoStore.montoEfectivo > 0 && carritoStore.montoEfectivo >= carritoStore.total" class="mt-1 text-sm text-green-600">
+                Cambio: Q{{ formatearNumero(carritoStore.montoEfectivo - carritoStore.total) }}
+              </div>
+              <div v-else-if="carritoStore.montoEfectivo > 0 && carritoStore.montoEfectivo < carritoStore.total" class="mt-1 text-sm text-red-600">
+                Falta: Q{{ formatearNumero(carritoStore.total - carritoStore.montoEfectivo) }}
               </div>
             </div>
             
@@ -302,8 +313,8 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">💵 Efectivo</label>
                 <input
                   v-model.number="carritoStore.montoEfectivo"
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  @input="formatearInputEfectivo"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="0.00"
                 />
@@ -329,7 +340,7 @@
                 />
               </div>
               <div class="text-sm">
-                Total ingresado: Q{{ (carritoStore.montoEfectivo + carritoStore.montoTarjeta + carritoStore.montoTransferencia).toFixed(2) }}
+                Total ingresado: Q{{ formatearNumero(carritoStore.montoEfectivo + carritoStore.montoTarjeta + carritoStore.montoTransferencia) }}
               </div>
             </div>
           </div>
@@ -349,7 +360,7 @@
           <div class="mt-4 space-y-2">
             <button
               @click="procesarVenta"
-              :disabled="carritoStore.carritoVacio || procesandoVenta"
+              :disabled="!carritoStore.pacienteSeleccionado || carritoStore.carritoVacio || procesandoVenta"
               class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
             >
               {{ procesandoVenta ? '⏳ Procesando...' : '✅ Procesar Venta (Testing)' }}
@@ -849,6 +860,35 @@ async function procesarVenta() {
     
   } finally {
     procesandoVenta.value = false
+  }
+}
+
+// Función para manejar cambio de cantidad con validación
+function cambiarCantidad(itemId, nuevaCantidad) {
+  const resultado = carritoStore.actualizarCantidad(itemId, nuevaCantidad)
+  
+  if (resultado && !resultado.success) {
+    alert(resultado.message)
+  }
+}
+
+// Función para formatear números con comas
+function formatearNumero(numero) {
+  return numero.toLocaleString('en-US', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  })
+}
+
+// Formatear input de efectivo mientras se escribe
+function formatearInputEfectivo(event) {
+  const valor = event.target.value.replace(/,/g, '')
+  const numero = parseFloat(valor)
+  
+  if (!isNaN(numero)) {
+    carritoStore.montoEfectivo = numero
+  } else {
+    carritoStore.montoEfectivo = 0
   }
 }
 </script>

@@ -74,7 +74,19 @@ export const useCarritoStore = defineStore('carrito', () => {
     
     if (itemExistente) {
       // Incrementar cantidad si ya existe
-      itemExistente.cantidad += producto.cantidad || 1
+      const nuevaCantidad = itemExistente.cantidad + (producto.cantidad || 1)
+      
+      // Validar stock para medicamentos
+      if (itemExistente.tipo_producto === 'medicamento' && itemExistente.existencias !== null) {
+        if (nuevaCantidad > itemExistente.existencias) {
+          return { 
+            success: false, 
+            message: `Stock insuficiente. Solo hay ${itemExistente.existencias} unidades disponibles de "${itemExistente.producto_nombre}"` 
+          }
+        }
+      }
+      
+      itemExistente.cantidad = nuevaCantidad
       itemExistente.subtotal = itemExistente.precio_unitario * itemExistente.cantidad
       console.log('➕ Cantidad incrementada:', itemExistente)
       return { success: true, message: 'Cantidad actualizada' }
@@ -106,20 +118,23 @@ export const useCarritoStore = defineStore('carrito', () => {
   /**
    * Actualizar cantidad de un item
    */
-  function actualizarCantidad(itemId, nuevaCantidad) {
+function actualizarCantidad(itemId, nuevaCantidad) {
     const item = items.value.find(i => i.id === itemId)
-    if (!item) return
+    if (!item) return { success: false, message: 'Item no encontrado' }
     
     if (nuevaCantidad <= 0) {
       eliminarItem(itemId)
-      return
+      return { success: true }
     }
     
     // Validar stock para medicamentos
     if (item.tipo_producto === 'medicamento' && item.existencias !== null) {
       if (nuevaCantidad > item.existencias) {
         console.warn('⚠️ Cantidad solicitada excede el stock disponible')
-        return { success: false, message: 'Stock insuficiente' }
+        return { 
+          success: false, 
+          message: `Stock insuficiente. Solo hay ${item.existencias} unidades disponibles de "${item.producto_nombre}"` 
+        }
       }
     }
     
@@ -263,7 +278,7 @@ export const useCarritoStore = defineStore('carrito', () => {
       efectivo_recibido: efectivoRecibido,
       tarjeta_monto: tarjetaMonto,
       transferencia_monto: transferenciaMonto,
-      cliente_nombre: pacienteSeleccionado.value?.nombre + ' ' + pacienteSeleccionado.value?.apellido || 'Cliente General',
+      cliente_nombre: (pacienteSeleccionado.value?.nombres || pacienteSeleccionado.value?.nombre) + ' ' + (pacienteSeleccionado.value?.apellidos || pacienteSeleccionado.value?.apellido) || 'Cliente General',
       cliente_telefono: pacienteSeleccionado.value?.telefono || null,
       cliente_nit: 'CF',
       cliente_direccion: pacienteSeleccionado.value?.direccion || null,
