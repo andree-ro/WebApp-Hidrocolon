@@ -608,6 +608,7 @@ class PagoComision {
                 WHERE dv.doctora_id = ?
                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
                 AND dv.monto_comision > 0
+                AND dv.pago_comision_id IS NULL
                 ORDER BY dv.producto_nombre, v.fecha_creacion`,
                 [doctoraId, fechaInicio, fechaFin]
             );
@@ -703,42 +704,55 @@ class PagoComision {
     // ============================================================================
     static async validarPagoDuplicado(doctoraId, fechaInicio, fechaFin) {
         try {
-            const [pagos] = await pool.execute(
+            // Verificar si hay ventas en el rango que ya tienen pago_comision_id
+            const [ventasPagadas] = await pool.execute(
                 `SELECT 
-                    pc.id,
+                    DATE(v.fecha_creacion) as fecha_venta,
+                    dv.producto_nombre,
+                    dv.monto_comision,
+                    pc.id as pago_id,
                     pc.fecha_pago,
-                    pc.fecha_corte,
-                    pc.monto_total,
-                    pc.estado,
                     CONCAT(u.nombres, ' ', u.apellidos) as usuario_registro
-                FROM pagos_comisiones pc
+                FROM detalle_ventas dv
+                INNER JOIN ventas v ON dv.venta_id = v.id
+                LEFT JOIN pagos_comisiones pc ON dv.pago_comision_id = pc.id
                 LEFT JOIN usuarios u ON pc.usuario_registro_id = u.id
-                WHERE pc.doctora_id = ?
+                WHERE dv.doctora_id = ?
+                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND dv.pago_comision_id IS NOT NULL
                 AND pc.estado != 'anulado'
-                AND (
-                    (DATE(pc.fecha_corte) BETWEEN ? AND ?)
-                    OR (? BETWEEN DATE(pc.fecha_corte) AND DATE(pc.fecha_pago))
-                    OR (? BETWEEN DATE(pc.fecha_corte) AND DATE(pc.fecha_pago))
-                )
-                ORDER BY pc.fecha_pago DESC
-                LIMIT 1`,
-                [doctoraId, fechaInicio, fechaFin, fechaInicio, fechaFin]
+                ORDER BY v.fecha_creacion ASC
+                LIMIT 10`,
+                [doctoraId, fechaInicio, fechaFin]
             );
 
-            if (pagos.length > 0) {
+            if (ventasPagadas.length > 0) {
+                // Obtener el rango de fechas que ya están pagadas
+                const fechasPagadas = ventasPagadas.map(v => v.fecha_venta);
+                const primeraFechaPagada = fechasPagadas[0];
+                const ultimaFechaPagada = fechasPagadas[fechasPagadas.length - 1];
+                
                 return {
                     existe_pago: true,
-                    pago: pagos[0]
+                    pago: ventasPagadas[0],
+                    detalles: {
+                        cantidad_ventas_pagadas: ventasPagadas.length,
+                        primera_fecha_pagada: primeraFechaPagada,
+                        ultima_fecha_pagada: ultimaFechaPagada,
+                        ventas_pagadas: ventasPagadas
+                    },
+                    mensaje: `Ya existen ventas pagadas en este rango. Se encontraron ${ventasPagadas.length} ventas pagadas entre ${primeraFechaPagada} y ${ultimaFechaPagada}. Pago ID: ${ventasPagadas[0].pago_id}, registrado el ${ventasPagadas[0].fecha_pago}.`
                 };
             }
 
             return {
                 existe_pago: false,
-                pago: null
+                pago: null,
+                mensaje: 'No hay ventas pagadas en este rango'
             };
 
         } catch (error) {
-            console.error('âŒ Error validando pago duplicado:', error);
+            console.error('❌ Error validando pago duplicado:', error);
             throw error;
         }
     }

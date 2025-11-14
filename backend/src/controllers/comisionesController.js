@@ -650,9 +650,9 @@ const pagarComisionesConRango = async (req, res) => {
             if (validacion.existe_pago) {
                 return res.status(409).json({
                     success: false,
-                    message: 'Ya existe un pago registrado para este período',
+                    message: validacion.mensaje || 'Ya existe un pago en este rango',
                     requiere_autorizacion: true,
-                    pago_existente: validacion.pago
+                    detalles: validacion.detalles
                 });
             }
         }
