@@ -665,7 +665,7 @@ class PagoComision {
             // Convertir Map a Array y calcular totales
             const productos = Array.from(productosMap.values()).map(prod => {
                 const total_ventas = prod.total_cantidad * prod.precio;
-                const total_comision = prod.total_cantidad * prod.porcentaje_comision;
+                const total_comision = (total_ventas * prod.porcentaje_comision) / 100;
                 
                 return {
                     ...prod,
