@@ -265,19 +265,31 @@ function contarVentasPorDia(fecha) {
  */
 function formatearFechaCorta(fecha) {
   if (!fecha) return '-'
-  const date = new Date(fecha)
+  
+  // Parsear fecha asumiendo que viene en formato YYYY-MM-DD
+  const [year, month, day] = fecha.split('T')[0].split('-')
+  
+  // Crear fecha con los valores específicos (mes es 0-indexed)
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  
   const dia = String(date.getDate()).padStart(2, '0')
   const mes = String(date.getMonth() + 1).padStart(2, '0')
   const año = date.getFullYear()
+  
   return `${dia}/${mes}/${año}`
 }
-
 /**
  * Formatea fecha larga
  */
 function formatearFecha(fecha) {
   if (!fecha) return '-'
-  const date = new Date(fecha)
+  
+  // Parsear fecha asumiendo que viene en formato YYYY-MM-DD
+  const [year, month, day] = fecha.split('T')[0].split('-')
+  
+  // Crear fecha con los valores específicos (mes es 0-indexed)
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  
   return date.toLocaleDateString('es-ES', { 
     weekday: 'short',
     day: '2-digit', 

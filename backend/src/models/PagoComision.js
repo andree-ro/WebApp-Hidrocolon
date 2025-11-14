@@ -668,7 +668,7 @@ class PagoComision {
                 }
                 
                 const producto = productosMap.get(key);
-                const fechaKey = venta.fecha_venta;
+                const fechaKey = new Date(venta.fecha_venta).toISOString().split('T')[0];
                 
                 if (!producto.ventas_por_dia[fechaKey]) {
                     producto.ventas_por_dia[fechaKey] = {
