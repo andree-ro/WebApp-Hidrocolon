@@ -601,15 +601,15 @@ class PagoComision {
         }
     }
 
-    // ============================================================================
-    // OBTENER VENTAS AGRUPADAS POR DÃA Y PRODUCTO (PARA REPORTE)
+// ============================================================================
+    // OBTENER VENTAS AGRUPADAS POR DÍA Y PRODUCTO (PARA REPORTE)
     // ============================================================================
     static async obtenerVentasAgrupadasPorDiaYProducto(doctoraId, fechaInicio, fechaFin) {
         try {
-            console.log(`ðŸ“Š Obteniendo ventas agrupadas para doctora ID: ${doctoraId}`);
+            console.log(`📊 Obteniendo ventas agrupadas para doctora ID: ${doctoraId}`);
             console.log(`   Rango: ${fechaInicio} a ${fechaFin}`);
 
-            // Obtener todas las ventas del perÃ­odo
+            // Obtener todas las ventas del período
             const [ventas] = await pool.execute(
                 `SELECT 
                     dv.producto_nombre,
@@ -625,7 +625,7 @@ class PagoComision {
                 FROM detalle_ventas dv
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL
                 ORDER BY dv.producto_nombre, v.fecha_creacion`,
@@ -647,7 +647,7 @@ class PagoComision {
             // Verificar si alguna venta ya fue pagada
             const tiene_pagos_previos = ventas.some(v => v.pago_comision_id !== null);
 
-            // Obtener fechas Ãºnicas ordenadas
+            // Obtener fechas únicas ordenadas
             const fechasUnicas = [...new Set(ventas.map(v => v.fecha_venta))].sort();
             
             // Agrupar por producto
@@ -700,7 +700,7 @@ class PagoComision {
                 total_comisiones: productos.reduce((sum, p) => sum + p.total_comision, 0)
             };
 
-            console.log(`âœ… Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} dÃ­as`);
+            console.log(`✅ Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} días`);
 
             return {
                 productos,
@@ -713,7 +713,7 @@ class PagoComision {
             };
 
         } catch (error) {
-            console.error('âŒ Error obteniendo ventas agrupadas:', error);
+            console.error('❌ Error obteniendo ventas agrupadas:', error);
             throw error;
         }
     }
@@ -779,14 +779,14 @@ class PagoComision {
     
 
 
-    // ============================================================================
+// ============================================================================
     // REGISTRAR PAGO CON RANGO DE FECHAS (NUEVO FORMATO)
     // ============================================================================
     static async registrarPagoConRango(datos) {
         let connection;
         
         try {
-            console.log(`ðŸ’³ Registrando pago de comisiones con rango de fechas`);
+            console.log(`💳 Registrando pago de comisiones con rango de fechas`);
             console.log(`   Doctora ID: ${datos.doctora_id}`);
             console.log(`   Rango: ${datos.fecha_inicio} a ${datos.fecha_fin}`);
 
@@ -799,7 +799,7 @@ class PagoComision {
             if (!datos.fecha_fin) throw new Error('La fecha de fin es requerida');
             if (!datos.usuario_registro_id) throw new Error('El ID del usuario es requerido');
 
-            // Validar que no exista un pago previo (a menos que tenga autorizaciÃ³n)
+            // Validar que no exista un pago previo (a menos que tenga autorización)
             if (!datos.autorizado_por_admin) {
                 const validacion = await this.validarPagoDuplicado(
                     datos.doctora_id,
@@ -809,9 +809,9 @@ class PagoComision {
 
                 if (validacion.existe_pago) {
                     throw new Error(
-                        `Ya existe un pago registrado para este perÃ­odo. ` +
+                        `Ya existe un pago registrado para este período. ` +
                         `Pago ID: ${validacion.pago.id}, Fecha: ${validacion.pago.fecha_pago}. ` +
-                        `Se requiere autorizaciÃ³n de administrador.`
+                        `Se requiere autorización de administrador.`
                     );
                 }
             }
@@ -859,8 +859,8 @@ class PagoComision {
 
             const pagoComisionId = resultPago.insertId;
 
-            // âœ… INSERTAR DETALLES EN detalle_pagos_comisiones
-            console.log('ðŸ“ Insertando detalles en detalle_pagos_comisiones...');
+            // ✅ INSERTAR DETALLES EN detalle_pagos_comisiones
+            console.log('📝 Insertando detalles en detalle_pagos_comisiones...');
             
             const [detallesVentas] = await connection.execute(
                 `SELECT 
@@ -881,7 +881,7 @@ class PagoComision {
                 [datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
             );
 
-            console.log(`ðŸ“ ${detallesVentas.length} detalles encontrados para insertar`);
+            console.log(`📝 ${detallesVentas.length} detalles encontrados para insertar`);
 
             // Insertar cada detalle
             for (const detalle of detallesVentas) {
@@ -911,7 +911,7 @@ class PagoComision {
                 );
             }
 
-            console.log(`${detallesVentas.length} detalles insertados en detalle_pagos_comisiones`);
+            console.log(`✅ ${detallesVentas.length} detalles insertados en detalle_pagos_comisiones`);
 
             // Marcar todas las ventas como pagadas
             await connection.execute(
@@ -919,7 +919,7 @@ class PagoComision {
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 SET dv.pago_comision_id = ?
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL`,
                 [pagoComisionId, datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
@@ -937,7 +937,7 @@ class PagoComision {
 
             await connection.commit();
 
-            console.log(`âœ… Pago registrado exitosamente - ID: ${pagoComisionId}`);
+            console.log(`✅ Pago registrado exitosamente - ID: ${pagoComisionId}`);
 
             return {
                 pago_id: pagoComisionId,
@@ -949,14 +949,12 @@ class PagoComision {
 
         } catch (error) {
             if (connection) await connection.rollback();
-            console.error('âŒ Error registrando pago con rango:', error);
+            console.error('❌ Error registrando pago con rango:', error);
             throw error;
         } finally {
             if (connection) connection.release();
         }
     }
-
-
 }
 
 module.exports = PagoComision;
