@@ -47,7 +47,7 @@ class ComprobanteGenerator {
                 
                 doc.fontSize(8)
                 .font('Helvetica-Bold')
-                .text('Factura:', 40, startY);
+                .text('Comprobante:', 40, startY);
                 doc.font('Helvetica')
                 .text(venta.numero_factura, 100, startY);
 
@@ -216,7 +216,7 @@ class ComprobanteGenerator {
                 const contentWidth = pageWidth - (margin * 2);
                 let y = margin;
 
-                // Colores
+// Colores
                 const colors = {
                     primary: '#2563eb',
                     secondary: '#64748b',
@@ -225,7 +225,12 @@ class ComprobanteGenerator {
                     error: '#dc2626',
                     text: '#1e293b',
                     lightGray: '#f1f5f9',
-                    border: '#cbd5e1'
+                    border: '#cbd5e1',
+                    // Nuevos colores para los cierres
+                    cierreConImpuestos: '#1e40af',      // Azul oscuro
+                    fondoCierreConImpuestos: '#dbeafe', // Azul claro
+                    cierreNeto: '#15803d',              // Verde oscuro
+                    fondoCierreNeto: '#dcfce7'          // Verde claro
                 };
 
                 // Funciones auxiliares
@@ -413,8 +418,11 @@ class ComprobanteGenerator {
                 // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
                 // ============================================================
                 y = nuevaPaginaSiNecesario(200);
-                y = agregarSeccionHeader('CIERRE (CON IMPUESTOS)', y);
-                y += 15;
+                // Encabezado con color azul oscuro
+                doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreConImpuestos, colors.cierreConImpuestos);
+                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
+                .text('CIERRE (CON IMPUESTOS)', margin + 10, y + 8);
+                y += 25;
 
                 // Datos de entrada
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
@@ -458,13 +466,17 @@ class ComprobanteGenerator {
                 resultadosCrudo.forEach(([label, value], idx) => {
                     const esFinal = idx === resultadosCrudo.length - 1;
                     if (esFinal) {
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
-                        doc.fillColor(colors.primary).font('Helvetica-Bold');
+                        // Resultado final con fondo azul claro y borde azul oscuro
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke(colors.fondoCierreConImpuestos, colors.cierreConImpuestos);
+                        doc.lineWidth(2);
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.cierreConImpuestos);
+                        doc.lineWidth(1);
+                        doc.fillColor(colors.cierreConImpuestos).font('Helvetica-Bold').fontSize(11);
                     }
-                    doc.text(label, margin + 25, y, { width: 200 });
-                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica');
-                    y += esFinal ? 20 : 14;
+                    doc.text(label, margin + 25, y + (esFinal ? 5 : 0), { width: 200 });
+                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica').fontSize(9);
+                    y += esFinal ? 30 : 14;
                 });
 
                 y += 15;
@@ -473,8 +485,11 @@ class ComprobanteGenerator {
                 // SECCIÓN 3: CIERRE NETO (CON IMPUESTOS)
                 // ============================================================
                 y = nuevaPaginaSiNecesario(250);
-                y = agregarSeccionHeader('CIERRE NETO (SIN IMPUESTOS)', y);
-                y += 15;
+                // Encabezado con color verde oscuro
+                doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreNeto, colors.cierreNeto);
+                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
+                .text('CIERRE NETO (SIN IMPUESTOS)', margin + 10, y + 8);
+                y += 25;
 
                 // Ingresos netos
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
@@ -492,13 +507,17 @@ class ComprobanteGenerator {
                 ingresosNetos.forEach(([label, value], idx) => {
                     const esFinal = idx === ingresosNetos.length - 1;
                     if (esFinal) {
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
-                        doc.fillColor(colors.success).font('Helvetica-Bold');
+                        // Total con fondo verde claro y borde verde oscuro
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke(colors.fondoCierreNeto, colors.cierreNeto);
+                        doc.lineWidth(2);
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.cierreNeto);
+                        doc.lineWidth(1);
+                        doc.fillColor(colors.cierreNeto).font('Helvetica-Bold').fontSize(11);
                     }
-                    doc.fillColor(esFinal ? colors.success : colors.text).text(label, margin + 25, y, { width: 200 });
-                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica');
-                    y += esFinal ? 20 : 14;
+                    doc.fillColor(esFinal ? colors.cierreNeto : colors.text).text(label, margin + 25, y + (esFinal ? 5 : 0), { width: 200 });
+                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica').fontSize(9);
+                    y += esFinal ? 30 : 14;
                 });
 
                 y += 15;
@@ -529,14 +548,18 @@ class ComprobanteGenerator {
                     const esSubtotal = label.startsWith('  -');
                     
                     if (esFinal) {
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 18).fillAndStroke(colors.lightGray, colors.border);
-                        doc.fillColor(colors.error).font('Helvetica-Bold');
+                        // Total deducciones con fondo rojo claro y borde rojo
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke('#fee2e2', colors.error);
+                        doc.lineWidth(2);
+                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.error);
+                        doc.lineWidth(1);
+                        doc.fillColor(colors.error).font('Helvetica-Bold').fontSize(11);
                     }
                     
-                    doc.fillColor(esFinal ? colors.error : colors.text).text(label, margin + (esSubtotal ? 35 : 25), y, { width: 200 });
-                    doc.text(value, margin + 240, y, { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica');
-                    y += esFinal ? 20 : 14;
+                    doc.fillColor(esFinal ? colors.error : colors.text).text(label, margin + (esSubtotal ? 35 : 25), y + (esFinal ? 5 : 0), { width: 200 });
+                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
+                    if (!esFinal) doc.font('Helvetica').fontSize(9);
+                    y += esFinal ? 30 : 14;
                 });
 
                 y += 15;
@@ -546,11 +569,16 @@ class ComprobanteGenerator {
                 .text('Resultado Final:', margin, y);
                 y += 18;
 
-                doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke('#ecfdf5', '#10b981');
-                doc.fontSize(11).fillColor(colors.success).font('Helvetica-Bold')
-                .text('RESULTADO NETO', margin + 25, y + 5, { width: 200 });
-                doc.fontSize(12).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 5, { width: 100, align: 'right' });
-                y += 30;
+                // RESULTADO NETO - MUY VISTOSO con borde grueso y fondo verde brillante
+                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).fillAndStroke(colors.fondoCierreNeto, colors.cierreNeto);
+                doc.lineWidth(3);
+                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).stroke(colors.cierreNeto);
+                doc.lineWidth(1);
+                
+                doc.fontSize(14).fillColor(colors.cierreNeto).font('Helvetica-Bold')
+                .text('RESULTADO NETO', margin + 25, y + 10, { width: 200 });
+                doc.fontSize(16).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 9, { width: 120, align: 'right' });
+                y += 40;
 
 
 
