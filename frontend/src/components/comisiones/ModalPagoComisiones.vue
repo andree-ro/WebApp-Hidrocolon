@@ -490,7 +490,12 @@ function formatearFecha(fecha) {
 function formatearFechaTabla(fecha) {
   if (!fecha) return '-'
   
-  const date = new Date(fecha)
+  // Parsear fecha asumiendo que viene en formato YYYY-MM-DD
+  const [year, month, day] = fecha.split('T')[0].split('-')
+  
+  // Crear fecha con los valores específicos (mes es 0-indexed)
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  
   const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
   

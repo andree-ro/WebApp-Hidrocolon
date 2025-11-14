@@ -72,8 +72,8 @@ class PagoComision {
                     d.nombre,
                     COUNT(DISTINCT dv.venta_id) as cantidad_ventas,
                     COALESCE(SUM(dv.monto_comision), 0) as monto_pendiente,
-                    MIN(v.fecha_creacion) as fecha_primera_venta,
-                    MAX(v.fecha_creacion) as fecha_ultima_venta
+                    DATE(MIN(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00'))) as fecha_primera_venta,
+                    DATE(MAX(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00'))) as fecha_ultima_venta
                 FROM doctoras d
                 INNER JOIN detalle_ventas dv ON d.id = dv.doctora_id 
                     AND dv.doctora_id IS NOT NULL 
