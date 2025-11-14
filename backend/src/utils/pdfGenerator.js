@@ -575,9 +575,11 @@ class ComprobanteGenerator {
                 doc.rect(margin + 15, y - 2, contentWidth - 30, 35).stroke(colors.cierreNeto);
                 doc.lineWidth(1);
                 
+                const resultadoNeto = datosReporte.impuestos.total_ventas_netas - totalDeducciones;
+                
                 doc.fontSize(14).fillColor(colors.cierreNeto).font('Helvetica-Bold')
                 .text('RESULTADO NETO', margin + 25, y + 10, { width: 200 });
-                doc.fontSize(16).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 9, { width: 120, align: 'right' });
+                doc.fontSize(16).text(formatearMoneda(resultadoNeto), margin + 240, y + 9, { width: 120, align: 'right' });
                 y += 45;
 
                 // ============================================================
