@@ -595,7 +595,7 @@ class ComprobanteGenerator {
                 y += 15;
 
                 // Desglose
-                const ventasServicios = datosReporte.deposito.total_a_depositar || 0;
+                const ventasServicios = resultadoNeto;
                 const impuestosTotal = datosReporte.impuestos.total_impuestos || 0;
                 const totalDepositarEfectivo = ventasServicios + impuestosTotal;
 
