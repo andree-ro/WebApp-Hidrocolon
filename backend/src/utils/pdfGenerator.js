@@ -578,11 +578,47 @@ class ComprobanteGenerator {
                 doc.fontSize(14).fillColor(colors.cierreNeto).font('Helvetica-Bold')
                 .text('RESULTADO NETO', margin + 25, y + 10, { width: 200 });
                 doc.fontSize(16).text(formatearMoneda(datosReporte.deposito.total_a_depositar), margin + 240, y + 9, { width: 120, align: 'right' });
+                y += 45;
+
+                // ============================================================
+                // TOTAL A DEPOSITAR EFECTIVO
+                // ============================================================
+                y = nuevaPaginaSiNecesario(100);
+                
+                // Encabezado con color turquesa/cyan
+                doc.rect(margin, y, contentWidth, 25).fillAndStroke('#14b8a6', '#14b8a6');
+                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
+                .text('TOTAL A DEPOSITAR EFECTIVO', margin + 10, y + 8);
+                y += 25;
+                y += 15;
+
+                // Desglose
+                const ventasServicios = datosReporte.deposito.total_a_depositar || 0;
+                const impuestosTotal = datosReporte.impuestos.total_impuestos || 0;
+                const totalDepositarEfectivo = ventasServicios + impuestosTotal;
+
+                doc.fontSize(10).fillColor(colors.text).font('Helvetica');
+                
+                // Ventas/Servicios
+                doc.text('Ventas/Servicios', margin + 25, y, { width: 200 });
+                doc.fillColor(colors.text).font('Helvetica-Bold').text(formatearMoneda(ventasServicios), margin + 240, y, { width: 100, align: 'right' });
+                y += 18;
+
+                // Impuestos
+                doc.fillColor(colors.text).font('Helvetica').text('Impuestos', margin + 25, y, { width: 200 });
+                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(impuestosTotal), margin + 240, y, { width: 100, align: 'right' });
+                y += 25;
+
+                // Total a depositar - MUY VISTOSO
+                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).fillAndStroke('#ccfbf1', '#14b8a6');
+                doc.lineWidth(3);
+                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).stroke('#14b8a6');
+                doc.lineWidth(1);
+                
+                doc.fontSize(14).fillColor('#14b8a6').font('Helvetica-Bold')
+                .text('TOTAL A DEPOSITAR', margin + 25, y + 10, { width: 200 });
+                doc.fontSize(16).text(formatearMoneda(totalDepositarEfectivo), margin + 240, y + 9, { width: 120, align: 'right' });
                 y += 40;
-
-
-
-                // ⭐ ELIMINADO: Todo el pie de página
 
                 doc.end();
             } catch (error) {
