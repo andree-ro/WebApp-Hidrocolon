@@ -617,15 +617,16 @@ class PagoComision {
                     dv.porcentaje_comision,
                     dv.cantidad,
                     dv.monto_comision,
-                    DATE(v.fecha_creacion) as fecha_venta,
-                    DAYNAME(v.fecha_creacion) as dia_semana,
-                    DAY(v.fecha_creacion) as dia_mes,
-                    MONTH(v.fecha_creacion) as mes,
+                    DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) as fecha_venta,
+                    DAYNAME(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) as dia_semana,
+                    DAY(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) as dia_mes,
+                    MONTH(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) as mes,
                     dv.pago_comision_id
                 FROM detalle_ventas dv
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) >= ? 
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL
                 ORDER BY dv.producto_nombre, v.fecha_creacion`,
@@ -875,7 +876,8 @@ class PagoComision {
                 FROM detalle_ventas dv
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) >= ? 
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL`,
                 [datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]
@@ -919,7 +921,8 @@ class PagoComision {
                 INNER JOIN ventas v ON dv.venta_id = v.id
                 SET dv.pago_comision_id = ?
                 WHERE dv.doctora_id = ?
-                AND DATE(v.fecha_creacion) >= ? AND DATE(v.fecha_creacion) <= ?
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) >= ? 
+                AND DATE(CONVERT_TZ(v.fecha_creacion, '+00:00', '-06:00')) <= ?
                 AND dv.monto_comision > 0
                 AND dv.pago_comision_id IS NULL`,
                 [pagoComisionId, datos.doctora_id, datos.fecha_inicio, datos.fecha_fin]

@@ -173,6 +173,5 @@ console.log('   GET    /api/comisiones/pago/:id - Obtener pago específico');
 console.log('   GET    /api/comisiones/pdf/:id/datos - Datos para PDF');
 console.log('   POST   /api/comisiones/pdf/:id/generar - Generar PDF');
 console.log('   DELETE /api/comisiones/pago/:id/anular - Anular pago');
-router.get('/debug/doctora/:doctora_id/ventas', comisionesController.debugVentasDoctora);
 
 module.exports = router;

@@ -882,47 +882,6 @@ function convertirCentenas(num) {
 }
 
 
-// ============================================================================
-// 🔍 DEBUG: VERIFICAR VENTAS DE DOCTORA
-// ============================================================================
-const debugVentasDoctora = async (req, res) => {
-    try {
-        const { doctora_id } = req.params;
-        const { pool } = require('../config/database');
-
-        const [ventas] = await pool.execute(`
-            SELECT 
-                dv.id,
-                dv.producto_nombre,
-                v.fecha_creacion,
-                DATE(v.fecha_creacion) as fecha_solo,
-                dv.monto_comision,
-                dv.pago_comision_id,
-                dv.doctora_id
-            FROM detalle_ventas dv
-            INNER JOIN ventas v ON dv.venta_id = v.id
-            WHERE dv.doctora_id = ?
-            AND dv.monto_comision > 0
-            ORDER BY v.fecha_creacion DESC
-            LIMIT 10
-        `, [doctora_id]);
-
-        res.json({
-            success: true,
-            doctora_id: doctora_id,
-            total_ventas: ventas.length,
-            ventas: ventas
-        });
-
-    } catch (error) {
-        console.error('❌ Error en debug:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-}
-
 module.exports = {
     obtenerDashboard,
     obtenerDetalleComisionesDoctora,
@@ -936,5 +895,4 @@ module.exports = {
     verificarComisionesAcumuladas,
     obtenerVentasAgrupadasParaReporte,
     pagarComisionesConRango,
-    debugVentasDoctora
 };
