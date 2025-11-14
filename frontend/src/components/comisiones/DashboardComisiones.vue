@@ -75,11 +75,7 @@
                 <span class="flex items-center gap-1">
                   📦 {{ doctora.cantidad_ventas }} ventas
                 </span>
-                <span v-if="doctora.fecha_primera_venta" class="flex items-center gap-1">
-                  📅 {{ formatearFechaCorta(doctora.fecha_primera_venta) }} 
-                  - 
-                  {{ formatearFechaCorta(doctora.fecha_ultima_venta) }}
-                </span>
+
               </div>
             </div>
             

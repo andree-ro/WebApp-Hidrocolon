@@ -279,6 +279,7 @@
                       👁️
                     </button>
                     <button
+                      v-if="puedeEditar('pacientes')"
                       @click="abrirModalEditar(paciente)"
                       class="w-8 h-8 rounded-full bg-green-100 hover:bg-green-200 text-green-700 flex items-center justify-center transition-colors"
                       title="Editar paciente"
@@ -286,6 +287,7 @@
                       ✏️
                     </button>
                     <button
+                      v-if="puedeEliminar('pacientes')"
                       @click="eliminarPaciente(paciente)"
                       class="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-700 flex items-center justify-center transition-colors"
                       title="Eliminar paciente"
@@ -682,12 +684,14 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCarritoStore } from '@/store/carritoStore'
 import pacientesService from '@/services/pacientesService'
+import { usePermisos } from '@/composables/usePermisos'
 
 export default {
   name: 'PacientesView',
   setup() {
     const router = useRouter()
     const carritoStore = useCarritoStore()
+    const { puedeEditar, puedeEliminar } = usePermisos()
     // Estado reactivo
     const pacientes = ref([])
     const loading = ref(false)
@@ -1243,6 +1247,8 @@ export default {
       formulario,
       error,
       mensaje,
+      puedeEditar,
+      puedeEliminar,
 
       // Métodos
       abrirModalNuevo,

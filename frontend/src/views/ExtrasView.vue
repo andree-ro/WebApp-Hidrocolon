@@ -235,6 +235,7 @@
 
                     <!-- Editar -->
                     <button
+                      v-if="puedeEditar('extras')"
                       @click="abrirModalEditar(extra)"
                       class="btn-icon btn-green"
                       title="Editar extra"
@@ -253,6 +254,7 @@
 
                     <!-- Eliminar -->
                     <button
+                      v-if="puedeEliminar('extras')"
                       @click="eliminarExtra(extra)"
                       class="btn-icon btn-red"
                       title="Eliminar extra"
@@ -564,9 +566,15 @@
 
 <script>
 import extrasService from '@/services/extrasService'
+import { usePermisos } from '@/composables/usePermisos'
 
 export default {
   name: 'ExtrasView',
+
+  setup() {
+    const { puedeEditar, puedeEliminar } = usePermisos()
+    return { puedeEditar, puedeEliminar }
+  },
   
   data() {
     return {

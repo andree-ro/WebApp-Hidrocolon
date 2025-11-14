@@ -16,6 +16,7 @@ import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
 import PacientesView from '@/views/PacientesView.vue'
 import FinancieroView from '@/views/FinancieroView.vue'
+import UsuariosView from '@/views/UsuariosView.vue'
 
 // =====================================
 // DEFINIR RUTAS - INCLUYENDO PACIENTES Y CARRITO
@@ -147,9 +148,23 @@ const routes = [
     component: FinancieroView,
     meta: { 
       requiresAuth: true,
-      title: 'MÃ³dulo Financiero - Sistema Hidrocolon',
+      title: 'Módulo Financiero - Sistema Hidrocolon',
       breadcrumb: 'Financiero',
       description: 'Control de turnos, caja y finanzas'
+    }
+  },
+
+    // Módulo Usuarios (solo administradores)
+  {
+    path: '/usuarios',
+    name: 'Usuarios',
+    component: UsuariosView,
+    meta: { 
+      requiresAuth: true,
+      adminOnly: true,
+      title: 'Gestión de Usuarios - Sistema Hidrocolon',
+      breadcrumb: 'Usuarios',
+      description: 'Administración de usuarios y roles del sistema'
     }
   },
 

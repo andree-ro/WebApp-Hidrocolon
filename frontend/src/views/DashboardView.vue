@@ -155,7 +155,7 @@
                   </a>
                 </li>
                 <li v-if="isAdmin">
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
+                  <a href="#" @click.prevent="navegarA('usuarios')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
                     <span class="text-lg mr-3">👤</span>
                     Usuarios
                   </a>
@@ -301,10 +301,11 @@ export default {
       return this.user?.nombres || 'Usuario'
     },
     userRole() {
-      return this.user?.rol?.nombre || 'Sin rol'
+      return this.user?.rol_nombre || this.user?.rol?.nombre || 'Sin rol'
     },
     isAdmin() {
-      return this.user?.rol?.nombre === 'administrador'
+      const rolNombre = this.user?.rol_nombre || this.user?.rol?.nombre
+      return rolNombre === 'administrador'
     },
     lastLoginFormatted() {
       if (!this.user?.ultimo_login) return 'N/A'
@@ -601,6 +602,9 @@ export default {
         case 'financiero':
           // Por implementar
           console.log('💰 Módulo financiero en desarrollo')
+          break
+        case 'usuarios':
+          this.$router.push('/usuarios')
           break
         default:
           console.log('❓ Módulo no reconocido:', modulo)

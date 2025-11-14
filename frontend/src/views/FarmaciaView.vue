@@ -289,6 +289,7 @@
 
                   <!-- Editar medicamento -->
                   <button
+                    v-if="puedeEditar('farmacia')"
                     @click="abrirModalEditar(medicamento)"
                     class="btn-icon btn-green"
                     title="Editar medicamento"
@@ -307,6 +308,7 @@
 
                   <!-- Eliminar -->
                   <button
+                    v-if="puedeEliminar('farmacia')"
                     @click="eliminarMedicamento(medicamento)"
                     class="btn-icon btn-red"
                     title="Eliminar medicamento"
@@ -783,12 +785,17 @@
 import farmaciaService from '@/services/farmaciaService'
 import extrasService from '@/services/extrasService'
 import ExtrasModal from '@/components/ExtrasModal.vue'
+import { usePermisos } from '@/composables/usePermisos'
 
 export default {
   name: 'FarmaciaView',
   
   components: {
     ExtrasModal
+  },
+  setup() {
+    const { puedeEditar, puedeEliminar } = usePermisos()
+    return { puedeEditar, puedeEliminar }
   },
   
   data() {

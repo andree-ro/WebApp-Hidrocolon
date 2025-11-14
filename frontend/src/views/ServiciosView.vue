@@ -215,7 +215,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Comisión
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th v-if="puede('servicios', 'verMedicamentos')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Medicamentos
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -258,7 +258,7 @@
               </td>
 
               <!-- Medicamentos -->
-              <td class="px-6 py-4">
+              <td v-if="puede('servicios', 'verMedicamentos')" class="px-6 py-4">
                 <div class="flex items-center space-x-2">
                   <button
                     @click="verMedicamentosVinculados(servicio)"
@@ -316,6 +316,7 @@
                   </button>
                   
                   <button
+                    v-if="puedeEditar('servicios')"
                     @click="editarServicio(servicio)"
                     class="btn-icon btn-blue"
                     title="Editar servicio"
@@ -325,6 +326,7 @@
     
                 
                   <button
+                    v-if="puedeEliminar('servicios')"
                     @click="eliminarServicio(servicio)"
                     class="btn-icon btn-red"
                     title="Eliminar servicio"
@@ -605,6 +607,7 @@ import extrasService from '@/services/extrasService'
 import ServiciosModal from '@/components/ServiciosModal.vue'
 import MedicamentosVinculadosModal from '@/components/MedicamentosVinculadosModal.vue'
 import ExtrasVinculadosServiciosModal from '@/components/ExtrasVinculadosServiciosModal.vue'
+import { usePermisos } from '@/composables/usePermisos'
 
 export default {
   name: 'ServiciosView',
@@ -612,6 +615,11 @@ export default {
     ServiciosModal,
     MedicamentosVinculadosModal,
     ExtrasVinculadosServiciosModal
+  },
+
+  setup() {
+    const { puedeEditar, puedeEliminar, puede } = usePermisos()
+    return { puedeEditar, puedeEliminar, puede }
   },
 
   data() {

@@ -13,13 +13,14 @@ export const useCarritoStore = defineStore('carrito', () => {
   const pacienteSeleccionado = ref(null)
   const descuentoGlobal = ref(0)
   const observaciones = ref('')
-  const metodoPago = ref('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'mixto'
+  const metodoPago = ref('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'deposito', 'mixto'
   const doctoraSeleccionada = ref(null)
   
   // Para pago mixto
-  const montoEfectivo = ref(0)
-  const montoTarjeta = ref(0)
-  const montoTransferencia = ref(0)
+const montoEfectivo = ref(0)
+const montoTarjeta = ref(0)
+const montoTransferencia = ref(0)
+const montoDeposito = ref(0)
   
   // ============================================================================
   // 🧮 COMPUTED - CÁLCULOS AUTOMÁTICOS
@@ -182,6 +183,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     montoEfectivo.value = 0
     montoTarjeta.value = 0
     montoTransferencia.value = 0
+    montoDeposito.value = 0
     console.log('🧹 Carrito vaciado')
   }
   
@@ -247,23 +249,28 @@ function actualizarCantidad(itemId, nuevaCantidad) {
         doctora_id: doctoraSeleccionada.value?.id || null  
       }
     })
+
+    const totalFinal = total.value
     
     // Calcular montos según método de pago
-    const totalFinal = total.value
     let efectivoRecibido = 0
     let tarjetaMonto = 0
     let transferenciaMonto = 0
-    
+    let depositoMonto = 0
+
     if (metodoPago.value === 'efectivo') {
       efectivoRecibido = montoEfectivo.value || totalFinal
     } else if (metodoPago.value === 'tarjeta') {
       tarjetaMonto = totalFinal
     } else if (metodoPago.value === 'transferencia') {
       transferenciaMonto = totalFinal
+    } else if (metodoPago.value === 'deposito') {
+      depositoMonto = totalFinal
     } else if (metodoPago.value === 'mixto') {
       efectivoRecibido = montoEfectivo.value
       tarjetaMonto = montoTarjeta.value
       transferenciaMonto = montoTransferencia.value
+      depositoMonto = montoDeposito.value
     }
     
     // Datos completos de la venta
@@ -278,6 +285,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
       efectivo_recibido: efectivoRecibido,
       tarjeta_monto: tarjetaMonto,
       transferencia_monto: transferenciaMonto,
+      deposito_monto: depositoMonto,
       cliente_nombre: (pacienteSeleccionado.value?.nombres || pacienteSeleccionado.value?.nombre) + ' ' + (pacienteSeleccionado.value?.apellidos || pacienteSeleccionado.value?.apellido) || 'Cliente General',
       cliente_telefono: pacienteSeleccionado.value?.telefono || null,
       cliente_nit: 'CF',
@@ -302,7 +310,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     
     // Validar montos en pago mixto
     if (metodoPago.value === 'mixto') {
-      const sumaPagos = montoEfectivo.value + montoTarjeta.value + montoTransferencia.value
+      const sumaPagos = montoEfectivo.value + montoTarjeta.value + montoTransferencia.value + montoDeposito.value
       const diferencia = Math.abs(sumaPagos - total.value)
       
       if (diferencia > 0.01) { // Tolerancia de 1 centavo por redondeo
@@ -335,6 +343,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     montoEfectivo,
     montoTarjeta,
     montoTransferencia,
+    montoDeposito,
     doctoraSeleccionada,
     
     // Computed

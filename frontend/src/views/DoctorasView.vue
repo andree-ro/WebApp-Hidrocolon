@@ -177,6 +177,7 @@
                 <div class="flex flex-wrap gap-1">
                   <!-- Editar -->
                   <button
+                    v-if="puedeEditar('doctoras')"
                     @click="abrirModalEditar(doctora)"
                     class="btn-icon btn-green"
                     title="Editar doctora"
@@ -186,7 +187,7 @@
 
                   <!-- Desactivar/Reactivar -->
                   <button
-                    v-if="doctora.activo"
+                    v-if="puedeEliminar('doctoras') && doctora.activo"
                     @click="confirmarDesactivar(doctora)"
                     class="btn-icon btn-red"
                     title="Desactivar doctora"
@@ -194,7 +195,7 @@
                     ❌
                   </button>
                   <button
-                    v-else
+                    v-if="puedeEliminar('doctoras') && !doctora.activo"
                     @click="reactivarDoctora(doctora.id)"
                     class="btn-icon btn-green"
                     title="Reactivar doctora"
@@ -342,6 +343,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import doctorasService from '@/services/doctorasService'
+import { usePermisos } from '@/composables/usePermisos'
+
+const permisos = usePermisos()
+const puedeEditar = (modulo) => permisos.puedeEditar(modulo)
+const puedeEliminar = (modulo) => permisos.puedeEliminar(modulo)
 
 // Estado
 const doctoras = ref([])

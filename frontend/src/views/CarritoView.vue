@@ -285,6 +285,7 @@
               <option value="efectivo">💵 Efectivo</option>
               <option value="tarjeta">💳 Tarjeta</option>
               <option value="transferencia">🏦 Transferencia</option>
+              <option value="deposito">🏧 Depósito</option>
               <option value="mixto">💰 Pago Mixto</option>
             </select>
           </div>
@@ -339,8 +340,18 @@
                   placeholder="0.00"
                 />
               </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">🏧 Depósito</label>
+                <input
+                  v-model.number="carritoStore.montoDeposito"
+                  type="number"
+                  step="0.01"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="0.00"
+                />
+              </div>
               <div class="text-sm">
-                Total ingresado: Q{{ formatearNumero(carritoStore.montoEfectivo + carritoStore.montoTarjeta + carritoStore.montoTransferencia) }}
+                Total ingresado: Q{{ formatearNumero(carritoStore.montoEfectivo + carritoStore.montoTarjeta + carritoStore.montoTransferencia + carritoStore.montoDeposito) }}
               </div>
             </div>
           </div>
