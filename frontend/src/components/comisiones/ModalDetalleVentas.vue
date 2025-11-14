@@ -135,21 +135,6 @@
               </table>
             </div>
           </div>
-
-          <!-- Ventas por día (opcional, expandible) -->
-          <details class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <summary class="cursor-pointer font-semibold text-gray-900 hover:text-purple-600">
-              📅 Ver ventas por día
-            </summary>
-            <div class="mt-4 space-y-2">
-              <div v-for="fecha in ventasData.ventas_agrupadas.fechas" :key="fecha" class="text-sm">
-                <span class="font-medium text-gray-700">{{ formatearFecha(fecha) }}:</span>
-                <span class="text-gray-600 ml-2">
-                  {{ contarVentasPorDia(fecha) }} ventas
-                </span>
-              </div>
-            </div>
-          </details>
         </div>
 
         <!-- Error -->
@@ -247,18 +232,6 @@ async function cargarVentas() {
   }
 }
 
-/**
- * Cuenta ventas de un día específico
- */
-function contarVentasPorDia(fecha) {
-  let total = 0
-  ventasData.value.ventas_agrupadas.productos.forEach(producto => {
-    if (producto.ventas_por_dia[fecha]) {
-      total += producto.ventas_por_dia[fecha].cantidad
-    }
-  })
-  return total
-}
 
 /**
  * Formatea fecha a DD/MM/YYYY

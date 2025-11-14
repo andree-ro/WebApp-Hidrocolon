@@ -300,8 +300,16 @@ function volverAlDashboard() {
 /**
  * Cuando se abre un turno
  */
-function onTurnoAbierto() {
-  console.log('✅ Turno abierto exitosamente')
+async function onTurnoAbierto() {
+  console.log('✅✅✅ onTurnoAbierto EJECUTÁNDOSE')
+    financieroStore.cerrarModalApertura()
+    await new Promise(resolve => setTimeout(resolve, 300))
+    console.log('🚀 REDIRIGIENDO')
+    try {
+      await router.push('/')
+    } catch (e) {
+      window.location.href = '/'
+    }
 }
 
 /**

@@ -313,16 +313,17 @@ async function abrirTurno() {
 
     console.log('📤 Enviando datos de apertura:', datosApertura)
 
-    // Llamar al store
-    await financieroStore.abrirTurno(datosApertura)
+    // Llamar al store SIN AWAIT
+    const promesa = financieroStore.abrirTurno(datosApertura)
 
-    console.log('✅ Turno abierto exitosamente')
-
-    // Emitir evento de éxito
+    // EMITIR INMEDIATAMENTE (modal aún existe)
+    console.log('📤📤📤 EMITIENDO turno-abierto')
     emit('turno-abierto')
+    console.log('✅ EMITIDO')
 
-    // Mostrar notificación (opcional)
-    alert(`¡Turno abierto exitosamente!\nEfectivo inicial: Q${formatearNumero(totalEfectivo.value)}`)
+    // Ahora esperar que termine
+    await promesa
+    console.log('✅ Turno completamente abierto')
 
   } catch (error) {
     console.error('❌ Error al abrir turno:', error)

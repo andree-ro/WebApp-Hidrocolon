@@ -222,7 +222,7 @@ export default {
         // Esperar un momento y redirigir
         setTimeout(() => {
           console.log('🚀 Redirigiendo al dashboard...')
-          this.$router.push('/dashboard')
+          this.$router.push('/financiero')
         }, 1000)
         
       } catch (error) {
@@ -240,9 +240,9 @@ export default {
       if (window.markRecentLogin) {
         window.markRecentLogin()
       }
-      this.$router.replace('/dashboard').catch(() => {
-        window.location.replace('/dashboard')
-      })
+    this.$router.replace('/financiero').catch(() => {
+      window.location.replace('/financiero')
+    })
     },
 
     showForgotPassword() {

@@ -59,7 +59,8 @@ class ComprobanteGenerator {
                     month: '2-digit', 
                     year: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'America/Guatemala'
                 }), 340, startY);
 
                 doc.font('Helvetica-Bold')

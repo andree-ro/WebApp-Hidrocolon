@@ -673,7 +673,7 @@ export const useFinancieroStore = defineStore('financiero', {
       this.cache.estadisticas = null
       
       // Cerrar todos los modales
-      this.mostrarModalApertura = false
+      // this.mostrarModalApertura = false
       this.mostrarModalCierre = false
       this.mostrarModalGasto = false
       this.mostrarModalVoucher = false
