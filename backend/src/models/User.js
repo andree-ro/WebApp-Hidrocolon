@@ -290,6 +290,157 @@ class User {
         const regex = /^[a-zA-Z]+[a-zA-Z0-9]*@hidrocolon\.com$/;
         return regex.test(usuario);
     }
+
+    // Actualizar usuario (sin contraseña)
+    async update(userId, userData) {
+        const connection = await this.getConnection();
+        try {
+            const updates = [];
+            const values = [];
+
+            if (userData.usuario) {
+                updates.push('usuario = ?');
+                values.push(userData.usuario);
+            }
+            if (userData.rol_id) {
+                updates.push('rol_id = ?');
+                values.push(userData.rol_id);
+            }
+            if (userData.nombres) {
+                updates.push('nombres = ?');
+                values.push(userData.nombres);
+            }
+            if (userData.apellidos) {
+                updates.push('apellidos = ?');
+                values.push(userData.apellidos);
+            }
+            if (userData.activo !== undefined) {
+                updates.push('activo = ?');
+                values.push(userData.activo ? 1 : 0);
+            }
+
+            if (updates.length === 0) {
+                return false;
+            }
+
+            updates.push('fecha_actualizacion = NOW()');
+            values.push(userId);
+
+            const query = `
+                UPDATE usuarios 
+                SET ${updates.join(', ')}
+                WHERE id = ?
+            `;
+
+            const [result] = await connection.execute(query, values);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error actualizando usuario:', error.message);
+            throw new Error('Error actualizando usuario');
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Actualizar contraseña de usuario
+    async updatePassword(userId, newPassword) {
+        const connection = await this.getConnection();
+        try {
+            const hashedPassword = await this.hashPassword(newPassword);
+
+            const query = `
+                UPDATE usuarios 
+                SET password_hash = ?,
+                    fecha_actualizacion = NOW()
+                WHERE id = ?
+            `;
+
+            const [result] = await connection.execute(query, [hashedPassword, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error actualizando contraseña:', error.message);
+            throw new Error('Error actualizando contraseña');
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Activar usuario
+    async activate(userId) {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                UPDATE usuarios 
+                SET activo = 1,
+                    fecha_actualizacion = NOW()
+                WHERE id = ?
+            `;
+
+            const [result] = await connection.execute(query, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error activando usuario:', error.message);
+            throw new Error('Error activando usuario');
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Obtener roles disponibles
+    async getRoles() {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                SELECT 
+                    id,
+                    nombre,
+                    descripcion
+                FROM roles
+                WHERE activo = 1
+                ORDER BY id
+            `;
+
+            const [rows] = await connection.execute(query);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error obteniendo roles:', error.message);
+            throw new Error('Error obteniendo roles');
+        } finally {
+            await connection.end();
+        }
+    }
+
+    // Obtener todos los usuarios (incluyendo inactivos)
+    async getAllWithInactive() {
+        const connection = await this.getConnection();
+        try {
+            const query = `
+                SELECT 
+                    u.id,
+                    u.usuario,
+                    u.rol_id,
+                    u.nombres,
+                    u.apellidos,
+                    u.activo,
+                    u.ultimo_login,
+                    u.fecha_creacion,
+                    r.nombre as rol_nombre,
+                    r.descripcion as rol_descripcion
+                FROM usuarios u
+                INNER JOIN roles r ON u.rol_id = r.id
+                WHERE r.activo = 1
+                ORDER BY u.activo DESC, u.fecha_creacion DESC
+            `;
+
+            const [rows] = await connection.execute(query);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error obteniendo usuarios:', error.message);
+            throw new Error('Error obteniendo lista de usuarios');
+        } finally {
+            await connection.end();
+        }
+    }
 }
 
 module.exports = new User();

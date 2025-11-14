@@ -20,6 +20,7 @@ const crearVenta = async (req, res) => {
             efectivo_recibido,
             tarjeta_monto,
             transferencia_monto,
+            deposito_monto,
             cliente_nombre,
             cliente_telefono,
             cliente_nit,
@@ -40,7 +41,7 @@ const crearVenta = async (req, res) => {
         }
 
         // Validar método de pago
-        const metodosValidos = ['efectivo', 'tarjeta', 'transferencia', 'mixto'];
+        const metodosValidos = ['efectivo', 'tarjeta', 'transferencia', 'deposito', 'mixto'];
         if (!metodosValidos.includes(metodo_pago)) {
             return res.status(400).json({
                 success: false,
@@ -141,16 +142,17 @@ const crearVenta = async (req, res) => {
         if (metodo_pago === 'mixto') {
             const tarjeta = parseFloat(tarjeta_monto || 0);
             const transferencia = parseFloat(transferencia_monto || 0);
-            const efectivo = total - tarjeta - transferencia;
+            const deposito = parseFloat(deposito_monto || 0);
+            const efectivo = total - tarjeta - transferencia - deposito;
 
             if (efectivo < 0) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Los montos de tarjeta/transferencia exceden el total de la venta'
+                    message: 'Los montos de tarjeta/transferencia/depósito exceden el total de la venta'
                 });
             }
 
-            if (Math.abs((tarjeta + transferencia + efectivo) - total) > 0.01) {
+            if (Math.abs((tarjeta + transferencia + deposito + efectivo) - total) > 0.01) {
                 return res.status(400).json({
                     success: false,
                     message: 'La suma de los métodos de pago debe ser igual al total'
@@ -175,6 +177,7 @@ const crearVenta = async (req, res) => {
             efectivo_cambio: metodo_pago === 'efectivo' ? (parseFloat(efectivo_recibido) - total) : 0,
             tarjeta_monto: (metodo_pago === 'tarjeta' || metodo_pago === 'mixto') ? parseFloat(tarjeta_monto || 0) : 0,
             transferencia_monto: (metodo_pago === 'transferencia' || metodo_pago === 'mixto') ? parseFloat(transferencia_monto || 0) : 0,
+            deposito_monto: (metodo_pago === 'deposito' || metodo_pago === 'mixto') ? parseFloat(deposito_monto || 0) : 0,
             cliente_nombre: cliente_nombre.trim(),
             cliente_telefono: cliente_telefono || null,
             cliente_nit: cliente_nit || 'CF',

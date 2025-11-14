@@ -235,4 +235,9 @@ class AuthMiddleware {
 }
 
 // Exportar instancia única del middleware
-module.exports = new AuthMiddleware();
+const authMiddleware = new AuthMiddleware();
+
+// Exportar funciones helper individuales para uso en rutas
+module.exports = authMiddleware;
+module.exports.verifyToken = authMiddleware.authenticate();
+module.exports.isAdmin = authMiddleware.requireAdmin();

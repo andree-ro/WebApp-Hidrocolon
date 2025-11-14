@@ -46,6 +46,7 @@ const vouchersRoutes = require('./src/routes/vouchers');
 const transferenciasRoutes = require('./src/routes/transferencias');
 const comisionesRoutes = require('./src/routes/comisiones');
 const laboratoriosRoutes = require('./src/routes/laboratorios');
+const usuariosRoutes = require('./src/routes/usuarios');
 
 const app = express();
 
@@ -204,7 +205,8 @@ app.get('/', (req, res) => {
             ventas: 'Sistema de ventas y carrito',
             turnos: 'Control de turnos y caja',
             comisiones: 'Sistema de comisiones para doctoras',
-            laboratorios: 'Ganancias de laboratorios'
+            laboratorios: 'Ganancias de laboratorios',
+            usuarios: 'Gestión de usuarios y roles'
         },
         endpoints: {
             health: 'GET /health',
@@ -216,7 +218,8 @@ app.get('/', (req, res) => {
             ventas: 'GET|POST|DELETE /api/ventas/*',
             turnos: 'GET|POST|PUT /api/turnos/*',
             comisiones: 'GET|POST|DELETE /api/comisiones/*',
-            laboratorios: 'GET|POST|PUT|DELETE|PATCH /api/laboratorios/*'
+            laboratorios: 'GET|POST|PUT|DELETE|PATCH /api/laboratorios/*',
+            usuarios: 'GET|POST|PUT|DELETE /api/usuarios/*'
         }
     });
 });
@@ -240,6 +243,7 @@ app.get('/health', (req, res) => {
             turnos: 'active',
             comisiones: 'active',
             laboratorios: 'active',
+            usuarios: 'active',
             api: 'active'
         }
     });
@@ -283,6 +287,9 @@ console.log('âœ… Rutas de comisiones configuradas');
 
 app.use('/api/laboratorios', laboratoriosRoutes);
 console.log('âœ… Rutas de laboratorios configuradas');
+
+app.use('/api/usuarios', usuariosRoutes);
+console.log('✅ Rutas de usuarios configuradas');
 
 
 // ============================================================================
