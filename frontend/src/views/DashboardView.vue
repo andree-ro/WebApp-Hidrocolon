@@ -204,65 +204,7 @@
           </div>
 
           <!-- Stats Cards con datos reales -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-            <!-- Medicamentos -->
-            <div class="card p-3 sm:p-6">
-              <div class="flex items-center">
-                <div class="p-2 bg-blue-100 rounded-lg">
-                  <span class="text-xl sm:text-2xl">💊</span>
-                </div>
-                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
-                  <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Medicamentos</p>
-                  <p class="text-lg sm:text-2xl font-semibold text-blue-600">
-                    {{ stats.farmacia?.total_medicamentos || '--' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Extras -->
-            <div class="card p-3 sm:p-6">
-              <div class="flex items-center">
-                <div class="p-2 bg-green-100 rounded-lg">
-                  <span class="text-xl sm:text-2xl">🧰</span>
-                </div>
-                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
-                  <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Extras</p>
-                  <p class="text-lg sm:text-2xl font-semibold text-green-600">
-                    {{ stats.extras?.total_extras || '--' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- ⭐ Servicios - NUEVO -->
-            <div class="card p-3 sm:p-6">
-              <div class="flex items-center">
-                <div class="p-2 bg-purple-100 rounded-lg">
-                  <span class="text-xl sm:text-2xl">🏥</span>
-                </div>
-                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
-                  <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Servicios</p>
-                  <p class="text-lg sm:text-2xl font-semibold text-purple-600">
-                    {{ stats.servicios?.total_servicios || '--' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Ventas del día -->
-            <div class="card p-3 sm:p-6">
-              <div class="flex items-center">
-                <div class="p-2 bg-yellow-100 rounded-lg">
-                  <span class="text-xl sm:text-2xl">💰</span>
-                </div>
-                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
-                  <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Ventas Hoy</p>
-                  <p class="text-sm sm:text-2xl font-semibold text-yellow-600">Q 0.00</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          
 
           <!-- Quick Actions Mejoradas -->
           <div class="card p-4 sm:p-6 mb-6 sm:mb-8">
@@ -318,51 +260,6 @@
                 <!-- Badge NUEVO -->
 
               </button>
-            </div>
-          </div>
-
-          <!-- Alertas y Notificaciones -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Estado del Sistema -->
-            <div class="card p-4 sm:p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <span class="mr-2">🔧</span>
-                Estado del Sistema
-              </h3>
-              
-              <div class="space-y-3">
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Frontend Conectado</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Operativo</span>
-                </div>
-                
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">API Backend - Railway</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Conectado</span>
-                </div>
-                
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Autenticación JWT</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Activa</span>
-                </div>
-
-                <div class="status-item">
-                  <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm text-gray-700">Módulo Servicios</span>
-                  </div>
-                  <span class="text-xs text-green-600">✓ Funcional</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
