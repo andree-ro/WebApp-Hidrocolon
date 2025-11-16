@@ -19,6 +19,7 @@ export const useFinancieroStore = defineStore('financiero', {
     gastos: [],
     vouchers: [],
     transferencias: [],
+    depositos: [],
     historialTurnos: [],
     
     // Estados de carga
@@ -28,6 +29,7 @@ export const useFinancieroStore = defineStore('financiero', {
       gastos: false,
       vouchers: false,
       transferencias: false,
+      depositos: false,
       cierre: false
     },
     
@@ -45,7 +47,8 @@ export const useFinancieroStore = defineStore('financiero', {
     mostrarModalCierre: false,
     mostrarModalGasto: false,
     mostrarModalVoucher: false,
-    mostrarModalTransferencia: false
+    mostrarModalTransferencia: false,
+    mostrarModalDeposito: false
   }),
 
   // ============================================================================
@@ -96,6 +99,13 @@ export const useFinancieroStore = defineStore('financiero', {
      */
     totalTransferencias: (state) => {
       return state.transferencias.reduce((sum, trans) => sum + parseFloat(trans.monto || 0), 0)
+    },
+    
+    /**
+     * Total de depósitos del turno
+     */
+    totalDepositos: (state) => {
+      return state.depositos.reduce((sum, deposito) => sum + parseFloat(deposito.monto || 0), 0)
     },
     
     /**
@@ -212,6 +222,7 @@ export const useFinancieroStore = defineStore('financiero', {
         this.gastos = []
         this.vouchers = []
         this.transferencias = []
+        this.depositos = []
         this.resumenTurno = null
         
         // Cargar resumen inicial
@@ -250,6 +261,7 @@ export const useFinancieroStore = defineStore('financiero', {
         this.gastos = []
         this.vouchers = []
         this.transferencias = []
+        this.depositos = []
         
         // Cerrar modal de cierre
         this.mostrarModalCierre = false
@@ -667,6 +679,7 @@ export const useFinancieroStore = defineStore('financiero', {
       this.gastos = []
       this.vouchers = []
       this.transferencias = []
+      this.depositos = []
       this.historialTurnos = []
       this.error = null
       this.cache.ultimaActualizacion = null
@@ -678,6 +691,7 @@ export const useFinancieroStore = defineStore('financiero', {
       this.mostrarModalGasto = false
       this.mostrarModalVoucher = false
       this.mostrarModalTransferencia = false
+      this.mostrarModalDeposito = false
     },
     
     /**
@@ -727,6 +741,14 @@ export const useFinancieroStore = defineStore('financiero', {
      */
     toggleModalTransferencia() {
       this.mostrarModalTransferencia = !this.mostrarModalTransferencia
+    }
+    ,
+    
+    /**
+     * Toggle modal de depósito
+     */
+    toggleModalDeposito() {
+      this.mostrarModalDeposito = !this.mostrarModalDeposito
     }
   }
 })

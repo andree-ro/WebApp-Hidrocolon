@@ -179,6 +179,7 @@
         @registrar-gasto="financieroStore.toggleModalGasto()"
         @registrar-voucher="financieroStore.toggleModalVoucher()"
         @registrar-transferencia="financieroStore.toggleModalTransferencia()"
+        @registrar-deposito="financieroStore.toggleModalDeposito()"
       />
 
       <!-- Mensaje si no hay resumen -->
@@ -218,6 +219,11 @@
       @transferencia-registrada="onTransferenciaRegistrada"
       @cancelar="financieroStore.toggleModalTransferencia()"
     />
+    <ModalDeposito
+      v-if="financieroStore.mostrarModalDeposito"
+      @deposito-registrado="onDepositoRegistrado"
+      @cancelar="financieroStore.toggleModalDeposito()"
+    />
   </div>
 </template>
 
@@ -233,6 +239,7 @@ import CierreTurno from '@/components/financiero/CierreTurno.vue'
 import ModalGasto from '@/components/financiero/ModalGasto.vue'
 import ModalVoucher from '@/components/financiero/ModalVoucher.vue'
 import ModalTransferencia from '@/components/financiero/ModalTransferencia.vue'
+import ModalDeposito from '@/components/financiero/ModalDeposito.vue'
 
 const financieroStore = useFinancieroStore()
 const router = useRouter()
@@ -340,6 +347,10 @@ function onVoucherRegistrado() {
  */
 function onTransferenciaRegistrada() {
   console.log('✅ Transferencia registrada exitosamente')
+}
+
+function onDepositoRegistrado() {
+  console.log('✅ Depósito registrado exitosamente')
 }
 
 // ============================================================================

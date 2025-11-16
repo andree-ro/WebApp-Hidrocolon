@@ -44,6 +44,7 @@ const doctorasRoutes = require('./src/routes/doctoras');
 const gastosRoutes = require('./src/routes/gastos');
 const vouchersRoutes = require('./src/routes/vouchers');
 const transferenciasRoutes = require('./src/routes/transferencias');
+const depositosRoutes = require('./src/routes/depositos');
 const comisionesRoutes = require('./src/routes/comisiones');
 const laboratoriosRoutes = require('./src/routes/laboratorios');
 const usuariosRoutes = require('./src/routes/usuarios');
@@ -281,9 +282,9 @@ app.use('/api/gastos', gastosRoutes);
 app.use('/api/vouchers', vouchersRoutes);
 
 app.use('/api/transferencias', transferenciasRoutes);
-
 app.use('/api/comisiones', comisionesRoutes);
 console.log('âœ… Rutas de comisiones configuradas');
+app.use('/api/depositos', depositosRoutes);
 
 app.use('/api/laboratorios', laboratoriosRoutes);
 console.log('âœ… Rutas de laboratorios configuradas');

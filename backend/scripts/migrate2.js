@@ -354,6 +354,20 @@ async function runMigration() {
         console.log('âœ… Tabla creada: transferencias');
 
         await connection.execute(`
+            CREATE TABLE IF NOT EXISTS depositos (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                turno_id INT NOT NULL,
+                numero_deposito VARCHAR(100) NOT NULL,
+                paciente_nombre VARCHAR(200) NOT NULL,
+                monto DECIMAL(10,2) NOT NULL,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE,
+                INDEX idx_numero_deposito (numero_deposito)
+            )
+        `);
+        console.log('✅ Tabla creada: depositos');
+
+        await connection.execute(`
             CREATE TABLE IF NOT EXISTS gastos (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 turno_id INT NOT NULL,

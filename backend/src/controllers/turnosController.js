@@ -414,6 +414,7 @@ const calcularCuadrePrevio = async (req, res) => {
                 impuesto_efectivo: impuestos.efectivo,
                 impuesto_tarjeta: impuestos.tarjeta,
                 impuesto_transferencia: impuestos.transferencia,
+                impuesto_depositos: impuestos.depositos,
                 total_impuestos: impuestos.efectivo + impuestos.tarjeta + impuestos.transferencia + impuestos.depositos,
                 // ✅ VENTAS NETAS Y TOTAL A DEPOSITAR
                 ventas_netas: ventasNetas,
@@ -437,6 +438,9 @@ const calcularCuadrePrevio = async (req, res) => {
                         : null,
                     transferencias: Math.abs(diferencias.transferencias) > 0.50 
                         ? `Diferencia de Q${Math.abs(diferencias.transferencias).toFixed(2)} en transferencias` 
+                        : null,
+                    depositos: Math.abs(diferencias.depositos || 0) > 0.50 
+                        ? `Diferencia de Q${Math.abs(diferencias.depositos || 0).toFixed(2)} en depósitos` 
                         : null
                 }
             }

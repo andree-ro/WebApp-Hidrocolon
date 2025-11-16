@@ -353,6 +353,7 @@ class Turno {
             const listaGastos = await this.obtenerListaGastos(turnoId);
             const listaVouchers = await this.obtenerListaVouchers(turnoId);
             const listaTransferencias = await this.obtenerListaTransferencias(turnoId);
+            const listaDepositos = await this.obtenerListaDepositos(turnoId);
 
             // Calcular impuestos
             const impuestos = this.calcularImpuestos(totalesVentas);
@@ -377,6 +378,7 @@ class Turno {
                     efectivo: totalesVentas.efectivo,
                     tarjeta: totalesVentas.tarjeta,
                     transferencia: totalesVentas.transferencia,
+                    deposito: totalesVentas.deposito,
                     cantidad: totalesVentas.cantidad
                 },
                 impuestos: {
@@ -388,6 +390,9 @@ class Turno {
                 gastos: listaGastos,                    // Ã¢Å“â€¦ LISTA COMPLETA
                 vouchers: listaVouchers,                // Ã¢Å“â€¦ LISTA COMPLETA
                 transferencias: listaTransferencias,     // Ã¢Å“â€¦ LISTA COMPLETA
+                depositos: listaDepositos,              // ✅ LISTA COMPLETA
+                total_depositos: await this.obtenerTotalDepositos(turnoId),
+                ventas_deposito: totalesVentas.deposito,
                 total_comisiones_pagadas: totalComisionesPagadas
             };
 
@@ -414,6 +419,9 @@ class Turno {
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN efectivo_recibido ELSE 0 END), 0) as mixto_efectivo,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN tarjeta_monto ELSE 0 END), 0) as mixto_tarjeta,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END), 0) as mixto_transferencia
+                    ,
+                    COALESCE(SUM(CASE WHEN metodo_pago = 'deposito' THEN total ELSE 0 END), 0) as deposito,
+                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN deposito_monto ELSE 0 END), 0) as mixto_deposito
                  FROM ventas
                  WHERE turno_id = ?`,
                 [turnoId]
@@ -427,7 +435,8 @@ class Turno {
                 total: parseFloat(totales.total),
                 efectivo: parseFloat(totales.efectivo) + parseFloat(totales.mixto_efectivo),
                 tarjeta: parseFloat(totales.tarjeta) + parseFloat(totales.mixto_tarjeta),
-                transferencia: parseFloat(totales.transferencia) + parseFloat(totales.mixto_transferencia)
+                transferencia: parseFloat(totales.transferencia) + parseFloat(totales.mixto_transferencia),
+                deposito: parseFloat(totales.deposito) + parseFloat(totales.mixto_deposito)
             };
 
         } catch (error) {
@@ -475,6 +484,30 @@ class Turno {
             throw error;
         }
     }
+
+
+    // ============================================================================
+    // OBTENER TOTAL DE DEPÓSITOS
+    // ============================================================================
+    static async obtenerTotalDepositos(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [result] = await conn.execute(
+                'SELECT COALESCE(SUM(monto), 0) as total FROM depositos WHERE turno_id = ?',
+                [turnoId]
+            );
+
+            return parseFloat(result[0].total);
+
+        } catch (error) {
+            console.error('❌ Error obteniendo total depósitos:', error);
+            throw error;
+        }
+    }
+
+
+    
 
     // ============================================================================
     // OBTENER TOTAL DE GASTOS
@@ -583,6 +616,37 @@ class Turno {
 
         } catch (error) {
             console.error('Ã¢ÂÅ’ Error obteniendo lista de transferencias:', error);
+            throw error;
+        }
+    }
+
+
+
+    // ============================================================================
+    // OBTENER LISTA DE DEPÓSITOS DEL TURNO
+    // ============================================================================
+    static async obtenerListaDepositos(turnoId, connection = null) {
+        try {
+            const conn = connection || pool;
+            
+            const [depositos] = await conn.execute(
+                `SELECT 
+                    id,
+                    turno_id,
+                    numero_deposito,
+                    paciente_nombre,
+                    monto,
+                    fecha_creacion
+                FROM depositos
+                WHERE turno_id = ?
+                ORDER BY fecha_creacion DESC`,
+                [turnoId]
+            );
+
+            return depositos;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo lista de depósitos:', error);
             throw error;
         }
     }
