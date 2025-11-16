@@ -435,10 +435,29 @@
               </label>
               <input
                 v-model="formulario.dpi"
+                @input="verificarDPIExistente"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                :class="[
+                  'w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500',
+                  dpiExistente ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                ]"
                 placeholder="1234567890101"
+                maxlength="13"
               />
+              <!-- Advertencia si el DPI ya existe -->
+              <div v-if="dpiExistente" class="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p class="text-sm text-red-700 font-medium flex items-center">
+                  <span class="mr-2">⚠️</span>
+                  Ya existe un paciente con este DPI
+                </p>
+                <p class="text-xs text-red-600 mt-1">
+                  {{ dpiExistente.nombres }} {{ dpiExistente.apellidos }} (ID: {{ dpiExistente.id }})
+                </p>
+              </div>
+              <!-- Mensaje de verificación -->
+              <p v-if="verificandoDPI" class="mt-1 text-xs text-gray-500">
+                Verificando DPI...
+              </p>
             </div>
 
             <!-- Fecha primera cita -->
@@ -701,6 +720,8 @@ export default {
     const pacienteEditando = ref(null)
     const error = ref('')
     const mensaje = ref('')
+    const dpiExistente = ref(null)
+    const verificandoDPI = ref(false)
     const modalDetalle = ref(false)
     const pacienteDetalle = ref(null)
 
@@ -814,7 +835,58 @@ export default {
       Object.assign(formulario, formularioBase)
       error.value = ''
       mensaje.value = ''
+      dpiExistente.value = null      // <--- AGREGAR ESTA LÍNEA
+      verificandoDPI.value = false
     }
+
+    const verificarDPIExistente = (() => {
+      let timeout
+      return async () => {
+        clearTimeout(timeout)
+        
+        const dpi = formulario.dpi?.trim()
+        
+        // Limpiar advertencia si el DPI está vacío o es muy corto
+        if (!dpi || dpi.length < 13) {
+          dpiExistente.value = null
+          return
+        }
+        
+        // Si estamos editando, no verificar si es el mismo paciente
+        if (modalEditando.value && pacienteEditando.value?.dpi === dpi) {
+          dpiExistente.value = null
+          return
+        }
+        
+        // Verificar después de 500ms de que el usuario dejó de escribir
+        timeout = setTimeout(async () => {
+          verificandoDPI.value = true
+          
+          try {
+            // Buscar si existe un paciente con ese DPI
+            const response = await pacientesService.getPacientes({
+              search: dpi,
+              limit: 100
+            })
+            
+            if (response.success && response.data) {
+              // Buscar coincidencia exacta de DPI
+              const pacienteConDPI = response.data.find(p => p.dpi === dpi)
+              
+              if (pacienteConDPI) {
+                dpiExistente.value = pacienteConDPI
+              } else {
+                dpiExistente.value = null
+              }
+            }
+          } catch (err) {
+            console.error('Error verificando DPI:', err)
+          } finally {
+            verificandoDPI.value = false
+          }
+        }, 500)
+      }
+    })()
 
     const guardarPaciente = async () => {
       // Validar datos antes de enviar
@@ -1259,8 +1331,11 @@ export default {
       mensaje,
       puedeEditar,
       puedeEliminar,
-
+      dpiExistente,
+      verificandoDPI,
       // Métodos
+
+      verificarDPIExistente,
       abrirModalNuevo,
       abrirModalEditar,
       cerrarModal,
