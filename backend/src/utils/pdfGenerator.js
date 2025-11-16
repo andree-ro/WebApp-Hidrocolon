@@ -826,17 +826,21 @@ class ComprobanteGenerator {
                 y += 40;
 
                 // ============================================================
-                // OBSERVACIONES (si hay)
+                // OBSERVACIONES
                 // ============================================================
-                if (datosPDF.observaciones) {
-                    y += 10;
-                    doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
-                       .text('Observaciones:', margin, y);
-                    y += 12;
-                    doc.font('Helvetica').fontSize(8)
-                       .text(datosPDF.observaciones, margin, y, { width: contentWidth });
-                    y += 25;
-                }
+                y += 10;
+                doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
+                   .text('Observaciones:', margin, y);
+                y += 12;
+                
+                // Determinar qué mostrar
+                const textoObservaciones = datosPDF.observaciones && datosPDF.observaciones.trim() !== '' 
+                    ? datosPDF.observaciones 
+                    : 'No se agregaron observaciones';
+                
+                doc.font('Helvetica').fontSize(8)
+                   .text(textoObservaciones, margin, y, { width: contentWidth });
+                y += 25;
 
                 // ============================================================
                 // FIRMAS

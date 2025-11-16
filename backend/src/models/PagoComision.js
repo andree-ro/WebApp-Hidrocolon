@@ -435,7 +435,7 @@ class PagoComision {
     // ============================================================================
     static async obtenerDatosParaPDF(id) {
         try {
-            console.log(`ðŸ“„ Obteniendo datos para generar PDF del pago ID: ${id}`);
+            console.log(`📄 Obteniendo datos para generar PDF del pago ID: ${id}`);
 
             const pago = await this.obtenerPorId(id);
 
@@ -460,25 +460,11 @@ class PagoComision {
                 ORDER BY dv.producto_nombre
             `, [id]);
 
-            // Obtener rango real de fechas de las ventas incluidas
+            // ✅ USAR EL RANGO GUARDADO EN LA BD (fecha_inicio y fecha_corte)
+            const fechaInicio = pago.fecha_inicio || pago.fecha_corte;
+            const fechaFin = pago.fecha_corte;
 
-            const [rangoFechas] = await pool.execute(`
-                SELECT 
-                    MIN(DATE(v.fecha_creacion)) as fecha_min,
-                    MAX(DATE(v.fecha_creacion)) as fecha_max
-                FROM detalle_ventas dv
-                INNER JOIN ventas v ON dv.venta_id = v.id
-                INNER JOIN detalle_pagos_comisiones pcd ON pcd.detalle_venta_id = dv.id
-                WHERE pcd.pago_comision_id = ?
-            `, [id]);
-
-            const fechaInicio = rangoFechas[0]?.fecha_min || pago.fecha_corte;
-            const fechaFin = rangoFechas[0]?.fecha_max || pago.fecha_pago;
-
-            console.log('DEBUG - Rango de fechas real:', { fechaInicio, fechaFin });
-
-            console.log('DEBUG - Ventas agrupadas encontradas:', ventasAgrupadas.length);
-            console.log('DEBUG - Datos:', JSON.stringify(ventasAgrupadas, null, 2));
+            console.log('📅 Rango de fechas del pago:', { fechaInicio, fechaFin });
 
             // Formatear datos para el PDF
             const datosPDF = {
@@ -486,13 +472,12 @@ class PagoComision {
                 pago_id: pago.id,
                 turno_id: pago.turno_id,
                 
-                // InformaciÃ³n del pago
+                // Información del pago
                 doctora_nombre: pago.doctora_nombre,
                 fecha_pago: pago.fecha_pago,
                 fecha_corte: pago.fecha_corte,
-                // Buscar fechas reales de las ventas
-                fecha_inicio: fechaInicio, // Se llenará abajo
-                fecha_fin: fechaFin,    // Se llenará abajo
+                fecha_inicio: fechaInicio, // ✅ Rango seleccionado por el usuario
+                fecha_fin: fechaFin,       // ✅ Rango seleccionado por el usuario
                 
                 // Totales
                 monto_total: parseFloat(pago.monto_total),
@@ -509,12 +494,12 @@ class PagoComision {
                     total_comision: parseFloat(v.total_comision)
                 })),
                 
-                // InformaciÃ³n adicional
+                // Información adicional
                 observaciones: pago.observaciones,
                 usuario_registro: `${pago.usuario_nombres} ${pago.usuario_apellidos}`
             };
 
-            console.log('âœ… Datos para PDF preparados:', {
+            console.log('✅ Datos para PDF preparados:', {
                 pago_id: datosPDF.pago_id,
                 productos: datosPDF.ventas_agrupadas.length,
                 monto: datosPDF.monto_total
@@ -523,7 +508,7 @@ class PagoComision {
             return datosPDF;
 
         } catch (error) {
-            console.error('âŒ Error obteniendo datos para PDF:', error);
+            console.error('❌ Error obteniendo datos para PDF:', error);
             throw error;
         }
     }
@@ -834,6 +819,7 @@ class PagoComision {
             const [resultPago] = await connection.execute(
                 `INSERT INTO pagos_comisiones (
                     doctora_id,
+                    fecha_inicio,
                     fecha_corte,
                     fecha_pago,
                     monto_total,
@@ -843,16 +829,17 @@ class PagoComision {
                     observaciones,
                     turno_id,
                     usuario_registro_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     datos.doctora_id,
+                    datos.fecha_inicio, // ← NUEVO: fecha de inicio del rango
                     datos.fecha_fin, // fecha_corte es el fin del rango
                     new Date().toISOString().split('T')[0], // fecha_pago es hoy
                     montoTotal,
                     ventasAgrupadas.productos.reduce((sum, p) => sum + p.total_cantidad, 0),
                     true, // siempre es true porque se paga inmediatamente
                     'pagado',
-                    datos.observaciones || `Pago de comisiones del ${datos.fecha_inicio} al ${datos.fecha_fin}`,
+                    datos.observaciones || null, // ← CAMBIADO: ya no genera observación automática
                     datos.turno_id || null,
                     datos.usuario_registro_id
                 ]

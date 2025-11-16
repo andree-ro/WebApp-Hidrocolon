@@ -1,12 +1,22 @@
 // Migración: Agregar campo fecha_inicio a pagos_comisiones
-const { pool } = require('./src/config/database');
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 async function migrate() {
-    let connection;
+    let connection = null;
     
     try {
-        connection = await pool.getConnection();
+        console.log('🔧 Conectando a la base de datos...');
         
+        connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT || 3306
+        });
+        
+        console.log('✅ Conexión establecida');
         console.log('🔧 Agregando campo fecha_inicio a pagos_comisiones...');
         
         // Agregar columna fecha_inicio
@@ -35,13 +45,16 @@ async function migrate() {
             throw error;
         }
     } finally {
-        if (connection) connection.release();
+        if (connection) {
+            await connection.end();
+            console.log('🔌 Conexión cerrada');
+        }
     }
 }
 
 migrate()
     .then(() => {
-        console.log('✅ Migración completada');
+        console.log('✅ Migración completada exitosamente');
         process.exit(0);
     })
     .catch((error) => {
