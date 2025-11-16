@@ -3,13 +3,13 @@ const express = require('express');
 const router = express.Router();
 const depositosController = require('../controllers/depositosController');
 const { authenticate } = require('../middleware/authMiddleware');
-const { verificarTurnoActivo } = require('../middleware/turnosMiddleware');
+const { validarTurnoAbierto } = require('../middleware/turnosMiddleware');
 
 // Todas las rutas requieren autenticación
 router.use(authenticate());
 
 // Registrar nuevo depósito (requiere turno activo)
-router.post('/', verificarTurnoActivo, depositosController.registrarDeposito);
+router.post('/', validarTurnoAbierto, depositosController.registrarDeposito);
 
 // Obtener depósitos de un turno
 router.get('/turno/:turno_id', depositosController.obtenerDepositosTurno);
