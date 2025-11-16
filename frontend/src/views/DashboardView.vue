@@ -116,7 +116,7 @@
                 <li>
                   <a href="#" @click.prevent="navegarA('doctoras')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors relative">
                     <span class="text-lg mr-3">👩‍⚕️</span>
-                    Doctoras
+                    Doctor(as)
                   </a>
                 </li>
 

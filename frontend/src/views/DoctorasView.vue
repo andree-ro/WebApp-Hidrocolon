@@ -35,13 +35,13 @@
     <span>Ver Comisiones</span>
   </button>
   
-  <!-- Botón Agregar Nueva Doctora -->
+  <!-- Botón Agregar Nuevo Doctor(a) -->
   <button
     @click="abrirModalAgregar"
     class="btn-primary flex items-center space-x-2"
   >
     <span class="text-lg">➕</span>
-    <span>Agregar Doctora</span>
+    <span>Agregar Doctor(a)</span>
   </button>
   </div>
   
@@ -217,7 +217,7 @@
             @click="abrirModalAgregar"
             class="mt-4 btn-primary"
           >
-            ➕ Agregar Primera Doctora
+            ➕ Agregar Primera Doctor(a)
           </button>
         </div>
       </div>
@@ -229,7 +229,7 @@
         <div class="p-6">
           <div class="flex justify-between items-start mb-6">
             <h3 class="text-lg font-semibold text-gray-900">
-              {{ modalFormulario.editando ? '✏️ Editar Doctora' : '➕ Agregar Nueva Doctora' }}
+              {{ modalFormulario.editando ? '✏️ Editar Doctor(a)' : '➕ Agregar Nuevo(a) Doctor(a)' }}
             </h3>
             <button @click="cerrarModalFormulario" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
