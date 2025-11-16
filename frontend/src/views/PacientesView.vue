@@ -856,8 +856,18 @@ export default {
           error.value = response.message || 'Error guardando paciente'
         }
       } catch (err) {
-        error.value = pacientesService.procesarError(err)
         console.error('Error guardando paciente:', err)
+        
+        // Manejo especial para DPI duplicado
+        if (err.response?.data?.error_type === 'duplicate_dpi') {
+          error.value = '❌ Ya existe un paciente con ese DPI en el sistema'
+        } else if (err.response?.data?.message?.includes('DPI')) {
+          error.value = err.response.data.message
+        } else if (err.message?.includes('DPI')) {
+          error.value = err.message
+        } else {
+          error.value = pacientesService.procesarError(err)
+        }
       } finally {
         guardando.value = false
       }

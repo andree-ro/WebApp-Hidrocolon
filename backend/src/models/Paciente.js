@@ -221,6 +221,20 @@ class Paciente {
                 throw new Error('Campos requeridos: nombres, apellidos, telefono, fecha_primer_cita, fecha_nacimiento');
             }
 
+            // Validar DPI duplicado (solo si se proporciona un DPI)
+            if (data.dpi && data.dpi.trim() !== '') {
+                const [existente] = await connection.execute(
+                    'SELECT id, nombres, apellidos FROM pacientes WHERE dpi = ? AND activo = 1',
+                    [data.dpi.trim()]
+                );
+                
+                if (existente.length > 0) {
+                    const pacienteExistente = existente[0];
+                    throw new Error(`Ya existe un paciente con el DPI ${data.dpi}. Paciente: ${pacienteExistente.nombres} ${pacienteExistente.apellidos} (ID: ${pacienteExistente.id})`);
+                }
+            }
+
+
             const query = `
                 INSERT INTO pacientes (
                     nombres, apellidos, telefono, dpi, 

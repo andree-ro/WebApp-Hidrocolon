@@ -135,6 +135,18 @@ class PacientesController {
                 });
             }
 
+
+            // Error de validación personalizado (del modelo)
+            if (error.message && error.message.includes('Ya existe un paciente con el DPI')) {
+                return res.status(409).json({
+                    success: false,
+                    message: error.message,
+                    error_type: 'duplicate_dpi'
+                });
+            }
+
+
+
             res.status(500).json({
                 success: false,
                 message: 'Error creando paciente',
