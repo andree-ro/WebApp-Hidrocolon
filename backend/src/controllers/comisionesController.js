@@ -475,6 +475,47 @@ const generarPDF = async (req, res) => {
 };
 
 // ============================================================================
+// GENERAR PDF SIN REGISTRAR EN BD (PARA PERÍODOS SIN VENTAS)
+// ============================================================================
+const generarPDFSinRegistro = async (req, res) => {
+    try {
+        const { doctora_nombre, fecha_inicio, fecha_fin, observaciones } = req.body;
+
+        console.log(`📄 Generando PDF sin registro para ${doctora_nombre}`);
+
+        // Preparar datos para el PDF con ventas vacías
+        const datosPDF = {
+            doctora_nombre,
+            fecha_inicio,
+            fecha_fin,
+            ventas_agrupadas: [], // Sin ventas
+            monto_total: 0,
+            observaciones: observaciones || 'No hubo ventas en este período'
+        };
+
+        // Generar PDF usando el generador
+        const pdfGenerator = require('../utils/pdfGenerator');
+        const pdfBuffer = await pdfGenerator.generarPDFComisiones(datosPDF);
+
+        // Enviar PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Comisiones_${doctora_nombre.replace(/\s/g, '_')}_${fecha_inicio}_${fecha_fin}.pdf`);
+        res.send(pdfBuffer);
+
+        console.log('✅ PDF sin registro generado exitosamente');
+
+    } catch (error) {
+        console.error('❌ Error generando PDF sin registro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al generar PDF',
+            error: error.message
+        });
+    }
+};
+
+
+// ============================================================================
 // VERIFICAR COMISIONES ACUMULADAS
 // ============================================================================
 const verificarComisionesAcumuladas = async (req, res) => {
@@ -895,4 +936,5 @@ module.exports = {
     verificarComisionesAcumuladas,
     obtenerVentasAgrupadasParaReporte,
     pagarComisionesConRango,
+    generarPDFSinRegistro,
 };

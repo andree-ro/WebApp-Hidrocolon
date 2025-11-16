@@ -100,6 +100,12 @@ router.post('/pdf/:id/generar',
     comisionesController.generarPDF
 );
 
+// POST /api/comisiones/pdf/sin-registro - Generar PDF sin registrar en BD
+router.post('/pdf/sin-registro',
+    simpleAuth,
+    comisionesController.generarPDFSinRegistro
+);
+
 // ============================================================================
 // RUTAS DE ADMINISTRACIÓN
 // ============================================================================

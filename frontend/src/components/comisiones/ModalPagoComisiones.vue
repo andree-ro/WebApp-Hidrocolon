@@ -87,8 +87,8 @@
         <div v-if="ventasAgrupadas" class="mb-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Preview de Ventas</h3>
 
-          <!-- Alerta si existe pago previo -->
-          <div v-if="ventasAgrupadas.validacion_pago?.existe_pago" class="mb-4 bg-red-50 border-2 border-red-400 rounded-lg p-4">
+          <!-- Alerta si TODO el rango fue pagado (sin productos pendientes) -->
+          <div v-if="ventasAgrupadas.validacion_pago?.existe_pago && ventasAgrupadas.ventas_agrupadas.productos.length === 0" class="mb-4 bg-red-50 border-2 border-red-400 rounded-lg p-4">
             <div class="flex items-center gap-3">
               <span class="text-3xl">🚫</span>
               <div>
@@ -96,7 +96,22 @@
                   Este rango de fechas ya fue pagado anteriormente
                 </p>
                 <p class="text-sm text-red-700 mt-1">
-                  Seleccione fechas diferentes
+                  Seleccione fechas diferentes o consulte el historial de pagos
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerta informativa si PARTE del rango fue pagado (hay productos pendientes) -->
+          <div v-if="ventasAgrupadas.validacion_pago?.existe_pago && ventasAgrupadas.ventas_agrupadas.productos.length > 0" class="mb-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">ℹ️</span>
+              <div>
+                <p class="font-semibold text-blue-900 text-sm">
+                  Hay {{ ventasAgrupadas.validacion_pago.detalles.cantidad_ventas_pagadas }} venta(s) ya pagada(s) en este rango
+                </p>
+                <p class="text-xs text-blue-700 mt-1">
+                  Solo se muestran los productos pendientes de pago
                 </p>
               </div>
             </div>
@@ -194,15 +209,34 @@
         </div>
 
         <!-- Estado: Sin ventas -->
-        <div v-if="yaConsulto && ventasAgrupadas && ventasAgrupadas.ventas_agrupadas.productos.length === 0" class="text-center py-8">
+        <div v-if="yaConsulto && ventasAgrupadas && ventasAgrupadas.ventas_agrupadas.productos.length === 0 && !ventasAgrupadas.validacion_pago?.existe_pago" class="text-center py-8">
           <div class="text-5xl mb-3">📭</div>
-          <p class="text-gray-600 font-medium">No hay ventas en el período seleccionado</p>
-          <button
-            @click="reiniciarConsulta"
-            class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            🔄 Cambiar Fechas
-          </button>
+          <p class="text-gray-600 font-medium mb-4">No hay ventas en el período seleccionado</p>
+          
+          <!-- Resumen visual con Q0.00 -->
+          <div class="max-w-md mx-auto mb-6">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p class="text-sm text-gray-600 font-medium">Total Comisiones</p>
+              <p class="text-3xl font-bold text-gray-700 mt-1">Q0.00</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 justify-center">
+            <button
+              @click="reiniciarConsulta"
+              class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              🔄 Cambiar Fechas
+            </button>
+            
+            <button
+              @click="generarPDFSinVentas"
+              :disabled="cargando"
+              class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 shadow-sm hover:shadow-md"
+            >
+              {{ cargando ? '⏳ Generando...' : '📄 Generar Comprobante Q0.00' }}
+            </button>
+          </div>
         </div>
 
         <!-- PASO 3: Observaciones -->
@@ -456,6 +490,41 @@ async function descargarPDFComisiones(pagoId) {
   } catch (error) {
     console.error('❌ Error descargando PDF:', error)
     alert('El pago se registró correctamente, pero hubo un error al generar el PDF.')
+  }
+}
+
+/**
+ * Generar PDF sin ventas (Q0.00) - No registra en BD
+ */
+async function generarPDFSinVentas() {
+  cargando.value = true
+
+  try {
+    console.log('📄 Generando PDF sin ventas...')
+
+    // Preparar datos para el PDF con Q0.00
+    const datosPDF = {
+      doctora_nombre: props.doctora.nombre,
+      fecha_inicio: fechaInicio.value,
+      fecha_fin: fechaFin.value,
+      ventas_agrupadas: [],
+      monto_total: 0,
+      observaciones: 'No hubo ventas en este período'
+    }
+
+    // Llamar al endpoint que genera el PDF directamente
+    const response = await comisionesStore.generarPDFSinRegistro(datosPDF)
+    
+    console.log('✅ PDF sin ventas generado exitosamente')
+    
+    // Cerrar el modal
+    emit('cerrar')
+    
+  } catch (error) {
+    console.error('❌ Error generando PDF:', error)
+    alert('Error al generar el comprobante. Intente nuevamente.')
+  } finally {
+    cargando.value = false
   }
 }
 

@@ -315,6 +315,22 @@ export const useComisionesStore = defineStore('comisiones', () => {
   }
 
   /**
+   * Generar PDF sin registrar pago en BD (para períodos sin ventas)
+   */
+  async function generarPDFSinRegistro(datosPDF) {
+    try {
+      console.log('📄 [Store] Generando PDF sin registro en BD...')
+      
+      await comisionesService.generarPDFSinRegistro(datosPDF)
+      
+      console.log('✅ [Store] PDF generado')
+    } catch (err) {
+      console.error('❌ [Store] Error generando PDF:', err)
+      throw err
+    }
+  }
+
+  /**
    * Limpia el error actual
    */
   function limpiarError() {
@@ -382,7 +398,8 @@ export const useComisionesStore = defineStore('comisiones', () => {
     cargarPago,
     anularPago,
     cargarDoctoras,
-    descargarPDFComision, 
+    descargarPDFComision,
+    generarPDFSinRegistro,  // ← AGREGAR ESTA LÍNEA
     limpiarError,
     limpiarMensaje,
     limpiarVentasAgrupadas,

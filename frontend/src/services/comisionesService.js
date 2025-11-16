@@ -207,5 +207,35 @@ export default {
       console.error('❌ Error descargando PDF:', error)
       throw error
     }
+  },
+
+  /**
+   * Generar PDF sin registrar en BD (para períodos sin ventas)
+   */
+  async generarPDFSinRegistro(datosPDF) {
+    try {
+      console.log('📄 Generando PDF sin registro...')
+
+      const response = await api.post('/comisiones/pdf/sin-registro', datosPDF, {
+        responseType: 'blob'
+      })
+
+      // Crear blob y descargar
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Comisiones_${datosPDF.doctora_nombre}_${datosPDF.fecha_inicio}_${datosPDF.fecha_fin}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      console.log('✅ PDF generado exitosamente')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Error generando PDF:', error)
+      throw error
+    }
   }
 }
