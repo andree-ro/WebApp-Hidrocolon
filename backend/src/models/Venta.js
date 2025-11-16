@@ -36,10 +36,10 @@ class Venta {
                     numero_factura, turno_id, paciente_id, usuario_vendedor_id,
                     metodo_pago, subtotal, descuento, total,
                     efectivo_recibido, efectivo_cambio,
-                    tarjeta_monto, transferencia_monto,
+                    tarjeta_monto, transferencia_monto, deposito_monto,
                     cliente_nombre, cliente_telefono, cliente_nit, cliente_direccion,
                     observaciones
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     numeroFactura,
                     ventaData.turno_id,
@@ -53,6 +53,7 @@ class Venta {
                     ventaData.efectivo_cambio || 0,
                     ventaData.tarjeta_monto || 0,
                     ventaData.transferencia_monto || 0,
+                    ventaData.deposito_monto || 0,
                     ventaData.cliente_nombre,
                     ventaData.cliente_telefono || null,
                     ventaData.cliente_nit || 'CF',

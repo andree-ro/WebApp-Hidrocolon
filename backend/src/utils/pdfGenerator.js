@@ -175,9 +175,10 @@ class ComprobanteGenerator {
                     doc.fontSize(6)
                     .font('Helvetica');
                     const detalles = [];
-                    if (parseFloat(venta.tarjeta_monto) > 0) detalles.push(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
-                    if (parseFloat(venta.transferencia_monto) > 0) detalles.push(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
-                    const efectivo = parseFloat(venta.total) - parseFloat(venta.tarjeta_monto) - parseFloat(venta.transferencia_monto);
+                    if (parseFloat(venta.tarjeta_monto || 0) > 0) detalles.push(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
+                    if (parseFloat(venta.transferencia_monto || 0) > 0) detalles.push(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
+                    if (parseFloat(venta.deposito_monto || 0) > 0) detalles.push(`Depósito: Q${parseFloat(venta.deposito_monto).toFixed(2)}`);
+                    const efectivo = parseFloat(venta.total) - parseFloat(venta.tarjeta_monto || 0) - parseFloat(venta.transferencia_monto || 0) - parseFloat(venta.deposito_monto || 0);
                     if (efectivo > 0) detalles.push(`Efectivo: Q${efectivo.toFixed(2)}`);
                     doc.text(detalles.join(' | '), 420, yPosition);
                 }
