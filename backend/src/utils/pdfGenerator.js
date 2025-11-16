@@ -73,6 +73,16 @@ class ComprobanteGenerator {
                 doc.font('Helvetica')
                 .text(venta.metodo_pago.toUpperCase(), 340, startY + 12);
 
+                // Agregar información de la doctora si existe
+                const doctoraNombre = venta.detalle && venta.detalle.length > 0 && venta.detalle[0].doctora_nombre 
+                    ? venta.detalle[0].doctora_nombre 
+                    : 'No asignado';
+                
+                doc.font('Helvetica-Bold')
+                .text('Doctor(a):', 40, startY + 24);
+                doc.font('Helvetica')
+                .text(doctoraNombre, 100, startY + 24);
+
                 doc.moveDown(1.5);
 
                 // DATOS DEL CLIENTE

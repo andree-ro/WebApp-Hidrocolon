@@ -274,9 +274,12 @@ class Venta {
                 return null;
             }
 
-            // Obtener detalle de productos
+            // Obtener detalle de productos con nombre de doctora
             const [detalle] = await pool.execute(
-                `SELECT * FROM detalle_ventas WHERE venta_id = ?`,
+                `SELECT dv.*, d.nombre as doctora_nombre
+                 FROM detalle_ventas dv
+                 LEFT JOIN doctoras d ON dv.doctora_id = d.id
+                 WHERE dv.venta_id = ?`,
                 [id]
             );
 
