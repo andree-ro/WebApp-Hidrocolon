@@ -373,6 +373,13 @@ const calcularCuadrePrevio = async (req, res) => {
                         totalesVentas.efectivo - 
                         totalesGastos -
                         totalComisionesPagadas;
+        // Calcular duración del turno
+        const fechaApertura = new Date(turno.fecha_apertura);
+        const fechaActual = new Date();
+        const duracionMs = fechaActual - fechaApertura;
+        const duracionHoras = Math.floor(duracionMs / (1000 * 60 * 60));
+        const duracionMinutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
+        const duracion = `${duracionHoras}h ${duracionMinutos}m`;
         // ✅ CALCULAR IMPUESTOS
         const impuestos = Turno.calcularImpuestos(totalesVentas);
         
@@ -404,12 +411,14 @@ const calcularCuadrePrevio = async (req, res) => {
                 efectivo_inicial: parseFloat(turno.efectivo_inicial_total),
                 efectivo_esperado: efectivoEsperado,
                 efectivo_contado: efectivoFinalTotal,
+                duracion: duracion,
                 // ✅ AMBOS NOMBRES PARA COMPATIBILIDAD
                 venta_total: totalesVentas.total,
                 ventas_totales: totalesVentas.total,
                 ventas_efectivo: totalesVentas.efectivo,
                 ventas_tarjeta: totalesVentas.tarjeta,
                 ventas_transferencia: totalesVentas.transferencia,
+                ventas_deposito: totalesVentas.deposito,
                 // ✅ IMPUESTOS DESGLOSADOS
                 impuesto_efectivo: impuestos.efectivo,
                 impuesto_tarjeta: impuestos.tarjeta,
