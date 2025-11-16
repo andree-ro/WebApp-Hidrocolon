@@ -305,6 +305,7 @@ export const useFinancieroStore = defineStore('financiero', {
             efectivo: Math.round((parseFloat(resumen.ventas?.efectivo) || 0) * 100) / 100,
             tarjeta: Math.round((parseFloat(resumen.ventas?.tarjeta) || 0) * 100) / 100,
             transferencia: Math.round((parseFloat(resumen.ventas?.transferencia) || 0) * 100) / 100,
+            deposito: Math.round((parseFloat(resumen.ventas?.deposito) || 0) * 100) / 100,
             cantidad: parseInt(resumen.ventas?.cantidad) || 0
           },
           impuestos: {
@@ -316,6 +317,7 @@ export const useFinancieroStore = defineStore('financiero', {
           gastos: Array.isArray(resumen.gastos) ? resumen.gastos : [],
           vouchers: Array.isArray(resumen.vouchers) ? resumen.vouchers : [],
           transferencias: Array.isArray(resumen.transferencias) ? resumen.transferencias : [],
+          depositos: Array.isArray(resumen.depositos) ? resumen.depositos : [],
           total_comisiones_pagadas: parseFloat(resumen.total_comisiones_pagadas) || 0
         }
         

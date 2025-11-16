@@ -712,6 +712,7 @@ class Turno {
         // EFECTIVO/TRANSFERENCIA/DEPÃƒâ€œSITOS: 16% directo
         const impuestoEfectivo = totalesVentas.efectivo * 0.16;
         const impuestoTransferencia = totalesVentas.transferencia * 0.16;
+        const impuestoDepositos = (totalesVentas.deposito || 0) * 0.16;
         
         // TARJETA: Doble impuesto
         // 1. ComisiÃƒÂ³n bancaria 6%
@@ -726,7 +727,7 @@ class Turno {
             efectivo: impuestoEfectivo,
             tarjeta: impuestoTarjeta,
             transferencia: impuestoTransferencia,
-            depositos: 0, // Por implementar
+            depositos: impuestoDepositos,
             // Detalle para debugging/reportes
             detalle_tarjeta: {
                 comision_bancaria: comisionBancaria,
