@@ -672,7 +672,7 @@ class Turno {
                     dv.precio_total,
                     CASE 
                         WHEN v.metodo_pago = 'efectivo' THEN dv.precio_total
-                        WHEN v.metodo_pago = 'mixto' THEN (v.total - COALESCE(v.tarjeta_monto, 0) - COALESCE(v.transferencia_monto, 0)) * (dv.precio_total / v.total)
+                        WHEN v.metodo_pago = 'mixto' THEN (v.total - COALESCE(v.tarjeta_monto, 0) - COALESCE(v.transferencia_monto, 0) - COALESCE(v.deposito_monto, 0)) * (dv.precio_total / v.total)
                         ELSE 0 
                     END as efectivo_producto,
                     CASE 
@@ -685,6 +685,11 @@ class Turno {
                         WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.transferencia_monto, 0) * (dv.precio_total / v.total)
                         ELSE 0 
                     END as transferencia_producto,
+                    CASE 
+                        WHEN v.metodo_pago = 'deposito' THEN dv.precio_total
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.deposito_monto, 0) * (dv.precio_total / v.total)
+                        ELSE 0 
+                    END as deposito_producto,
                     u.nombres,
                     u.apellidos
                 FROM ventas v
@@ -825,8 +830,11 @@ class Turno {
             const impuestoTransferencia = totalesVentas.transferencia * 0.16;
             const ventaNetaTransferencia = totalesVentas.transferencia - impuestoTransferencia;
             
-            const totalImpuestos = impuestoEfectivo + impuestoTotalTarjeta + impuestoTransferencia;
-            const totalVentasNetas = ventaNetaEfectivo + ventaNetaTarjeta + ventaNetaTransferencia;
+            const impuestoDepositos = (totalesVentas.deposito || 0) * 0.16;
+            const ventaNetaDepositos = (totalesVentas.deposito || 0) - impuestoDepositos;
+            
+            const totalImpuestos = impuestoEfectivo + impuestoTotalTarjeta + impuestoTransferencia + impuestoDepositos;
+            const totalVentasNetas = ventaNetaEfectivo + ventaNetaTarjeta + ventaNetaTransferencia + ventaNetaDepositos;
             
             // 5. Calcular total a depositar
             const totalADepositar = totalVentasNetas - totalGastos - (turno.total_comisiones_pagadas || 0);
@@ -869,7 +877,8 @@ class Turno {
                     venta_total: totalesVentas.total,
                     ventas_efectivo: totalesVentas.efectivo,
                     ventas_tarjeta: totalesVentas.tarjeta,
-                    ventas_transferencia: totalesVentas.transferencia
+                    ventas_transferencia: totalesVentas.transferencia,
+                    ventas_deposito: totalesVentas.deposito || 0
                 },
                 efectivo_inicial: {
                     billetes: turno.efectivo_billetes || {},
@@ -938,6 +947,7 @@ class Turno {
                     efectivo: parseFloat(p.efectivo_producto),
                     tarjeta: parseFloat(p.tarjeta_producto),
                     transferencia: parseFloat(p.transferencia_producto),
+                    deposito: parseFloat(p.deposito_producto || 0),
                     usuario: `${p.nombres} ${p.apellidos}`,
                     fecha: p.fecha_creacion
                 })),
@@ -959,6 +969,11 @@ class Turno {
                         ventas: totalesVentas.transferencia,
                         impuesto: impuestoTransferencia,
                         venta_neta: ventaNetaTransferencia
+                    },
+                    depositos: {
+                        ventas: totalesVentas.deposito || 0,
+                        impuesto: impuestoDepositos,
+                        venta_neta: ventaNetaDepositos
                     },
                     total_impuestos: totalImpuestos,
                     total_ventas_netas: totalVentasNetas

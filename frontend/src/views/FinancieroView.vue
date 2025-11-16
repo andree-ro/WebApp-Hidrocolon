@@ -351,6 +351,7 @@ function onTransferenciaRegistrada() {
 
 function onDepositoRegistrado() {
   console.log('✅ Depósito registrado exitosamente')
+  financieroStore.toggleModalDeposito()
 }
 
 // ============================================================================

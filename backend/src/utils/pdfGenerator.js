@@ -313,8 +313,8 @@ class ComprobanteGenerator {
 
                 if (datosReporte.productos_vendidos && datosReporte.productos_vendidos.length > 0) {
                     // Tabla de productos
-                    const colWidths = [30, 150, 40, 60, 60, 60, 60, 72];
-                    const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Total', 'Usuario'];
+                    const colWidths = [25, 130, 30, 50, 50, 50, 50, 50, 65];
+                    const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Depósito', 'Total', 'Usuario'];
                     
                     // Encabezados
                     doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
@@ -338,13 +338,14 @@ class ComprobanteGenerator {
                         let xPos = margin;
                         const valores = [
                             prod.venta_id.toString(),
-                            prod.producto_nombre.substring(0, 26),
+                            prod.producto_nombre.substring(0, 22),
                             prod.cantidad.toString(),
-                            formatearMoneda(prod.tarjeta),
-                            formatearMoneda(prod.efectivo),
-                            formatearMoneda(prod.transferencia),
+                            formatearMoneda(prod.tarjeta || 0),
+                            formatearMoneda(prod.efectivo || 0),
+                            formatearMoneda(prod.transferencia || 0),
+                            formatearMoneda(prod.deposito || 0),
                             formatearMoneda(prod.precio_total),
-                            prod.usuario.substring(0, 13)
+                            prod.usuario.substring(0, 11)
                         ];
 
                         valores.forEach((val, i) => {
@@ -434,9 +435,10 @@ class ComprobanteGenerator {
                     ['Ingreso Efectivo', formatearMoneda(datosReporte.resumen_ventas.ventas_efectivo)],
                     ['Ingreso Tarjeta', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta)],
                     ['Ingreso Transferencia', formatearMoneda(datosReporte.resumen_ventas.ventas_transferencia)],
+                    ['Ingreso Depósito', formatearMoneda(datosReporte.resumen_ventas.ventas_deposito || 0)],
                     ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
                     ['Total Real', formatearMoneda(datosReporte.resumen_ventas.venta_total)],
-                    ['Total Banco', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta + datosReporte.resumen_ventas.ventas_transferencia)]
+                    ['Total Banco', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta + datosReporte.resumen_ventas.ventas_transferencia + (datosReporte.resumen_ventas.ventas_deposito || 0))]
                 ];
 
                 doc.fontSize(9).font('Helvetica');
@@ -501,6 +503,7 @@ class ComprobanteGenerator {
                     ['Efectivo Neto', formatearMoneda(datosReporte.impuestos.efectivo.venta_neta)],
                     ['Tarjeta Neta', formatearMoneda(datosReporte.impuestos.tarjeta.venta_neta)],
                     ['Transferencia Neta', formatearMoneda(datosReporte.impuestos.transferencia.venta_neta)],
+                    ['Depósito Neto', formatearMoneda(datosReporte.impuestos.depositos?.venta_neta || 0)],
                     ['Total Ingresos Netos', formatearMoneda(datosReporte.impuestos.total_ventas_netas)]
                 ];
 
@@ -539,6 +542,7 @@ class ComprobanteGenerator {
                     ['  - Impuesto Efectivo (16%)', formatearMoneda(datosReporte.impuestos.efectivo.impuesto)],
                     ['  - Impuesto Tarjeta (6% + 16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_total)],
                     ['  - Impuesto Transferencia (16%)', formatearMoneda(datosReporte.impuestos.transferencia.impuesto)],
+                    ['  - Impuesto Depósito (16%)', formatearMoneda(datosReporte.impuestos.depositos?.impuesto || 0)],
                     ['Comisiones', formatearMoneda(totalComisiones)],
                     ['Total Deducciones', formatearMoneda(totalDeducciones)]
                 ];

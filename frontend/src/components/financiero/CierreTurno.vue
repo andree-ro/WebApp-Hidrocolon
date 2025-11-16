@@ -432,7 +432,7 @@ function formatearFechaCorta(fecha) {
           <!-- Resumen de Ventas -->
           <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
             <h3 class="text-lg font-bold text-blue-900 mb-4">💰 Resumen de Ventas</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <p class="text-sm text-blue-700">Venta Total</p>
                 <p class="text-2xl font-bold text-blue-900">Q{{ formatearNumero(cuadre.venta_total) }}</p>
@@ -448,6 +448,10 @@ function formatearFechaCorta(fecha) {
               <div>
                 <p class="text-sm text-blue-700">Transferencia</p>
                 <p class="text-xl font-semibold text-blue-800">Q{{ formatearNumero(cuadre.ventas_transferencia) }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-blue-700">Depósito</p>
+                <p class="text-xl font-semibold text-blue-800">Q{{ formatearNumero(cuadre.ventas_deposito || 0) }}</p>
               </div>
             </div>
           </div>
@@ -467,6 +471,10 @@ function formatearFechaCorta(fecha) {
               <div class="flex justify-between">
                 <span class="text-purple-700">Transferencia (16%)</span>
                 <span class="font-semibold">Q{{ formatearNumero(cuadre.impuesto_transferencia) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-purple-700">Depósitos (16%)</span>
+                <span class="font-semibold">Q{{ formatearNumero(cuadre.impuesto_depositos || 0) }}</span>
               </div>
               <div class="flex justify-between border-t pt-2">
                 <span class="font-bold text-purple-900">Total Impuestos</span>
