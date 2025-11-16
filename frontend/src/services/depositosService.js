@@ -1,5 +1,5 @@
 // frontend/src/services/depositosService.js
-import api from './index.js'
+import { api } from './authService'
 
 export default {
   /**
