@@ -95,13 +95,6 @@ export const useFinancieroStore = defineStore('financiero', {
     },
     
     /**
-     * Total de transferencias del turno
-     */
-    totalTransferencias: (state) => {
-      return state.transferencias.reduce((sum, trans) => sum + parseFloat(trans.monto || 0), 0)
-    },
-    
-    /**
      * Total de depósitos del turno
      */
     totalDepositos: (state) => {
@@ -124,7 +117,8 @@ export const useFinancieroStore = defineStore('financiero', {
         ventaTransferencia: ventas.transferencia || 0,
         impuestoTotal: (impuestos.efectivo || 0) + (impuestos.tarjeta || 0) + (impuestos.transferencia || 0),
         gastoTotal: state.totalGastos,
-        efectivoEnCaja: (ventas.efectivo || 0) - state.totalGastos
+        efectivoEnCaja: (ventas.efectivo || 0) - state.totalGastos,
+        ventaDeposito: ventas.deposito || 0,
       }
     },
     
@@ -318,6 +312,8 @@ export const useFinancieroStore = defineStore('financiero', {
           vouchers: Array.isArray(resumen.vouchers) ? resumen.vouchers : [],
           transferencias: Array.isArray(resumen.transferencias) ? resumen.transferencias : [],
           depositos: Array.isArray(resumen.depositos) ? resumen.depositos : [],
+          total_depositos: parseFloat(resumen.total_depositos) || 0,
+          ventas_deposito: parseFloat(resumen.ventas_deposito) || 0,
           total_comisiones_pagadas: parseFloat(resumen.total_comisiones_pagadas) || 0
         }
         
@@ -651,6 +647,74 @@ export const useFinancieroStore = defineStore('financiero', {
         this.loading.transferencias = false
       }
     },
+
+    // ========================================
+// DEPÓSITOS
+// ========================================
+
+/**
+ * Registrar un depósito bancario
+ */
+async registrarDeposito(deposito) {
+  if (!this.turnoActivo) {
+    throw new Error('No hay turno activo')
+  }
+  
+  this.loading.depositos = true
+  this.error = null
+  
+  try {
+    const depositoCompleto = {
+      turno_id: this.turnoActivo.id,
+      numero_deposito: deposito.numero_deposito,
+      paciente_nombre: deposito.paciente_nombre,
+      monto: parseFloat(deposito.monto)
+    }
+    
+    console.log('📤 Enviando depósito al backend:', depositoCompleto)
+    
+    const response = await financieroService.registrarDeposito(depositoCompleto)
+    
+    // Agregar a la lista local
+    this.depositos.push(response.data)
+    
+    // Actualizar resumen
+    await this.obtenerResumenTurno()
+    
+    // Cerrar modal
+    this.mostrarModalDeposito = false
+    
+    return response
+  } catch (error) {
+    this.error = error.message
+    console.error('Error al registrar depósito:', error)
+    throw error
+  } finally {
+    this.loading.depositos = false
+  }
+},
+
+/**
+ * Eliminar un depósito
+ */
+async eliminarDeposito(depositoId) {
+  this.loading.depositos = true
+  
+  try {
+    await financieroService.eliminarDeposito(depositoId)
+    
+    // Remover de la lista local
+    this.depositos = this.depositos.filter(d => d.id !== depositoId)
+    
+    // Actualizar resumen
+    await this.obtenerResumenTurno()
+  } catch (error) {
+    console.error('Error al eliminar depósito:', error)
+    throw error
+  } finally {
+    this.loading.depositos = false
+  }
+},
     
     // ========================================
     // UTILIDADES

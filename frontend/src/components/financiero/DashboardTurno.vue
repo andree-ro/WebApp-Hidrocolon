@@ -59,6 +59,20 @@
       </div>
     </div>
 
+    <!-- Depósito -->
+    <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-600 text-sm font-medium">Depósito</span>
+        <span class="text-3xl">🏧</span>
+      </div>
+      <p class="text-3xl font-bold text-purple-600">
+        Q{{ formatearNumero(resumen.ventas?.deposito || 0) }}
+      </p>
+      <p class="text-sm text-gray-500 mt-1">
+        Ventas con depósito
+      </p>
+    </div>
+
     <!-- Sección de Impuestos y Gastos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Impuestos Desglosados -->
