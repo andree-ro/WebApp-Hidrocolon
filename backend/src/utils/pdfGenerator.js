@@ -83,16 +83,14 @@ class ComprobanteGenerator {
                 doc.font('Helvetica')
                 .text(doctoraNombre, 100, startY + 24);
 
-                doc.moveDown(1.5);
-
-                // DATOS DEL CLIENTE
+                // DATOS DEL CLIENTE (ahora debajo de Doctor(a))
                 doc.fontSize(8)
                 .font('Helvetica-Bold')
-                .text('Cliente: ', { continued: true })
-                .font('Helvetica')
-                .text(venta.cliente_nombre + ' | NIT: ' + venta.cliente_nit);
+                .text('Cliente:', 40, startY + 36);
+                doc.font('Helvetica')
+                .text(venta.cliente_nombre + ' | NIT: ' + venta.cliente_nit, 100, startY + 36);
 
-                doc.moveDown(0.5);
+                doc.moveDown(1.5);
 
                 // TABLA DE PRODUCTOS
                 const tableTop = doc.y;
@@ -435,6 +433,7 @@ class ComprobanteGenerator {
                 doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
                 .text('CIERRE (CON IMPUESTOS)', margin + 10, y + 8);
                 y += 25;
+                y += 15;  // ← ESPACIO ADICIONAL
 
                 // Datos de entrada
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
@@ -503,6 +502,7 @@ class ComprobanteGenerator {
                 doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
                 .text('CIERRE NETO (SIN IMPUESTOS)', margin + 10, y + 8);
                 y += 25;
+                y += 15;  // ← ESPACIO ADICIONAL
 
                 // Ingresos netos
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
