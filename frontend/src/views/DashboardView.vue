@@ -133,15 +133,15 @@
                   <router-link 
                     to="/financiero" 
                     @click="closeMobileSidebar" 
-                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors"
-                    active-class="bg-gray-800 text-white"
+                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    active-class="bg-blue-100 text-blue-700"
                   >
                     <span class="text-lg mr-3">💰</span>
                     Financiero
                   </router-link>
                 </li>
 
-                <li>
+                <li v-if="isAdmin">
                   <router-link 
                     to="/libro-bancos" 
                     @click="closeMobileSidebar" 
@@ -152,8 +152,7 @@
                     Libro de Bancos
                   </router-link>
                 </li>
-
-                <li>
+                <li v-if="isAdmin">
                   <router-link 
                     to="/estado-resultados" 
                     @click="closeMobileSidebar" 
@@ -172,24 +171,14 @@
                 Sistema
               </h3>
               <ul class="space-y-1 sm:space-y-2">
-                <li>
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
-                    <span class="text-lg mr-3">🔔</span>
-                    Notificaciones
-                  </a>
-                </li>
+
                 <li v-if="isAdmin">
                   <a href="#" @click.prevent="navegarA('usuarios')" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
                     <span class="text-lg mr-3">👤</span>
                     Usuarios
                   </a>
                 </li>
-                <li v-if="isAdmin">
-                  <a href="#" @click="closeMobileSidebar" class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
-                    <span class="text-lg mr-3">📊</span>
-                    Bitácora
-                  </a>
-                </li>
+
               </ul>
             </div>
           </nav>
@@ -286,6 +275,7 @@
               </button>
               <!-- Libro de Bancos -->
               <button 
+                v-if="isAdmin"
                 @click="navegarA('libro-bancos')" 
                 class="quick-action-btn bg-indigo-50 hover:bg-indigo-100 border-indigo-200 hover:border-indigo-300"
               >
@@ -296,8 +286,9 @@
                 </div>
               </button>
 
-                            <!-- Estado de Resultados -->
+              <!-- Estado de Resultados -->
               <button 
+                v-if="isAdmin"
                 @click="navegarA('estado-resultados')" 
                 class="quick-action-btn bg-teal-50 hover:bg-teal-100 border-teal-200 hover:border-teal-300"
               >

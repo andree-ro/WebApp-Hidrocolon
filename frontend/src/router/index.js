@@ -163,19 +163,21 @@ const routes = [
     component: LibroBancosView,
     meta: { 
       requiresAuth: true,
+      adminOnly: true,
       title: 'Libro de Bancos - Sistema Hidrocolon',
       breadcrumb: 'Libro de Bancos',
       description: 'Control de ingresos y egresos bancarios'
     }
   },
-  
-    // Módulo Estado de Resultados
+
+  // Módulo Estado de Resultados
   {
     path: '/estado-resultados',
     name: 'EstadoResultados',
     component: EstadoResultadosView,
     meta: { 
       requiresAuth: true,
+      adminOnly: true,
       title: 'Estado de Resultados - Sistema Hidrocolon',
       breadcrumb: 'Estado de Resultados',
       description: 'Reporte financiero de ingresos, costos y utilidades'
