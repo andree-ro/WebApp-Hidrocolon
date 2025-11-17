@@ -716,9 +716,16 @@ class ComprobanteGenerator {
                 doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
                 y += 20;
 
-                // RANGO DE FECHAS EN MAYÚSCULAS
-                const fechaInicioStr = formatearFechaLarga(datosPDF.fecha_inicio).toUpperCase();
-                const fechaFinStr = formatearFechaLarga(datosPDF.fecha_fin).toUpperCase();
+                // RANGO DE FECHAS EN MAYÚSCULAS - Agregar T12:00:00 para evitar desfase
+                const fechaInicioAjustada = datosPDF.fecha_inicio && !datosPDF.fecha_inicio.includes('T') 
+                    ? datosPDF.fecha_inicio + 'T12:00:00' 
+                    : datosPDF.fecha_inicio;
+                const fechaFinAjustada = datosPDF.fecha_fin && !datosPDF.fecha_fin.includes('T') 
+                    ? datosPDF.fecha_fin + 'T12:00:00' 
+                    : datosPDF.fecha_fin;
+                
+                const fechaInicioStr = formatearFechaLarga(fechaInicioAjustada).toUpperCase();
+                const fechaFinStr = formatearFechaLarga(fechaFinAjustada).toUpperCase();
 
                 doc.fontSize(11).fillColor(colors.text).font('Helvetica')
                 .text(`DEL ${fechaInicioStr} AL ${fechaFinStr}`, margin, y, { align: 'center', width: contentWidth });
@@ -774,10 +781,9 @@ class ComprobanteGenerator {
                             (item.producto_nombre || 'Sin nombre').substring(0, 38),
                             (item.cantidad_total || 0).toString(),
                             formatearMoneda(item.precio_promedio || 0),
-                            `${parseFloat(item.comision_porcentaje || 0).toFixed(1)}%`,
+                            `${parseFloat(item.comision_porcentaje || 0).toFixed(2)}%`,  // ← Cambiar aquí
                             formatearMoneda(item.total_comision || 0)
                         ];
-
                         valores.forEach((val, i) => {
                             doc.fillColor(colors.text).text(val, xPos + 4, y + 4, { 
                                 width: colWidths[i] - 8, 
@@ -817,8 +823,17 @@ class ComprobanteGenerator {
                 y += 15;
                 
                 const montoEnLetras = formatearMoneda(datosPDF.monto_total);
-                const fechaInicioTexto = formatearFechaLarga(datosPDF.fecha_inicio).toUpperCase();
-                const fechaFinTexto = formatearFechaLarga(datosPDF.fecha_fin).toUpperCase();
+                
+                // Agregar T12:00:00 para evitar desfase
+                const fechaInicioParaTexto = datosPDF.fecha_inicio && !datosPDF.fecha_inicio.includes('T') 
+                    ? datosPDF.fecha_inicio + 'T12:00:00' 
+                    : datosPDF.fecha_inicio;
+                const fechaFinParaTexto = datosPDF.fecha_fin && !datosPDF.fecha_fin.includes('T') 
+                    ? datosPDF.fecha_fin + 'T12:00:00' 
+                    : datosPDF.fecha_fin;
+                
+                const fechaInicioTexto = formatearFechaLarga(fechaInicioParaTexto).toUpperCase();
+                const fechaFinTexto = formatearFechaLarga(fechaFinParaTexto).toUpperCase();
                 const fechaHoy = formatearFechaLarga(new Date());
 
                 doc.fontSize(9).fillColor(colors.text).font('Helvetica')
