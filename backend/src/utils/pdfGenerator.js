@@ -717,12 +717,19 @@ class ComprobanteGenerator {
                 y += 20;
 
                 // RANGO DE FECHAS EN MAYÚSCULAS - Agregar T12:00:00 para evitar desfase
-                const fechaInicioAjustada = datosPDF.fecha_inicio && !datosPDF.fecha_inicio.includes('T') 
-                    ? datosPDF.fecha_inicio + 'T12:00:00' 
+                const fechaInicioString = datosPDF.fecha_inicio instanceof Date 
+                    ? datosPDF.fecha_inicio.toISOString().split('T')[0] 
                     : datosPDF.fecha_inicio;
-                const fechaFinAjustada = datosPDF.fecha_fin && !datosPDF.fecha_fin.includes('T') 
-                    ? datosPDF.fecha_fin + 'T12:00:00' 
+                const fechaFinString = datosPDF.fecha_fin instanceof Date 
+                    ? datosPDF.fecha_fin.toISOString().split('T')[0] 
                     : datosPDF.fecha_fin;
+                
+                const fechaInicioAjustada = fechaInicioString && !fechaInicioString.includes('T') 
+                    ? fechaInicioString + 'T12:00:00' 
+                    : fechaInicioString;
+                const fechaFinAjustada = fechaFinString && !fechaFinString.includes('T') 
+                    ? fechaFinString + 'T12:00:00' 
+                    : fechaFinString;
                 
                 const fechaInicioStr = formatearFechaLarga(fechaInicioAjustada).toUpperCase();
                 const fechaFinStr = formatearFechaLarga(fechaFinAjustada).toUpperCase();
@@ -825,12 +832,19 @@ class ComprobanteGenerator {
                 const montoEnLetras = formatearMoneda(datosPDF.monto_total);
                 
                 // Agregar T12:00:00 para evitar desfase
-                const fechaInicioParaTexto = datosPDF.fecha_inicio && !datosPDF.fecha_inicio.includes('T') 
-                    ? datosPDF.fecha_inicio + 'T12:00:00' 
+                const fechaInicioTextoString = datosPDF.fecha_inicio instanceof Date 
+                    ? datosPDF.fecha_inicio.toISOString().split('T')[0] 
                     : datosPDF.fecha_inicio;
-                const fechaFinParaTexto = datosPDF.fecha_fin && !datosPDF.fecha_fin.includes('T') 
-                    ? datosPDF.fecha_fin + 'T12:00:00' 
+                const fechaFinTextoString = datosPDF.fecha_fin instanceof Date 
+                    ? datosPDF.fecha_fin.toISOString().split('T')[0] 
                     : datosPDF.fecha_fin;
+                
+                const fechaInicioParaTexto = fechaInicioTextoString && !fechaInicioTextoString.includes('T') 
+                    ? fechaInicioTextoString + 'T12:00:00' 
+                    : fechaInicioTextoString;
+                const fechaFinParaTexto = fechaFinTextoString && !fechaFinTextoString.includes('T') 
+                    ? fechaFinTextoString + 'T12:00:00' 
+                    : fechaFinTextoString;
                 
                 const fechaInicioTexto = formatearFechaLarga(fechaInicioParaTexto).toUpperCase();
                 const fechaFinTexto = formatearFechaLarga(fechaFinParaTexto).toUpperCase();
