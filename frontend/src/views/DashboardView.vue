@@ -152,6 +152,18 @@
                     Libro de Bancos
                   </router-link>
                 </li>
+
+                <li>
+                  <router-link 
+                    to="/estado-resultados" 
+                    @click="closeMobileSidebar" 
+                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    active-class="bg-blue-100 text-blue-700"
+                  >
+                    <span class="text-lg mr-3">📊</span>
+                    Estado de Resultados
+                  </router-link>
+                </li>
               </ul>
             </div>
 
@@ -281,6 +293,18 @@
                 <span class="text-xs sm:text-sm font-medium text-indigo-700">Libro de Bancos</span>
                 <div class="text-xs text-indigo-600 mt-1">
                   Control bancario
+                </div>
+              </button>
+
+                            <!-- Estado de Resultados -->
+              <button 
+                @click="navegarA('estado-resultados')" 
+                class="quick-action-btn bg-teal-50 hover:bg-teal-100 border-teal-200 hover:border-teal-300"
+              >
+                <span class="text-2xl mb-2 block">📊</span>
+                <span class="text-xs sm:text-sm font-medium text-teal-700">Estado de Resultados</span>
+                <div class="text-xs text-teal-600 mt-1">
+                  Reporte financiero
                 </div>
               </button>
             </div>
@@ -625,6 +649,9 @@ export default {
           break
         case 'libro-bancos': // ⭐ NUEVO - LIBRO DE BANCOS
           this.$router.push('/libro-bancos')
+          break
+        case 'estado-resultados':
+          this.$router.push('/estado-resultados')
           break
         case 'usuarios':
           this.$router.push('/usuarios')

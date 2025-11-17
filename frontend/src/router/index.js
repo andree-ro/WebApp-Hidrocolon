@@ -17,6 +17,7 @@ import ServiciosView from '@/views/ServiciosView.vue'
 import PacientesView from '@/views/PacientesView.vue'
 import FinancieroView from '@/views/FinancieroView.vue'
 import LibroBancosView from '@/views/LibroBancosView.vue'
+import EstadoResultadosView from '@/views/EstadoResultadosView.vue'
 import UsuariosView from '@/views/UsuariosView.vue'
 
 // =====================================
@@ -165,6 +166,19 @@ const routes = [
       title: 'Libro de Bancos - Sistema Hidrocolon',
       breadcrumb: 'Libro de Bancos',
       description: 'Control de ingresos y egresos bancarios'
+    }
+  },
+  
+    // Módulo Estado de Resultados
+  {
+    path: '/estado-resultados',
+    name: 'EstadoResultados',
+    component: EstadoResultadosView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Estado de Resultados - Sistema Hidrocolon',
+      breadcrumb: 'Estado de Resultados',
+      description: 'Reporte financiero de ingresos, costos y utilidades'
     }
   },
 

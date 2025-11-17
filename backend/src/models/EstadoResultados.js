@@ -145,11 +145,11 @@ class EstadoResultados {
 
             // CONCEPTOS MANUALES de tipo 'costo_operacion'
             const [conceptosManuales] = await pool.execute(
-                `SELECT nombre, monto
-                 FROM conceptos_estado_resultados
-                 WHERE tipo = 'costo_operacion'
-                 AND periodo_inicio <= ? AND periodo_fin >= ?
-                 ORDER BY nombre`,
+                `SELECT id, nombre, monto, tipo
+                FROM conceptos_estado_resultados
+                WHERE tipo = 'costo_operacion'
+                AND periodo_inicio <= ? AND periodo_fin >= ?
+                ORDER BY nombre`,
                 [fechaFin, fechaInicio]
             );
 
@@ -166,8 +166,10 @@ class EstadoResultados {
                 total_comisiones: parseFloat(totalComisiones.toFixed(2)),
                 gastos_clinica: parseFloat(totalGastosClinica.toFixed(2)),
                 conceptos_manuales: conceptosManuales.map(c => ({
+                    id: c.id,
                     nombre: c.nombre,
-                    monto: parseFloat(c.monto)
+                    monto: parseFloat(c.monto),
+                    tipo: c.tipo
                 })),
                 total_conceptos_manuales: parseFloat(totalConceptosManuales.toFixed(2)),
                 total_costos: parseFloat((totalComisiones + totalGastosClinica + totalConceptosManuales).toFixed(2))
@@ -185,11 +187,11 @@ class EstadoResultados {
     static async calcularGastosOperacion(fechaInicio, fechaFin) {
         try {
             const [conceptos] = await pool.execute(
-                `SELECT nombre, monto
-                 FROM conceptos_estado_resultados
-                 WHERE tipo = 'gasto_operacion'
-                 AND periodo_inicio <= ? AND periodo_fin >= ?
-                 ORDER BY nombre`,
+                `SELECT id, nombre, monto, tipo
+                FROM conceptos_estado_resultados
+                WHERE tipo = 'gasto_operacion'
+                AND periodo_inicio <= ? AND periodo_fin >= ?
+                ORDER BY nombre`,
                 [fechaFin, fechaInicio]
             );
 
@@ -197,8 +199,10 @@ class EstadoResultados {
 
             return {
                 conceptos: conceptos.map(c => ({
+                    id: c.id,
                     nombre: c.nombre,
-                    monto: parseFloat(c.monto)
+                    monto: parseFloat(c.monto),
+                    tipo: c.tipo
                 })),
                 total_gastos: parseFloat(totalGastos.toFixed(2))
             };
@@ -254,11 +258,11 @@ class EstadoResultados {
 
             // CONCEPTOS MANUALES de tipo 'otro_gasto'
             const [conceptosManuales] = await pool.execute(
-                `SELECT nombre, monto
-                 FROM conceptos_estado_resultados
-                 WHERE tipo = 'otro_gasto'
-                 AND periodo_inicio <= ? AND periodo_fin >= ?
-                 ORDER BY nombre`,
+                `SELECT id, nombre, monto, tipo
+                FROM conceptos_estado_resultados
+                WHERE tipo = 'otro_gasto'
+                AND periodo_inicio <= ? AND periodo_fin >= ?
+                ORDER BY nombre`,
                 [fechaFin, fechaInicio]
             );
 
@@ -277,8 +281,10 @@ class EstadoResultados {
                     depositos: parseFloat(impuestoDepositos.toFixed(2))
                 },
                 conceptos_manuales: conceptosManuales.map(c => ({
+                    id: c.id,
                     nombre: c.nombre,
-                    monto: parseFloat(c.monto)
+                    monto: parseFloat(c.monto),
+                    tipo: c.tipo
                 })),
                 total_conceptos_manuales: parseFloat(totalConceptosManuales.toFixed(2)),
                 total_otros_gastos: parseFloat((totalImpuestos + totalConceptosManuales).toFixed(2))
