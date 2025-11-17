@@ -102,15 +102,18 @@ async function migrate() {
         // VERIFICAR TABLAS CREADAS
         // ========================================================================
         console.log('\n📋 Verificando tablas creadas...');
-        const [tables] = await connection.execute(`
-            SHOW TABLES LIKE '%bancos%' 
-            UNION 
-            SHOW TABLES LIKE '%estado_resultados%'
-        `);
+        
+        const [allTables] = await connection.execute('SHOW TABLES');
+        const tablasCreadas = allTables
+            .map(table => Object.values(table)[0])
+            .filter(tableName => 
+                tableName.includes('bancos') || 
+                tableName.includes('estado_resultados')
+            );
         
         console.log('\n✅ Tablas del módulo Estado de Resultados:');
-        tables.forEach(table => {
-            console.log(`   ✓ ${Object.values(table)[0]}`);
+        tablasCreadas.forEach(tableName => {
+            console.log(`   ✓ ${tableName}`);
         });
 
         console.log('\n🎉 ¡Migración completada exitosamente!');
