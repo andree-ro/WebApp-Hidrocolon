@@ -140,7 +140,7 @@ class LibroBancos {
             // Calcular saldo después de esta operación
             // Obtener el saldo de la última operación antes de esta fecha
             const [ultimaOperacion] = await connection.execute(
-                `SELECT saldo FROM libro_bancos 
+                `SELECT saldo_bancos FROM libro_bancos 
                  WHERE fecha <= ? 
                  ORDER BY fecha DESC, id DESC 
                  LIMIT 1`,
@@ -149,7 +149,7 @@ class LibroBancos {
 
             let saldoAnterior;
             if (ultimaOperacion.length > 0) {
-                saldoAnterior = parseFloat(ultimaOperacion[0].saldo);
+                saldoAnterior = parseFloat(ultimaOperacion[0].saldo_bancos);
             } else {
                 saldoAnterior = saldoInicialData.saldo_inicial;
             }
@@ -164,7 +164,7 @@ class LibroBancos {
                 `INSERT INTO libro_bancos (
                     fecha, beneficiario, descripcion, clasificacion,
                     tipo_operacion, numero_cheque, numero_deposito,
-                    ingreso, egreso, saldo, usuario_registro_id
+                    ingreso, egreso, saldo_bancos, usuario_registro_id
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     datos.fecha,
@@ -213,7 +213,7 @@ class LibroBancos {
         try {
             // Obtener saldo anterior a esta fecha
             const [operacionAnterior] = await connection.execute(
-                `SELECT saldo FROM libro_bancos 
+                `SELECT saldo_bancos FROM libro_bancos 
                  WHERE fecha < ? 
                  ${operacionIdExcluir ? 'OR (fecha = ? AND id < ?)' : ''}
                  ORDER BY fecha DESC, id DESC 
@@ -223,7 +223,7 @@ class LibroBancos {
 
             let saldoActual;
             if (operacionAnterior.length > 0) {
-                saldoActual = parseFloat(operacionAnterior[0].saldo);
+                saldoActual = parseFloat(operacionAnterior[0].saldo_bancos);
             } else {
                 const saldoInicial = await this.obtenerSaldoInicial();
                 saldoActual = saldoInicial.saldo_inicial;
@@ -243,7 +243,7 @@ class LibroBancos {
             for (const operacion of operacionesPosteriores) {
                 saldoActual = saldoActual + parseFloat(operacion.ingreso) - parseFloat(operacion.egreso);
                 await connection.execute(
-                    'UPDATE libro_bancos SET saldo = ? WHERE id = ?',
+                    'UPDATE libro_bancos SET saldo_bancos = ? WHERE id = ?',
                     [saldoActual, operacion.id]
                 );
             }

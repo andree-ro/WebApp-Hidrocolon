@@ -124,7 +124,7 @@ class EstadoResultados {
                 `SELECT 
                     d.id as doctora_id,
                     d.nombre as nombre_doctora,
-                    SUM(pc.monto_pagado) as total_comisiones
+                    SUM(pc.monto_total) as total_comisiones
                  FROM pagos_comisiones pc
                  INNER JOIN doctoras d ON pc.doctora_id = d.id
                  WHERE DATE(pc.fecha_pago) BETWEEN ? AND ?

@@ -48,8 +48,8 @@ const depositosRoutes = require('./src/routes/depositos');
 const comisionesRoutes = require('./src/routes/comisiones');
 const laboratoriosRoutes = require('./src/routes/laboratorios');
 const usuariosRoutes = require('./src/routes/usuarios');
-const libroBancosRoutes = require('./src/routes/libro-bancos');
-const estadoResultadosRoutes = require('./src/routes/estado-resultados');
+const libroBancosRoutes = require('./src/routes/libroBancos');
+const estadoResultadosRoutes = require('./src/routes/estadoResultados');
 
 const app = express();
 
