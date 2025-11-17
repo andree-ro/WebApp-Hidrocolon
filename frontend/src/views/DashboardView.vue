@@ -401,7 +401,7 @@ export default {
           this.cargarEstadisticasFarmacia(),
           this.cargarEstadisticasExtras(),
           this.cargarEstadisticasServicios(),
-          this.cargarEstadisticasPacientes()
+          // this.cargarEstadisticasPacientes()
         ])
         
         // Procesar resultados
@@ -409,7 +409,7 @@ export default {
           farmacia: farmaciaStats.status === 'fulfilled' ? farmaciaStats.value : this.getDefaultFarmaciaStats(),
           extras: extrasStats.status === 'fulfilled' ? extrasStats.value : this.getDefaultExtrasStats(),
           servicios: serviciosStats.status === 'fulfilled' ? serviciosStats.value : this.getDefaultServiciosStats(),
-          pacientes: pacientesStats.status === 'fulfilled' ? pacientesStats.value : { total: 0, citas_manana: 0 }
+          pacientes: { total: 0, citas_manana: 0 }
         }
         
         console.log('✅ Estadísticas finales cargadas:', this.stats)
@@ -420,7 +420,8 @@ export default {
         this.stats = {
           farmacia: this.getDefaultFarmaciaStats(),
           extras: this.getDefaultExtrasStats(),
-          servicios: this.getDefaultServiciosStats()
+          servicios: this.getDefaultServiciosStats(),
+          pacientes: { total: 0, citas_manana: 0 }
         }
       }
     },
