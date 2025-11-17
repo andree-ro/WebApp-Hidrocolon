@@ -140,6 +140,18 @@
                     Financiero
                   </router-link>
                 </li>
+
+                <li>
+                  <router-link 
+                    to="/libro-bancos" 
+                    @click="closeMobileSidebar" 
+                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    active-class="bg-blue-100 text-blue-700"
+                  >
+                    <span class="text-lg mr-3">📚</span>
+                    Libro de Bancos
+                  </router-link>
+                </li>
               </ul>
             </div>
 
@@ -259,6 +271,17 @@
                 <div class="text-xs mt-1 opacity-90">Sistema de ventas</div>
                 <!-- Badge NUEVO -->
 
+              </button>
+              <!-- Libro de Bancos -->
+              <button 
+                @click="navegarA('libro-bancos')" 
+                class="quick-action-btn bg-indigo-50 hover:bg-indigo-100 border-indigo-200 hover:border-indigo-300"
+              >
+                <span class="text-2xl mb-2 block">📚</span>
+                <span class="text-xs sm:text-sm font-medium text-indigo-700">Libro de Bancos</span>
+                <div class="text-xs text-indigo-600 mt-1">
+                  Control bancario
+                </div>
               </button>
             </div>
           </div>
@@ -589,19 +612,19 @@ export default {
           this.$router.push('/servicios')
           break
         case 'pacientes':
-          // Por implementar
           this.$router.push('/pacientes')
           break
         case 'doctoras':
           this.$router.push('/doctoras')
           break
         case 'carrito':
-          // Por implementar
           this.$router.push('/carrito')
           break
         case 'financiero':
-          // Por implementar
-          console.log('💰 Módulo financiero en desarrollo')
+          this.$router.push('/financiero')
+          break
+        case 'libro-bancos': // ⭐ NUEVO - LIBRO DE BANCOS
+          this.$router.push('/libro-bancos')
           break
         case 'usuarios':
           this.$router.push('/usuarios')

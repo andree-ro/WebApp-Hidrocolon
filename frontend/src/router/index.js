@@ -16,6 +16,7 @@ import ExtrasView from '@/views/ExtrasView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
 import PacientesView from '@/views/PacientesView.vue'
 import FinancieroView from '@/views/FinancieroView.vue'
+import LibroBancosView from '@/views/LibroBancosView.vue'
 import UsuariosView from '@/views/UsuariosView.vue'
 
 // =====================================
@@ -151,6 +152,19 @@ const routes = [
       title: 'Módulo Financiero - Sistema Hidrocolon',
       breadcrumb: 'Financiero',
       description: 'Control de turnos, caja y finanzas'
+    }
+  },
+
+  // Módulo Libro de Bancos
+  {
+    path: '/libro-bancos',
+    name: 'LibroBancos',
+    component: LibroBancosView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Libro de Bancos - Sistema Hidrocolon',
+      breadcrumb: 'Libro de Bancos',
+      description: 'Control de ingresos y egresos bancarios'
     }
   },
 
