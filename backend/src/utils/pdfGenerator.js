@@ -692,7 +692,13 @@ class ComprobanteGenerator {
 
                 const formatearFechaLarga = (fecha) => {
                     if (!fecha) return 'N/A';
-                    return new Date(fecha).toLocaleDateString('es-GT', {
+                    
+                    // Agregar T12:00:00 para evitar problemas de zona horaria
+                    const fechaStr = typeof fecha === 'string' && !fecha.includes('T') 
+                        ? fecha + 'T12:00:00' 
+                        : fecha;
+                    
+                    return new Date(fechaStr).toLocaleDateString('es-GT', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
