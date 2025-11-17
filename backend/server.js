@@ -48,6 +48,8 @@ const depositosRoutes = require('./src/routes/depositos');
 const comisionesRoutes = require('./src/routes/comisiones');
 const laboratoriosRoutes = require('./src/routes/laboratorios');
 const usuariosRoutes = require('./src/routes/usuarios');
+const libroBancosRoutes = require('./src/routes/libro-bancos');
+const estadoResultadosRoutes = require('./src/routes/estado-resultados');
 
 const app = express();
 
@@ -194,7 +196,7 @@ app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Sistema Hidrocolon API',
-        version: '1.8.0-modulo-depositos',
+        version: '1.9.0-estado-resultados-libro-bancos',
         timestamp: new Date().toISOString(),
         environment: NODE_ENV,
         modules: {
@@ -202,13 +204,15 @@ app.get('/', (req, res) => {
             farmacia: 'Gestión de medicamentos e inventario',
             extras: 'Gestión de extras y utensilios médicos',
             servicios: 'Gestión de servicios médicos y promociones',
-            pacientes: 'Gestión de pacientes y historial',
+            pacientes: 'Gestión de pacientes e historial',
             ventas: 'Sistema de ventas y carrito',
             turnos: 'Control de turnos y caja',
             comisiones: 'Sistema de comisiones para doctoras',
             laboratorios: 'Ganancias de laboratorios',
             usuarios: 'Gestión de usuarios y roles',
-            depositos: 'Gestión de depósitos bancarios'
+            depositos: 'Gestión de depósitos bancarios',
+            libroBancos: 'Libro de bancos con control de saldo',
+            estadoResultados: 'Estado de resultados financiero'
         },
         endpoints: {
             health: 'GET /health',
@@ -222,7 +226,9 @@ app.get('/', (req, res) => {
             comisiones: 'GET|POST|DELETE /api/comisiones/*',
             laboratorios: 'GET|POST|PUT|DELETE|PATCH /api/laboratorios/*',
             usuarios: 'GET|POST|PUT|DELETE /api/usuarios/*',
-            depositos: 'GET|POST|PUT|DELETE /api/depositos/*'
+            depositos: 'GET|POST|PUT|DELETE /api/depositos/*',
+            libroBancos: 'GET|POST|PUT|DELETE /api/libro-bancos/*',
+            estadoResultados: 'GET|POST|PUT|DELETE /api/estado-resultados/*'
         }
     });
 });
@@ -301,6 +307,12 @@ console.log('✅ Rutas de laboratorios configuradas');
 
 app.use('/api/usuarios', usuariosRoutes);
 console.log('✅ Rutas de usuarios configuradas');
+
+app.use('/api/libro-bancos', libroBancosRoutes);
+console.log('📖 Rutas de libro de bancos configuradas');
+
+app.use('/api/estado-resultados', estadoResultadosRoutes);
+console.log('📊 Rutas de estado de resultados configuradas');
 
 
 // ============================================================================
