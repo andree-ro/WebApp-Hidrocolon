@@ -74,7 +74,7 @@ const libroBancosService = {
    * Exportar a PDF
    */
   async exportarPDF(params = {}) {
-    const response = await api.get('/libro-bancos/pdf', {
+    const response = await api.get('/libro-bancos/exportar/pdf', {
       params,
       responseType: 'blob'
     })
@@ -85,12 +85,11 @@ const libroBancosService = {
    * Exportar a Excel
    */
   async exportarExcel(params = {}) {
-    const response = await api.get('/libro-bancos/excel', {
+    const response = await api.get('/libro-bancos/exportar/excel', {
       params,
       responseType: 'blob'
     })
     return response.data
   }
 }
-
 export default libroBancosService
