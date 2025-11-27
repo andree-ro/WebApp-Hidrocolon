@@ -351,55 +351,90 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // INGRESOS
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('INGRESOS', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('💰 INGRESOS', 40, yPos);
         yPos += 20;
 
-        doc.fontSize(9).font('Helvetica');
-        doc.text('Ventas de Medicamentos', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.ingresos?.ventas_medicamentos || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
+        // VENTAS
+        if (estadoResultados.ingresos?.ventas?.length > 0) {
+            doc.fontSize(10).font('Helvetica-Bold').text('VENTAS', 60, yPos);
+            yPos += 15;
 
-        doc.text('Ventas de Extras', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.ingresos?.ventas_extras || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
+            doc.fontSize(9).font('Helvetica');
+            for (const venta of estadoResultados.ingresos.ventas) {
+                doc.text(venta.nombre_doctora, 80, yPos);
+                doc.text(formatearMoneda(venta.total), 450, yPos, { width: 100, align: 'right' });
+                yPos += 12;
+            }
+            
+            // Total Ventas
+            doc.font('Helvetica-Bold');
+            doc.text('TOTAL VENTAS', 80, yPos);
+            doc.text(formatearMoneda(estadoResultados.ingresos.total_ventas), 450, yPos, { width: 100, align: 'right' });
+            yPos += 20;
+        }
 
-        doc.text('Ventas de Servicios', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.ingresos?.ventas_servicios || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
+        // SERVICIOS
+        if (estadoResultados.ingresos?.servicios?.length > 0) {
+            doc.fontSize(10).font('Helvetica-Bold').text('SERVICIOS', 60, yPos);
+            yPos += 15;
 
-        doc.text('Ganancias de Laboratorios', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.ingresos?.ganancias_laboratorios || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 20;
+            doc.fontSize(9).font('Helvetica');
+            for (const servicio of estadoResultados.ingresos.servicios) {
+                doc.text(servicio.nombre_doctora, 80, yPos);
+                doc.text(formatearMoneda(servicio.total), 450, yPos, { width: 100, align: 'right' });
+                yPos += 12;
+            }
+            
+            // Total Servicios
+            doc.font('Helvetica-Bold');
+            doc.text('TOTAL SERVICIOS', 80, yPos);
+            doc.text(formatearMoneda(estadoResultados.ingresos.total_servicios), 450, yPos, { width: 100, align: 'right' });
+            yPos += 20;
+        }
 
-        // Total Ingresos
+        // TOTAL DE INGRESOS
         doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
         yPos += 8;
-        doc.font('Helvetica-Bold');
-        doc.text('TOTAL INGRESOS', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.ingresos?.total || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 25;
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text('TOTAL DE INGRESOS', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.ingresos.total_ingresos), 450, yPos, { width: 100, align: 'right' });
+        yPos += 30;
+
+        // Nueva página si es necesario
+        if (yPos > 650) {
+            doc.addPage();
+            yPos = 50;
+        }
 
         // ============================================================================
         // COSTOS DE OPERACIÓN
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('COSTOS DE OPERACIÓN', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('💸 COSTOS DE OPERACIÓN', 40, yPos);
         yPos += 20;
 
-        doc.fontSize(9).font('Helvetica');
-        doc.text('Costo Medicamentos Vendidos', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.costos_operacion?.costo_medicamentos || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
+        // COMISIONES
+        if (estadoResultados.costos_operacion?.comisiones?.length > 0) {
+            doc.fontSize(9).font('Helvetica');
+            for (const comision of estadoResultados.costos_operacion.comisiones) {
+                doc.text(`Comisiones ${comision.nombre_doctora}`, 60, yPos);
+                doc.text(formatearMoneda(comision.total), 450, yPos, { width: 100, align: 'right' });
+                yPos += 12;
+            }
+        }
 
-        doc.text('Costo Extras Vendidos', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.costos_operacion?.costo_extras || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
+        // Gastos en clínica
+        if (estadoResultados.costos_operacion?.gastos_clinica > 0) {
+            doc.text('Gastos en Clínica', 60, yPos);
+            doc.text(formatearMoneda(estadoResultados.costos_operacion.gastos_clinica), 450, yPos, { width: 100, align: 'right' });
+            yPos += 12;
+        }
 
-        // Conceptos personalizados de costos
-        if (estadoResultados.costos_operacion?.conceptos_personalizados?.length > 0) {
-            for (const concepto of estadoResultados.costos_operacion.conceptos_personalizados) {
+        // Conceptos manuales de costos
+        if (estadoResultados.costos_operacion?.conceptos_manuales?.length > 0) {
+            for (const concepto of estadoResultados.costos_operacion.conceptos_manuales) {
                 doc.text(concepto.nombre, 60, yPos);
                 doc.text(formatearMoneda(concepto.monto), 450, yPos, { width: 100, align: 'right' });
-                yPos += 15;
+                yPos += 12;
             }
         }
 
@@ -407,16 +442,16 @@ const exportarPDF = async (req, res) => {
         doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
         yPos += 8;
         doc.font('Helvetica-Bold');
-        doc.text('TOTAL COSTOS DE OPERACIÓN', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.costos_operacion?.total || 0), 450, yPos, { width: 100, align: 'right' });
+        doc.text('Total de costo de operación', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.costos_operacion.total_costos), 450, yPos, { width: 100, align: 'right' });
         yPos += 25;
 
         // ============================================================================
-        // UTILIDAD BRUTA
+        // GANANCIA BRUTA
         // ============================================================================
         doc.fontSize(11).font('Helvetica-Bold');
-        doc.text('UTILIDAD BRUTA', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.utilidad_bruta || 0), 450, yPos, { width: 100, align: 'right' });
+        doc.text('GANANCIA BRUTA', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.ganancia_bruta), 450, yPos, { width: 100, align: 'right' });
         yPos += 30;
 
         // Nueva página si es necesario
@@ -428,24 +463,16 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // GASTOS DE OPERACIÓN
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('GASTOS DE OPERACIÓN', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('💼 GASTOS DE OPERACIÓN', 40, yPos);
         yPos += 20;
 
         doc.fontSize(9).font('Helvetica');
-        doc.text('Comisiones Pagadas', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.gastos_operacion?.comisiones || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
-
-        doc.text('Gastos Registrados', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.gastos_operacion?.gastos || 0), 450, yPos, { width: 100, align: 'right' });
-        yPos += 15;
-
-        // Conceptos personalizados de gastos
-        if (estadoResultados.gastos_operacion?.conceptos_personalizados?.length > 0) {
-            for (const concepto of estadoResultados.gastos_operacion.conceptos_personalizados) {
+        
+        if (estadoResultados.gastos_operacion?.conceptos?.length > 0) {
+            for (const concepto of estadoResultados.gastos_operacion.conceptos) {
                 doc.text(concepto.nombre, 60, yPos);
                 doc.text(formatearMoneda(concepto.monto), 450, yPos, { width: 100, align: 'right' });
-                yPos += 15;
+                yPos += 12;
             }
         }
 
@@ -453,32 +480,41 @@ const exportarPDF = async (req, res) => {
         doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
         yPos += 8;
         doc.font('Helvetica-Bold');
-        doc.text('TOTAL GASTOS DE OPERACIÓN', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.gastos_operacion?.total || 0), 450, yPos, { width: 100, align: 'right' });
+        doc.text('Total Gastos de Operación', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.gastos_operacion.total_gastos), 450, yPos, { width: 100, align: 'right' });
         yPos += 25;
 
         // ============================================================================
-        // UTILIDAD OPERATIVA
+        // GANANCIA/PÉRDIDA EN OPERACIÓN
         // ============================================================================
         doc.fontSize(11).font('Helvetica-Bold');
-        doc.text('UTILIDAD OPERATIVA', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.utilidad_operativa || 0), 450, yPos, { width: 100, align: 'right' });
+        const esGanancia = estadoResultados.ganancia_perdida_operacion >= 0;
+        doc.text(esGanancia ? 'GANANCIA EN OPERACIÓN' : 'PÉRDIDA EN OPERACIÓN', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.ganancia_perdida_operacion), 450, yPos, { width: 100, align: 'right' });
         yPos += 30;
 
         // ============================================================================
-        // OTROS GASTOS
+        // OTROS GASTOS Y PRODUCTOS FINANCIEROS
         // ============================================================================
-        if (estadoResultados.otros_gastos?.total > 0) {
-            doc.fontSize(12).font('Helvetica-Bold').text('OTROS GASTOS', 40, yPos);
+        if (estadoResultados.otros_gastos?.total_otros_gastos > 0) {
+            doc.fontSize(12).font('Helvetica-Bold').text('📈 OTROS GASTOS Y PRODUCTOS FINANCIEROS', 40, yPos);
             yPos += 20;
 
             doc.fontSize(9).font('Helvetica');
             
-            if (estadoResultados.otros_gastos?.conceptos_personalizados?.length > 0) {
-                for (const concepto of estadoResultados.otros_gastos.conceptos_personalizados) {
+            // Impuestos
+            if (estadoResultados.otros_gastos?.impuestos > 0) {
+                doc.text('Impuestos (Automático)', 60, yPos);
+                doc.text(formatearMoneda(estadoResultados.otros_gastos.impuestos), 450, yPos, { width: 100, align: 'right' });
+                yPos += 12;
+            }
+
+            // Conceptos manuales
+            if (estadoResultados.otros_gastos?.conceptos_manuales?.length > 0) {
+                for (const concepto of estadoResultados.otros_gastos.conceptos_manuales) {
                     doc.text(concepto.nombre, 60, yPos);
                     doc.text(formatearMoneda(concepto.monto), 450, yPos, { width: 100, align: 'right' });
-                    yPos += 15;
+                    yPos += 12;
                 }
             }
 
@@ -486,22 +522,22 @@ const exportarPDF = async (req, res) => {
             doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
             yPos += 8;
             doc.font('Helvetica-Bold');
-            doc.text('TOTAL OTROS GASTOS', 60, yPos);
-            doc.text(formatearMoneda(estadoResultados.otros_gastos?.total || 0), 450, yPos, { width: 100, align: 'right' });
+            doc.text('Total Otros Gastos', 60, yPos);
+            doc.text(formatearMoneda(estadoResultados.otros_gastos.total_otros_gastos), 450, yPos, { width: 100, align: 'right' });
             yPos += 25;
         }
 
         // ============================================================================
-        // UTILIDAD NETA
+        // UTILIDAD DEL EJERCICIO
         // ============================================================================
         doc.moveTo(40, yPos).lineTo(555, yPos).stroke();
         yPos += 15;
 
         doc.fontSize(14).font('Helvetica-Bold');
-        const utilidadColor = estadoResultados.utilidad_neta >= 0 ? 'black' : 'red';
-        doc.fillColor(utilidadColor);
-        doc.text('UTILIDAD NETA', 60, yPos);
-        doc.text(formatearMoneda(estadoResultados.utilidad_neta || 0), 450, yPos, { width: 100, align: 'right' });
+        const utilidadPositiva = estadoResultados.utilidad_ejercicio >= 0;
+        doc.fillColor(utilidadPositiva ? 'black' : 'red');
+        doc.text('UTILIDAD DEL EJERCICIO', 60, yPos);
+        doc.text(formatearMoneda(estadoResultados.utilidad_ejercicio), 450, yPos, { width: 100, align: 'right' });
 
         // Pie de página
         doc.fillColor('black');
@@ -519,198 +555,6 @@ const exportarPDF = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error al generar PDF',
-            error: error.message
-        });
-    }
-};
-
-// ============================================================================
-// EXPORTAR A EXCEL
-// ============================================================================
-const exportarExcel = async (req, res) => {
-    try {
-        const { fecha_inicio, fecha_fin } = req.query;
-
-        if (!fecha_inicio || !fecha_fin) {
-            return res.status(400).json({
-                success: false,
-                message: 'Se requieren fecha_inicio y fecha_fin'
-            });
-        }
-
-        console.log('📊 Generando Excel de Estado de Resultados');
-
-        // Obtener datos
-        const estadoResultados = await EstadoResultados.obtenerEstadoResultados(fecha_inicio, fecha_fin);
-
-        // Generar Excel
-        const ExcelJS = require('exceljs');
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Estado de Resultados');
-
-        // Título
-        worksheet.mergeCells('A1:C1');
-        worksheet.getCell('A1').value = 'VIMESA CENTRAL ZONA 3';
-        worksheet.getCell('A1').font = { bold: true, size: 14 };
-        worksheet.getCell('A1').alignment = { horizontal: 'center' };
-
-        // Subtítulo
-        worksheet.mergeCells('A2:C2');
-        worksheet.getCell('A2').value = 'ESTADO DE RESULTADOS';
-        worksheet.getCell('A2').font = { bold: true, size: 12 };
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
-
-        // Rango de fechas
-        const fechaInicioFormateada = new Date(fecha_inicio + 'T00:00:00').toLocaleDateString('es-GT');
-        const fechaFinFormateada = new Date(fecha_fin + 'T00:00:00').toLocaleDateString('es-GT');
-        worksheet.mergeCells('A3:C3');
-        worksheet.getCell('A3').value = `Del ${fechaInicioFormateada} al ${fechaFinFormateada}`;
-        worksheet.getCell('A3').alignment = { horizontal: 'center' };
-
-        let currentRow = 5;
-
-        // Formato de moneda
-        const formatearMoneda = (valor) => parseFloat(valor || 0).toFixed(2);
-
-        // INGRESOS
-        worksheet.getCell(`A${currentRow}`).value = 'INGRESOS';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Ventas de Medicamentos';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos?.ventas_medicamentos);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Ventas de Extras';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos?.ventas_extras);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Ventas de Servicios';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos?.ventas_servicios);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Ganancias de Laboratorios';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos?.ganancias_laboratorios);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'TOTAL INGRESOS';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos?.total);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true };
-        currentRow += 2;
-
-        // COSTOS DE OPERACIÓN
-        worksheet.getCell(`A${currentRow}`).value = 'COSTOS DE OPERACIÓN';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Costo Medicamentos Vendidos';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion?.costo_medicamentos);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Costo Extras Vendidos';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion?.costo_extras);
-        currentRow++;
-
-        if (estadoResultados.costos_operacion?.conceptos_personalizados?.length > 0) {
-            for (const concepto of estadoResultados.costos_operacion.conceptos_personalizados) {
-                worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
-                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
-                currentRow++;
-            }
-        }
-
-        worksheet.getCell(`A${currentRow}`).value = 'TOTAL COSTOS DE OPERACIÓN';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion?.total);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true };
-        currentRow += 2;
-
-        // UTILIDAD BRUTA
-        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD BRUTA';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_bruta);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true };
-        currentRow += 2;
-
-        // GASTOS DE OPERACIÓN
-        worksheet.getCell(`A${currentRow}`).value = 'GASTOS DE OPERACIÓN';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Comisiones Pagadas';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion?.comisiones);
-        currentRow++;
-
-        worksheet.getCell(`A${currentRow}`).value = 'Gastos Registrados';
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion?.gastos);
-        currentRow++;
-
-        if (estadoResultados.gastos_operacion?.conceptos_personalizados?.length > 0) {
-            for (const concepto of estadoResultados.gastos_operacion.conceptos_personalizados) {
-                worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
-                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
-                currentRow++;
-            }
-        }
-
-        worksheet.getCell(`A${currentRow}`).value = 'TOTAL GASTOS DE OPERACIÓN';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion?.total);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true };
-        currentRow += 2;
-
-        // UTILIDAD OPERATIVA
-        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD OPERATIVA';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_operativa);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true };
-        currentRow += 2;
-
-        // OTROS GASTOS
-        if (estadoResultados.otros_gastos?.total > 0) {
-            worksheet.getCell(`A${currentRow}`).value = 'OTROS GASTOS';
-            worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
-            currentRow++;
-
-            if (estadoResultados.otros_gastos?.conceptos_personalizados?.length > 0) {
-                for (const concepto of estadoResultados.otros_gastos.conceptos_personalizados) {
-                    worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
-                    worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
-                    currentRow++;
-                }
-            }
-
-            worksheet.getCell(`A${currentRow}`).value = 'TOTAL OTROS GASTOS';
-            worksheet.getCell(`A${currentRow}`).font = { bold: true };
-            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.otros_gastos?.total);
-            worksheet.getCell(`C${currentRow}`).font = { bold: true };
-            currentRow += 2;
-        }
-
-        // UTILIDAD NETA
-        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD NETA';
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
-        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_neta);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };
-
-        // Ajustar anchos de columnas
-        worksheet.getColumn('A').width = 35;
-        worksheet.getColumn('B').width = 10;
-        worksheet.getColumn('C').width = 15;
-
-        // Configurar respuesta
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=estado-resultados-${Date.now()}.xlsx`);
-
-        await workbook.xlsx.write(res);
-        res.end();
-
-    } catch (error) {
-        console.error('❌ Error generando Excel:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al generar Excel',
             error: error.message
         });
     }
