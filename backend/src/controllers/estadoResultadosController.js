@@ -538,16 +538,6 @@ const exportarPDF = async (req, res) => {
         doc.fillColor(utilidadPositiva ? 'black' : 'red');
         doc.text('UTILIDAD DEL EJERCICIO', 60, yPos);
         doc.text(formatearMoneda(estadoResultados.utilidad_ejercicio), 450, yPos, { width: 100, align: 'right' });
-
-        // Pie de página
-        doc.fillColor('black');
-        doc.fontSize(8).font('Helvetica').text(
-            `Generado el ${new Date().toLocaleDateString('es-GT')} a las ${new Date().toLocaleTimeString('es-GT')}`,
-            40,
-            750,
-            { align: 'center', width: 530 }
-        );
-
         doc.end();
 
     } catch (error) {
