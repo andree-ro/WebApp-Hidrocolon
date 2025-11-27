@@ -21,18 +21,18 @@ class ComprobanteGenerator {
                 // ENCABEZADO ACTUALIZADO
                 doc.fontSize(18)
                 .font('Helvetica-Bold')
-                .text('VIMESA', { align: 'center' });
+                .text('VIMESA CENTRAL', { align: 'center' });
                 
                 doc.moveDown(0.3);
                 
                 doc.fontSize(8)
                 .font('Helvetica')
-                .text('6a. Calle D3-71 Zona 9, Los Cerezos, Quetzaltenango.', { align: 'center' });
+                .text('20 avenida y 9a. calle 9-20 zona 3 Quetzaltenango', { align: 'center' });
                 
                 doc.moveDown(0.1);
                 
                 doc.fontSize(8)
-                .text('PBX: 7767-2167  WHATSAPP: 5461 - 4822', { align: 'center' });
+                .text('PBX: 7767-1851  WHATSAPP: 3569 - 4483', { align: 'center' });
                 
                 doc.moveDown(0.5);
                 
@@ -291,7 +291,7 @@ class ComprobanteGenerator {
                 // ENCABEZADO
                 // ============================================================
                 doc.fontSize(18).fillColor(colors.primary).font('Helvetica-Bold')
-                .text('HIDROCOLON XELA - VIMESA ZONA 9', margin, y, { align: 'center', width: contentWidth });
+                .text('HIDROCOLON XELA - VIMESA ZONA 3', margin, y, { align: 'center', width: contentWidth });
                 y += 25;
                 doc.fontSize(16).text('REPORTE DE CIERRE DE TURNO', margin, y, { align: 'center', width: contentWidth });
                 y += 30;
