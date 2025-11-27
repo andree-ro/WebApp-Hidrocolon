@@ -66,7 +66,7 @@ const estadoResultadosService = {
    * Exportar a PDF
    */
   async exportarPDF(params = {}) {
-    const response = await api.get('/estado-resultados/pdf', {
+    const response = await api.get('/estado-resultados/exportar/pdf', {
       params,
       responseType: 'blob'
     })
@@ -77,7 +77,7 @@ const estadoResultadosService = {
    * Exportar a Excel
    */
   async exportarExcel(params = {}) {
-    const response = await api.get('/estado-resultados/excel', {
+    const response = await api.get('/estado-resultados/exportar/excel', {
       params,
       responseType: 'blob'
     })

@@ -478,15 +478,6 @@ const exportarPDF = async (req, res) => {
 
         // Línea final
         doc.moveTo(40, yPosition + 2).lineTo(570, yPosition + 2).stroke();
-
-        // Pie de página
-        doc.fontSize(8).font('Helvetica').text(
-            `Generado el ${new Date().toLocaleDateString('es-GT')} a las ${new Date().toLocaleTimeString('es-GT')}`,
-            40,
-            750,
-            { align: 'center', width: 530 }
-        );
-
         doc.end();
 
     } catch (error) {

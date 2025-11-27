@@ -35,4 +35,14 @@ router.put('/conceptos/:id', auth, estadoResultadosController.actualizarConcepto
 // DELETE /api/estado-resultados/conceptos/:id - Eliminar concepto
 router.delete('/conceptos/:id', auth, estadoResultadosController.eliminarConcepto);
 
+// ============================================================================
+// RUTAS DE EXPORTACIÓN
+// ============================================================================
+
+// GET /api/estado-resultados/exportar/pdf - Exportar a PDF
+router.get('/exportar/pdf', auth, estadoResultadosController.exportarPDF);
+
+// GET /api/estado-resultados/exportar/excel - Exportar a Excel
+router.get('/exportar/excel', auth, estadoResultadosController.exportarExcel);
+
 module.exports = router;
