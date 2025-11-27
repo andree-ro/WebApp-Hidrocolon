@@ -52,4 +52,14 @@ router.delete('/:id', auth, libroBancosController.eliminarOperacion);
 // GET /api/libro-bancos/resumen - Obtener resumen por período
 router.get('/resumen/periodo', auth, libroBancosController.obtenerResumen);
 
+// ============================================================================
+// RUTAS DE EXPORTACIÓN
+// ============================================================================
+
+// GET /api/libro-bancos/exportar/pdf - Exportar a PDF
+router.get('/exportar/pdf', auth, libroBancosController.exportarPDF);
+
+// GET /api/libro-bancos/exportar/excel - Exportar a Excel
+router.get('/exportar/excel', auth, libroBancosController.exportarExcel);
+
 module.exports = router;
