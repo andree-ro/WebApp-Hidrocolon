@@ -560,6 +560,245 @@ const exportarPDF = async (req, res) => {
     }
 };
 
+// ============================================================================
+// EXPORTAR A EXCEL
+// ============================================================================
+const exportarExcel = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin } = req.query;
+
+        if (!fecha_inicio || !fecha_fin) {
+            return res.status(400).json({
+                success: false,
+                message: 'Se requieren fecha_inicio y fecha_fin'
+            });
+        }
+
+        console.log('📊 Generando Excel de Estado de Resultados');
+
+        // Obtener datos
+        const estadoResultados = await EstadoResultados.obtenerEstadoResultados(fecha_inicio, fecha_fin);
+
+        // Generar Excel
+        const ExcelJS = require('exceljs');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Estado de Resultados');
+
+        // Título
+        worksheet.mergeCells('A1:C1');
+        worksheet.getCell('A1').value = 'VIMESA CENTRAL ZONA 3';
+        worksheet.getCell('A1').font = { bold: true, size: 14 };
+        worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+        // Subtítulo
+        worksheet.mergeCells('A2:C2');
+        worksheet.getCell('A2').value = 'ESTADO DE RESULTADOS';
+        worksheet.getCell('A2').font = { bold: true, size: 12 };
+        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+
+        // Rango de fechas
+        const fechaInicioFormateada = new Date(fecha_inicio + 'T00:00:00').toLocaleDateString('es-GT');
+        const fechaFinFormateada = new Date(fecha_fin + 'T00:00:00').toLocaleDateString('es-GT');
+        worksheet.mergeCells('A3:C3');
+        worksheet.getCell('A3').value = `Del ${fechaInicioFormateada} al ${fechaFinFormateada}`;
+        worksheet.getCell('A3').alignment = { horizontal: 'center' };
+
+        let currentRow = 5;
+
+        // Formato de moneda
+        const formatearMoneda = (valor) => parseFloat(valor || 0).toFixed(2);
+
+        // ============================================================================
+        // INGRESOS
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = '💰 INGRESOS';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        // VENTAS
+        if (estadoResultados.ingresos?.ventas?.length > 0) {
+            worksheet.getCell(`A${currentRow}`).value = 'VENTAS';
+            worksheet.getCell(`A${currentRow}`).font = { bold: true };
+            currentRow++;
+
+            for (const venta of estadoResultados.ingresos.ventas) {
+                worksheet.getCell(`B${currentRow}`).value = venta.nombre_doctora;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(venta.total);
+                currentRow++;
+            }
+
+            worksheet.getCell(`B${currentRow}`).value = 'TOTAL VENTAS';
+            worksheet.getCell(`B${currentRow}`).font = { bold: true };
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos.total_ventas);
+            worksheet.getCell(`C${currentRow}`).font = { bold: true };
+            currentRow += 2;
+        }
+
+        // SERVICIOS
+        if (estadoResultados.ingresos?.servicios?.length > 0) {
+            worksheet.getCell(`A${currentRow}`).value = 'SERVICIOS';
+            worksheet.getCell(`A${currentRow}`).font = { bold: true };
+            currentRow++;
+
+            for (const servicio of estadoResultados.ingresos.servicios) {
+                worksheet.getCell(`B${currentRow}`).value = servicio.nombre_doctora;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(servicio.total);
+                currentRow++;
+            }
+
+            worksheet.getCell(`B${currentRow}`).value = 'TOTAL SERVICIOS';
+            worksheet.getCell(`B${currentRow}`).font = { bold: true };
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos.total_servicios);
+            worksheet.getCell(`C${currentRow}`).font = { bold: true };
+            currentRow += 2;
+        }
+
+        // TOTAL INGRESOS
+        worksheet.getCell(`A${currentRow}`).value = 'TOTAL DE INGRESOS';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos.total_ingresos);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // COSTOS DE OPERACIÓN
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = '💸 COSTOS DE OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        // Comisiones
+        if (estadoResultados.costos_operacion?.comisiones?.length > 0) {
+            for (const comision of estadoResultados.costos_operacion.comisiones) {
+                worksheet.getCell(`A${currentRow}`).value = `Comisiones ${comision.nombre_doctora}`;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(comision.total);
+                currentRow++;
+            }
+        }
+
+        // Gastos en clínica
+        if (estadoResultados.costos_operacion?.gastos_clinica > 0) {
+            worksheet.getCell(`A${currentRow}`).value = 'Gastos en Clínica';
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion.gastos_clinica);
+            currentRow++;
+        }
+
+        // Conceptos manuales
+        if (estadoResultados.costos_operacion?.conceptos_manuales?.length > 0) {
+            for (const concepto of estadoResultados.costos_operacion.conceptos_manuales) {
+                worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
+                currentRow++;
+            }
+        }
+
+        worksheet.getCell(`A${currentRow}`).value = 'Total de costo de operación';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion.total_costos);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // GANANCIA BRUTA
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = 'GANANCIA BRUTA';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ganancia_bruta);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // GASTOS DE OPERACIÓN
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = '💼 GASTOS DE OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        if (estadoResultados.gastos_operacion?.conceptos?.length > 0) {
+            for (const concepto of estadoResultados.gastos_operacion.conceptos) {
+                worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
+                currentRow++;
+            }
+        }
+
+        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operación';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion.total_gastos);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // GANANCIA/PÉRDIDA EN OPERACIÓN
+        // ============================================================================
+        const esGanancia = estadoResultados.ganancia_perdida_operacion >= 0;
+        worksheet.getCell(`A${currentRow}`).value = esGanancia ? 'GANANCIA EN OPERACIÓN' : 'PÉRDIDA EN OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ganancia_perdida_operacion);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // OTROS GASTOS
+        // ============================================================================
+        if (estadoResultados.otros_gastos?.total_otros_gastos > 0) {
+            worksheet.getCell(`A${currentRow}`).value = '📈 OTROS GASTOS Y PRODUCTOS FINANCIEROS';
+            worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+            currentRow++;
+
+            // Impuestos
+            if (estadoResultados.otros_gastos?.impuestos > 0) {
+                worksheet.getCell(`A${currentRow}`).value = 'Impuestos (Automático)';
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.otros_gastos.impuestos);
+                currentRow++;
+            }
+
+            // Conceptos manuales
+            if (estadoResultados.otros_gastos?.conceptos_manuales?.length > 0) {
+                for (const concepto of estadoResultados.otros_gastos.conceptos_manuales) {
+                    worksheet.getCell(`A${currentRow}`).value = concepto.nombre;
+                    worksheet.getCell(`C${currentRow}`).value = formatearMoneda(concepto.monto);
+                    currentRow++;
+                }
+            }
+
+            worksheet.getCell(`A${currentRow}`).value = 'Total Otros Gastos';
+            worksheet.getCell(`A${currentRow}`).font = { bold: true };
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.otros_gastos.total_otros_gastos);
+            worksheet.getCell(`C${currentRow}`).font = { bold: true };
+            currentRow += 2;
+        }
+
+        // ============================================================================
+        // UTILIDAD DEL EJERCICIO
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD DEL EJERCICIO';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_ejercicio);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };
+
+        // Ajustar anchos de columnas
+        worksheet.getColumn('A').width = 40;
+        worksheet.getColumn('B').width = 10;
+        worksheet.getColumn('C').width = 15;
+
+        // Configurar respuesta
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=estado-resultados-${Date.now()}.xlsx`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error('❌ Error generando Excel:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al generar Excel',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     obtenerEstadoResultados,
     crearConcepto,
