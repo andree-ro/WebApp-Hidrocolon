@@ -351,7 +351,7 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // INGRESOS
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('💰 INGRESOS', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('INGRESOS', 40, yPos);
         yPos += 20;
 
         // VENTAS
@@ -409,7 +409,7 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // COSTOS DE OPERACIÓN
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('💸 COSTOS DE OPERACIÓN', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('COSTOS DE OPERACION', 40, yPos);
         yPos += 20;
 
         // COMISIONES
@@ -424,7 +424,7 @@ const exportarPDF = async (req, res) => {
 
         // Gastos en clínica
         if (estadoResultados.costos_operacion?.gastos_clinica > 0) {
-            doc.text('Gastos en Clínica', 60, yPos);
+            doc.text('Gastos en Clinica', 60, yPos);
             doc.text(formatearMoneda(estadoResultados.costos_operacion.gastos_clinica), 450, yPos, { width: 100, align: 'right' });
             yPos += 12;
         }
@@ -442,7 +442,7 @@ const exportarPDF = async (req, res) => {
         doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
         yPos += 8;
         doc.font('Helvetica-Bold');
-        doc.text('Total de costo de operación', 60, yPos);
+        doc.text('Total de costo de operacion', 60, yPos);
         doc.text(formatearMoneda(estadoResultados.costos_operacion.total_costos), 450, yPos, { width: 100, align: 'right' });
         yPos += 25;
 
@@ -463,7 +463,7 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // GASTOS DE OPERACIÓN
         // ============================================================================
-        doc.fontSize(12).font('Helvetica-Bold').text('💼 GASTOS DE OPERACIÓN', 40, yPos);
+        doc.fontSize(12).font('Helvetica-Bold').text('GASTOS DE OPERACION', 40, yPos);
         yPos += 20;
 
         doc.fontSize(9).font('Helvetica');
@@ -480,7 +480,7 @@ const exportarPDF = async (req, res) => {
         doc.moveTo(60, yPos).lineTo(555, yPos).stroke();
         yPos += 8;
         doc.font('Helvetica-Bold');
-        doc.text('Total Gastos de Operación', 60, yPos);
+        doc.text('Total Gastos de Operacion', 60, yPos);
         doc.text(formatearMoneda(estadoResultados.gastos_operacion.total_gastos), 450, yPos, { width: 100, align: 'right' });
         yPos += 25;
 
@@ -489,7 +489,7 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         doc.fontSize(11).font('Helvetica-Bold');
         const esGanancia = estadoResultados.ganancia_perdida_operacion >= 0;
-        doc.text(esGanancia ? 'GANANCIA EN OPERACIÓN' : 'PÉRDIDA EN OPERACIÓN', 60, yPos);
+        doc.text(esGanancia ? 'GANANCIA EN OPERACION' : 'PERDIDA EN OPERACION', 60, yPos);
         doc.text(formatearMoneda(estadoResultados.ganancia_perdida_operacion), 450, yPos, { width: 100, align: 'right' });
         yPos += 30;
 
@@ -497,14 +497,14 @@ const exportarPDF = async (req, res) => {
         // OTROS GASTOS Y PRODUCTOS FINANCIEROS
         // ============================================================================
         if (estadoResultados.otros_gastos?.total_otros_gastos > 0) {
-            doc.fontSize(12).font('Helvetica-Bold').text('📈 OTROS GASTOS Y PRODUCTOS FINANCIEROS', 40, yPos);
+            doc.fontSize(12).font('Helvetica-Bold').text('OTROS GASTOS Y PRODUCTOS FINANCIEROS', 40, yPos);
             yPos += 20;
 
             doc.fontSize(9).font('Helvetica');
             
             // Impuestos
             if (estadoResultados.otros_gastos?.impuestos > 0) {
-                doc.text('Impuestos (Automático)', 60, yPos);
+                doc.text('Impuestos (Automatico)', 60, yPos);
                 doc.text(formatearMoneda(estadoResultados.otros_gastos.impuestos), 450, yPos, { width: 100, align: 'right' });
                 yPos += 12;
             }
@@ -611,7 +611,7 @@ const exportarExcel = async (req, res) => {
         // ============================================================================
         // INGRESOS
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = '💰 INGRESOS';
+        worksheet.getCell(`A${currentRow}`).value = 'INGRESOS';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
         currentRow++;
 
@@ -663,7 +663,7 @@ const exportarExcel = async (req, res) => {
         // ============================================================================
         // COSTOS DE OPERACIÓN
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = '💸 COSTOS DE OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).value = 'COSTOS DE OPERACION';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
         currentRow++;
 
@@ -678,7 +678,7 @@ const exportarExcel = async (req, res) => {
 
         // Gastos en clínica
         if (estadoResultados.costos_operacion?.gastos_clinica > 0) {
-            worksheet.getCell(`A${currentRow}`).value = 'Gastos en Clínica';
+            worksheet.getCell(`A${currentRow}`).value = 'Gastos en Clinica';
             worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion.gastos_clinica);
             currentRow++;
         }
@@ -692,7 +692,7 @@ const exportarExcel = async (req, res) => {
             }
         }
 
-        worksheet.getCell(`A${currentRow}`).value = 'Total de costo de operación';
+        worksheet.getCell(`A${currentRow}`).value = 'Total de costo de operacion';
         worksheet.getCell(`A${currentRow}`).font = { bold: true };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion.total_costos);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -710,7 +710,7 @@ const exportarExcel = async (req, res) => {
         // ============================================================================
         // GASTOS DE OPERACIÓN
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = '💼 GASTOS DE OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).value = 'GASTOS DE OPERACION';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
         currentRow++;
 
@@ -722,7 +722,7 @@ const exportarExcel = async (req, res) => {
             }
         }
 
-        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operación';
+        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operacion';
         worksheet.getCell(`A${currentRow}`).font = { bold: true };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion.total_gastos);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -732,7 +732,7 @@ const exportarExcel = async (req, res) => {
         // GANANCIA/PÉRDIDA EN OPERACIÓN
         // ============================================================================
         const esGanancia = estadoResultados.ganancia_perdida_operacion >= 0;
-        worksheet.getCell(`A${currentRow}`).value = esGanancia ? 'GANANCIA EN OPERACIÓN' : 'PÉRDIDA EN OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).value = esGanancia ? 'GANANCIA EN OPERACION' : 'PERDIDA EN OPERACION';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ganancia_perdida_operacion);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -742,13 +742,13 @@ const exportarExcel = async (req, res) => {
         // OTROS GASTOS
         // ============================================================================
         if (estadoResultados.otros_gastos?.total_otros_gastos > 0) {
-            worksheet.getCell(`A${currentRow}`).value = '📈 OTROS GASTOS Y PRODUCTOS FINANCIEROS';
+            worksheet.getCell(`A${currentRow}`).value = 'OTROS GASTOS Y PRODUCTOS FINANCIEROS';
             worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
             currentRow++;
 
             // Impuestos
             if (estadoResultados.otros_gastos?.impuestos > 0) {
-                worksheet.getCell(`A${currentRow}`).value = 'Impuestos (Automático)';
+                worksheet.getCell(`A${currentRow}`).value = 'Impuestos (Automatico)';
                 worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.otros_gastos.impuestos);
                 currentRow++;
             }
