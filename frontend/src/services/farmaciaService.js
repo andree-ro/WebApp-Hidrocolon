@@ -448,6 +448,52 @@ const farmaciaService = {
       console.error('❌ Error filtrando medicamentos:', error)
       throw error
     }
+  },
+
+  // ============================================================================
+  // CRUD PRESENTACIONES
+  // ============================================================================
+  async crearPresentacion(datos) {
+    try {
+      const response = await api.post('/presentaciones', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error creando presentación:', error);
+      throw error;
+    }
+  },
+
+  async eliminarPresentacion(id) {
+    try {
+      const response = await api.delete(`/presentaciones/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error eliminando presentación:', error);
+      throw error;
+    }
+  },
+
+  // ============================================================================
+  // CRUD CASAS MÉDICAS (LABORATORIOS)
+  // ============================================================================
+  async crearCasaMedica(datos) {
+    try {
+      const response = await api.post('/casas-medicas', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error creando casa médica:', error);
+      throw error;
+    }
+  },
+
+  async eliminarCasaMedica(id) {
+    try {
+      const response = await api.delete(`/casas-medicas/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error eliminando casa médica:', error);
+      throw error;
+    }
   }
 }
 

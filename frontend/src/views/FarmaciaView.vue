@@ -388,22 +388,60 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Presentación *</label>
-                <select v-model="modalFormulario.datos.presentacion_id" required class="input-base">
-                  <option value="">Seleccionar presentación</option>
-                  <option v-for="presentacion in presentaciones" :key="presentacion.id" :value="presentacion.id">
-                    {{ presentacion.nombre }}
-                  </option>
-                </select>
+                <div class="flex gap-2">
+                  <select v-model="modalFormulario.datos.presentacion_id" required class="input-base flex-1">
+                    <option value="">Seleccionar presentación</option>
+                    <option v-for="presentacion in presentaciones" :key="presentacion.id" :value="presentacion.id">
+                      {{ presentacion.nombre }}
+                    </option>
+                  </select>
+                  <button 
+                    type="button"
+                    @click="abrirModalAgregarPresentacion" 
+                    class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                    title="Agregar presentación"
+                  >
+                    ➕
+                  </button>
+                  <button 
+                    type="button"
+                    @click="eliminarPresentacion" 
+                    :disabled="!modalFormulario.datos.presentacion_id"
+                    class="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+                    title="Eliminar presentación seleccionada"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio *</label>
-                <select v-model="modalFormulario.datos.laboratorio_id" required class="input-base">
-                  <option value="">Seleccionar laboratorio</option>
-                  <option v-for="laboratorio in laboratorios" :key="laboratorio.id" :value="laboratorio.id">
-                    {{ laboratorio.nombre }}
-                  </option>
-                </select>
+                <div class="flex gap-2">
+                  <select v-model="modalFormulario.datos.laboratorio_id" required class="input-base flex-1">
+                    <option value="">Seleccionar laboratorio</option>
+                    <option v-for="laboratorio in laboratorios" :key="laboratorio.id" :value="laboratorio.id">
+                      {{ laboratorio.nombre }}
+                    </option>
+                  </select>
+                  <button 
+                    type="button"
+                    @click="abrirModalAgregarLaboratorio" 
+                    class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                    title="Agregar casa médica"
+                  >
+                    ➕
+                  </button>
+                  <button 
+                    type="button"
+                    @click="eliminarLaboratorio" 
+                    :disabled="!modalFormulario.datos.laboratorio_id"
+                    class="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+                    title="Eliminar casa médica seleccionada"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -583,6 +621,101 @@
         </div>
       </div>
     </div>
+
+
+    <!-- Modal Agregar Presentación -->
+    <div v-if="modalPresentacion.visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">➕ Agregar Nueva Presentación</h3>
+          <button @click="cerrarModalPresentacion" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form @submit.prevent="guardarPresentacion" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Presentación *</label>
+            <input
+              v-model="modalPresentacion.datos.nombre"
+              type="text"
+              required
+              class="input-base"
+              placeholder="Ej: Frasco 1000 ml"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea
+              v-model="modalPresentacion.datos.descripcion"
+              rows="2"
+              class="input-base"
+              placeholder="Descripción opcional..."
+            ></textarea>
+          </div>
+
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="cerrarModalPresentacion" class="btn-secondary">
+              Cancelar
+            </button>
+            <button type="submit" class="btn-primary">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Agregar Casa Médica -->
+    <div v-if="modalLaboratorio.visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">➕ Agregar Nueva Casa Médica</h3>
+          <button @click="cerrarModalLaboratorio" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form @submit.prevent="guardarLaboratorio" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Casa Médica *</label>
+            <input
+              v-model="modalLaboratorio.datos.nombre"
+              type="text"
+              required
+              class="input-base"
+              placeholder="Ej: Laboratorio Bayer"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea
+              v-model="modalLaboratorio.datos.descripcion"
+              rows="2"
+              class="input-base"
+              placeholder="Descripción opcional..."
+            ></textarea>
+          </div>
+
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="cerrarModalLaboratorio" class="btn-secondary">
+              Cancelar
+            </button>
+            <button type="submit" class="btn-primary">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
 
     <!-- Modal Actualizar Stock -->
     <div v-if="modalStock.visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -871,6 +1004,23 @@ export default {
           dosis: '',
           porcentaje_comision: 0,
           requiere_extras: false
+        }
+      },
+      
+      // ✅ NUEVOS MODALES
+      modalPresentacion: {
+        visible: false,
+        datos: {
+          nombre: '',
+          descripcion: ''
+        }
+      },
+      
+      modalLaboratorio: {
+        visible: false,
+        datos: {
+          nombre: '',
+          descripcion: ''
         }
       }
     }
@@ -1462,36 +1612,22 @@ export default {
           return
         }
         
-        // ✅ Generar CSV con el separador correcto para Excel
         const csvContent = this.convertirCSVMejorado(this.medicamentos)
-        
-        // ✅ CRÍTICO: Agregar BOM (Byte Order Mark) para UTF-8
         const BOM = '\uFEFF'
-        
-        // ✅ Crear Blob con BOM + contenido
-        // Usar 'text/csv' para que Excel lo reconozca automáticamente
-        const blob = new Blob([BOM + csvContent], { 
-          type: 'text/csv;charset=utf-8;' 
-        })
-        
-        // ✅ Crear link de descarga
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement('a')
         const url = URL.createObjectURL(blob)
         
         link.setAttribute('href', url)
         link.setAttribute('download', `medicamentos_${new Date().toISOString().split('T')[0]}.csv`)
         link.style.visibility = 'hidden'
-        
-        // ✅ Trigger descarga
         document.body.appendChild(link)
         link.click()
-        
-        // ✅ Cleanup
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
         
         console.log('✅ Excel exportado exitosamente')
-        alert(`✅ Excel exportado: ${this.medicamentos.length} medicamentos\n\n💡 Si las columnas no se separan automáticamente:\n1. Abre el archivo en Excel\n2. Selecciona toda la columna A\n3. Ve a "Datos" > "Texto en columnas"\n4. Selecciona "Delimitado" > Siguiente\n5. Marca "Coma" como delimitador > Finalizar`)
+        alert(`✅ Excel exportado: ${this.medicamentos.length} medicamentos`)
         
       } catch (error) {
         console.error('❌ Error exportando Excel:', error)
@@ -1499,105 +1635,72 @@ export default {
       }
     },
 
-    // Convertir datos a CSV
     convertirCSVMejorado(datos) {
-  // ✅ Separador: punto y coma para Excel en español
-  const SEPARADOR = ';'
-  
-  // ✅ Headers
-  const headers = [
-    'ID',
-    'Nombre',
-    'Presentación',
-    'Laboratorio',
-    'Existencias',
-    'Fecha Vencimiento',
-    'Precio Tarjeta',
-    'Precio Efectivo',
-    'Costo Compra',
-    'Indicaciones',
-    'Contraindicaciones',
-    'Dosis',
-    'Comisión (%)',
-    'Requiere Extras'
-  ]
-  
-  // ✅ Escapar valores
-  const escaparValor = (valor) => {
-    if (valor === null || valor === undefined) return ''
-    let valorStr = String(valor).trim()
-    valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
-    
-    if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
-      valorStr = valorStr.replace(/"/g, '""')
-      return `"${valorStr}"`
-    }
-    return valorStr
-  }
-  
-  // ✅ Formatear fecha
-  const formatearFecha = (fecha) => {
-    if (!fecha) return ''
-    try {
-      const date = new Date(fecha)
-      const dia = String(date.getDate()).padStart(2, '0')
-      const mes = String(date.getMonth() + 1).padStart(2, '0')
-      const anio = date.getFullYear()
-      return `${dia}/${mes}/${anio}`
-    } catch {
-      return ''
-    }
-  }
-  
-  // ✅ Formatear decimales con coma
-  const formatearDecimal = (numero) => {
-    if (numero === null || numero === undefined) return '0,00'
-    return parseFloat(numero || 0).toFixed(2).replace('.', ',')
-  }
-  
-  // ✅ Headers
-  const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
-  
-  // ✅ Datos
-  const lineasDatos = datos.map(med => {
-    const valores = [
-      med.id || '',
-      med.nombre || '',
-      med.presentacion_nombre || '',
-      med.laboratorio_nombre || '',
-      med.existencias || 0,
-      formatearFecha(med.fecha_vencimiento),
-      formatearDecimal(med.precio_tarjeta),
-      formatearDecimal(med.precio_efectivo),
-      formatearDecimal(med.costo_compra),
-      (med.indicaciones || '').trim(),
-      (med.contraindicaciones || '').trim(),
-      (med.dosis || '').trim(),
-      formatearDecimal(med.porcentaje_comision),
-      med.requiere_extras ? 'Sí' : 'No'
-    ]
-    
-    return valores.map(v => escaparValor(v)).join(SEPARADOR)
-  })
-  
-  // ✅ Resultado final
-  return [lineaHeaders, ...lineasDatos].join('\r\n')
-},
+      const SEPARADOR = ';'
+      
+      const headers = [
+        'ID', 'Nombre', 'Presentación', 'Laboratorio', 'Existencias',
+        'Fecha Vencimiento', 'Precio Tarjeta', 'Precio Efectivo', 'Costo Compra',
+        'Indicaciones', 'Contraindicaciones', 'Dosis', 'Comisión (%)', 'Requiere Extras'
+      ]
+      
+      const escaparValor = (valor) => {
+        if (valor === null || valor === undefined) return ''
+        let valorStr = String(valor).trim()
+        valorStr = valorStr.replace(/[\r\n\t]/g, ' ')
+        if (valorStr.includes(SEPARADOR) || valorStr.includes('"')) {
+          valorStr = valorStr.replace(/"/g, '""')
+          return `"${valorStr}"`
+        }
+        return valorStr
+      }
+      
+      const formatearFecha = (fecha) => {
+        if (!fecha) return ''
+        try {
+          const date = new Date(fecha)
+          const dia = String(date.getDate()).padStart(2, '0')
+          const mes = String(date.getMonth() + 1).padStart(2, '0')
+          const anio = date.getFullYear()
+          return `${dia}/${mes}/${anio}`
+        } catch {
+          return ''
+        }
+      }
+      
+      const formatearDecimal = (numero) => {
+        if (numero === null || numero === undefined) return '0,00'
+        return parseFloat(numero || 0).toFixed(2).replace('.', ',')
+      }
+      
+      const lineaHeaders = headers.map(h => escaparValor(h)).join(SEPARADOR)
+      
+      const lineasDatos = datos.map(med => {
+        const valores = [
+          med.id || '', med.nombre || '', med.presentacion_nombre || '',
+          med.laboratorio_nombre || '', med.existencias || 0,
+          formatearFecha(med.fecha_vencimiento), formatearDecimal(med.precio_tarjeta),
+          formatearDecimal(med.precio_efectivo), formatearDecimal(med.costo_compra),
+          (med.indicaciones || '').trim(), (med.contraindicaciones || '').trim(),
+          (med.dosis || '').trim(), formatearDecimal(med.porcentaje_comision),
+          med.requiere_extras ? 'Sí' : 'No'
+        ]
+        return valores.map(v => escaparValor(v)).join(SEPARADOR)
+      })
+      
+      return [lineaHeaders, ...lineasDatos].join('\r\n')
+    },
 
-    // Formatear fecha para mostrar
     formatearFecha(fecha) {
       return farmaciaService.formatDate(fecha)
     },
 
-    // Formatear precio para mostrar
     formatearPrecio(precio) {
       return farmaciaService.formatPrice(precio)
     },
 
-    // Eliminar medicamento
     async eliminarMedicamento(medicamento) {
       try {
-        // Confirmación doble por seguridad
         const confirmar1 = confirm(`¿Estás seguro de que deseas ELIMINAR el medicamento "${medicamento.nombre}"?`)
         if (!confirmar1) return
         
@@ -1608,21 +1711,118 @@ export default {
         
         await farmaciaService.eliminarMedicamento(medicamento.id)
         
-        // Recargar datos
         await Promise.all([
           this.cargarMedicamentos(),
           this.cargarEstadisticas()
         ])
         
-        // Limpiar cache de extras
         delete this.extrasCache[medicamento.id]
         
-        // Mostrar mensaje de éxito
         alert(`✅ Medicamento "${medicamento.nombre}" eliminado exitosamente`)
         
       } catch (error) {
         console.error('❌ Error eliminando medicamento:', error)
         alert(`❌ Error eliminando medicamento: ${error.message}`)
+      }
+    },
+
+    // ============================================================================
+    // ✅ FUNCIONES PRESENTACIONES
+    // ============================================================================
+    abrirModalAgregarPresentacion() {
+      this.modalPresentacion.datos.nombre = ''
+      this.modalPresentacion.datos.descripcion = ''
+      this.modalPresentacion.visible = true
+    },
+
+    cerrarModalPresentacion() {
+      this.modalPresentacion.visible = false
+    },
+
+    async guardarPresentacion() {
+      try {
+        const response = await farmaciaService.crearPresentacion(this.modalPresentacion.datos)
+        if (response.success) {
+          await this.cargarPresentaciones()
+          this.cerrarModalPresentacion()
+          alert('✅ Presentación creada exitosamente')
+        }
+      } catch (error) {
+        console.error('Error creando presentación:', error)
+        alert(error.response?.data?.message || 'Error al crear presentación')
+      }
+    },
+
+    async eliminarPresentacion() {
+      if (!this.modalFormulario.datos.presentacion_id) return
+      
+      const presentacionSeleccionada = this.presentaciones.find(
+        p => p.id === this.modalFormulario.datos.presentacion_id
+      )
+      
+      if (!presentacionSeleccionada) return
+      if (!confirm(`¿Eliminar la presentación "${presentacionSeleccionada.nombre}"?`)) return
+      
+      try {
+        const response = await farmaciaService.eliminarPresentacion(this.modalFormulario.datos.presentacion_id)
+        if (response.success) {
+          this.modalFormulario.datos.presentacion_id = ''
+          await this.cargarPresentaciones()
+          alert('✅ Presentación eliminada exitosamente')
+        }
+      } catch (error) {
+        console.error('Error eliminando presentación:', error)
+        alert(error.response?.data?.message || 'Error al eliminar presentación')
+      }
+    },
+
+    // ============================================================================
+    // ✅ FUNCIONES LABORATORIOS
+    // ============================================================================
+    abrirModalAgregarLaboratorio() {
+      this.modalLaboratorio.datos.nombre = ''
+      this.modalLaboratorio.datos.descripcion = ''
+      this.modalLaboratorio.visible = true
+    },
+
+    cerrarModalLaboratorio() {
+      this.modalLaboratorio.visible = false
+    },
+
+    async guardarLaboratorio() {
+      try {
+        const response = await farmaciaService.crearCasaMedica(this.modalLaboratorio.datos)
+        if (response.success) {
+          await this.cargarLaboratorios()
+          this.cerrarModalLaboratorio()
+          alert('✅ Casa médica creada exitosamente')
+        }
+      } catch (error) {
+        console.error('Error creando casa médica:', error)
+        alert(error.response?.data?.message || 'Error al crear casa médica')
+      }
+    },
+
+    async eliminarLaboratorio() {
+      if (!this.modalFormulario.datos.laboratorio_id) return
+      
+      const laboratorioSeleccionado = this.laboratorios.find(
+        l => l.id === this.modalFormulario.datos.laboratorio_id
+      )
+      
+      if (!laboratorioSeleccionado) return
+      if (!confirm(`¿Eliminar la casa médica "${laboratorioSeleccionado.nombre}"?`)) return
+      
+      try {
+        const response = await farmaciaService.eliminarCasaMedica(this.modalFormulario.datos.laboratorio_id)
+        if (response.success) {
+          this.modalFormulario.datos.laboratorio_id = ''
+          await this.cargarLaboratorios()
+          alert('✅ Casa médica eliminada exitosamente')
+        }
+      } catch (error) {
+        console.error('Error eliminando casa médica:', error)
+        alert(error.response?.data?.message || 'Error al eliminar casa médica')
       }
     }
   }

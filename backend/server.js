@@ -50,6 +50,8 @@ const laboratoriosRoutes = require('./src/routes/laboratorios');
 const usuariosRoutes = require('./src/routes/usuarios');
 const libroBancosRoutes = require('./src/routes/libroBancos');
 const estadoResultadosRoutes = require('./src/routes/estadoResultados');
+const presentacionesRoutes = require('./src/routes/presentaciones');
+const casasMedicasRoutes = require('./src/routes/casasMedicas');
 
 const app = express();
 
@@ -313,6 +315,12 @@ console.log('📖 Rutas de libro de bancos configuradas');
 
 app.use('/api/estado-resultados', estadoResultadosRoutes);
 console.log('📊 Rutas de estado de resultados configuradas');
+
+app.use('/api/presentaciones', presentacionesRoutes);
+console.log('📋 Rutas de presentaciones configuradas');
+
+app.use('/api/casas-medicas', casasMedicasRoutes);
+console.log('🏭 Rutas de casas médicas configuradas');
 
 
 // ============================================================================
