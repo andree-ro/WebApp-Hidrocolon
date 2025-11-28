@@ -241,7 +241,7 @@
               <!-- Precios -->
               <td class="px-6 py-4">
                 <div class="flex items-center space-x-2">
-                  <span class="text-lg">💰</span>
+                  
                   <span class="text-sm font-medium text-gray-900">{{ formatearPrecio(servicio.precio) }}</span>
                 </div>
               </td>

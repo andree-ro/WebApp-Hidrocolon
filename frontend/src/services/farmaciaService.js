@@ -211,8 +211,7 @@ const farmaciaService = {
       laboratorio_id: parseInt(datos.laboratorio_id) || null,
       fecha_vencimiento: datos.fecha_vencimiento || null,
       existencias: parseInt(datos.existencias) || 0,
-      precio_tarjeta: parseFloat(datos.precio_tarjeta) || 0,
-      precio_efectivo: parseFloat(datos.precio_efectivo) || 0,
+      precio: parseFloat(datos.precio) || parseFloat(datos.precio_tarjeta) || 0,
       costo_compra: parseFloat(datos.costo_compra) || 0,
       indicaciones: datos.indicaciones?.trim() || '',
       contraindicaciones: datos.contraindicaciones?.trim() || '',
@@ -225,7 +224,7 @@ const farmaciaService = {
     // Remover campos nulos o vacíos para updates parciales
     Object.keys(datosLimpios).forEach(key => {
       if (datosLimpios[key] === null || datosLimpios[key] === '') {
-        if (key !== 'existencias' && key !== 'precio_tarjeta' && key !== 'precio_efectivo') {
+        if (key !== 'existencias' && key !== 'precio') {
           delete datosLimpios[key]
         }
       }
@@ -286,12 +285,9 @@ const farmaciaService = {
       errores.push('La fecha de vencimiento es obligatoria')
     }
 
-    if (datos.precio_tarjeta !== undefined && (isNaN(datos.precio_tarjeta) || datos.precio_tarjeta < 0)) {
-      errores.push('El precio de tarjeta debe ser un número válido mayor o igual a 0')
-    }
-
-    if (datos.precio_efectivo !== undefined && (isNaN(datos.precio_efectivo) || datos.precio_efectivo < 0)) {
-      errores.push('El precio de efectivo debe ser un número válido mayor o igual a 0')
+    const precioAValidar = datos.precio || datos.precio_tarjeta
+    if (precioAValidar !== undefined && (isNaN(precioAValidar) || precioAValidar < 0)) {
+      errores.push('El precio debe ser un número positivo')
     }
 
     if (datos.existencias !== undefined && (isNaN(datos.existencias) || datos.existencias < 0)) {
