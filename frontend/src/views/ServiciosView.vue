@@ -240,15 +240,9 @@
 
               <!-- Precios -->
               <td class="px-6 py-4">
-                <div class="space-y-1">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-lg">💵</span>
-                    <span class="text-sm font-medium text-gray-900">{{ formatearPrecio(servicio.precio_efectivo) }}</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-lg">💳</span>
-                    <span class="text-sm text-gray-600">{{ formatearPrecio(servicio.precio_tarjeta) }}</span>
-                  </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-lg">💰</span>
+                  <span class="text-sm font-medium text-gray-900">{{ formatearPrecio(servicio.precio) }}</span>
                 </div>
               </td>
 
@@ -422,8 +416,7 @@
               <div>
                 <h4 class="font-medium text-gray-900 mb-3">Precios y Configuración</h4>
                 <div class="space-y-2 text-sm">
-                  <div><span class="text-gray-500">💵 Precio Efectivo:</span> {{ formatearPrecio(servicioParaDetalles.precio_efectivo) }}</div>
-                  <div><span class="text-gray-500">💳 Precio Tarjeta:</span> {{ formatearPrecio(servicioParaDetalles.precio_tarjeta) }}</div>
+                  <div><span class="text-gray-500">💰 Precio:</span> {{ formatearPrecio(servicioParaDetalles.precio) }}</div>
                   <div><span class="text-gray-500">💰 Monto Mínimo:</span> {{ formatearPrecio(servicioParaDetalles.monto_minimo) }}</div>
                   <div><span class="text-gray-500">📈 Comisión:</span> {{ servicioParaDetalles.porcentaje_comision || servicioParaDetalles.comision_venta || 0 }}%</div>
                 </div>
@@ -451,7 +444,7 @@
                         Cantidad requerida: {{ medicamento.cantidad_requerida || 1 }}
                       </p>
                       <p class="text-xs text-green-600">
-                        Precio: {{ formatearPrecio(medicamento.precio_efectivo) }}
+                        Precio: {{ formatearPrecio(medicamento.precio) }}
                       </p>
                     </div>
                   </div>
@@ -771,7 +764,7 @@ export default {
           this.stats = {
             total_servicios: this.servicios.length,
             servicios_activos: this.servicios.filter(s => s.activo).length,
-            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
+            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio || 0), 0) / this.servicios.length,
             con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length,
             con_extras: this.servicios.filter(s => s.requiere_extras).length
           }
@@ -785,7 +778,7 @@ export default {
           this.stats = {
             total_servicios: this.servicios.length,
             servicios_activos: this.servicios.filter(s => s.activo).length,
-            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / this.servicios.length,
+            precio_promedio: this.servicios.reduce((sum, s) => sum + (s.precio || 0), 0) / this.servicios.length,
             con_medicamentos: this.servicios.filter(s => s.total_medicamentos > 0).length,
             con_extras: this.servicios.filter(s => s.requiere_extras).length            
           }
@@ -1132,8 +1125,7 @@ export default {
       const headers = [
         'ID',
         'Nombre Servicio',
-        'Precio Efectivo',
-        'Precio Tarjeta',
+        'Precio',
         'Monto Mínimo',
         'Comisión (%)',
         'Requiere Medicamentos',
@@ -1183,8 +1175,7 @@ export default {
         const valores = [
           servicio.id || '',
           servicio.nombre || servicio.nombre_servicio || '',
-          formatearDecimal(servicio.precio_efectivo),
-          formatearDecimal(servicio.precio_tarjeta),
+          formatearDecimal(servicio.precio),
           formatearDecimal(servicio.monto_minimo),
           formatearDecimal(servicio.porcentaje_comision || servicio.comision_venta || 0),
           servicio.requiere_medicamentos ? 'Sí' : 'No',

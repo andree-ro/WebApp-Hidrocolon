@@ -136,7 +136,7 @@
                       {{ medicamento.presentacion_nombre }} - {{ medicamento.laboratorio_nombre }}
                     </p>
                     <p class="text-xs text-green-600">
-                      Stock: {{ medicamento.existencias }} - 💳 {{ formatPrice(medicamento.precio_tarjeta) }}
+                      Stock: {{ medicamento.existencias }} - 💰 {{ formatPrice(medicamento.precio) }}
                     </p>
                   </div>
                 </div>

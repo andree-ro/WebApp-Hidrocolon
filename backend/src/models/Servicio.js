@@ -4,8 +4,7 @@ class Servicio {
     constructor(data) {
         this.id = data.id;
         this.nombre = data.nombre || data.nombre_servicio;
-        this.precio_tarjeta = parseFloat(data.precio_tarjeta) || 0;
-        this.precio_efectivo = parseFloat(data.precio_efectivo) || 0;
+        this.precio = parseFloat(data.precio) || parseFloat(data.precio_tarjeta) || 0;
         this.monto_minimo = parseFloat(data.monto_minimo) || 0;
         this.porcentaje_comision = parseFloat(data.porcentaje_comision) || 0;
         this.requiere_medicamentos = Boolean(data.requiere_medicamentos);
@@ -75,7 +74,7 @@ class Servicio {
 
             // ===== PASO 2: VALIDACIÓN DE ORDENAMIENTO =====
             const validOrderColumns = [
-                'id', 'nombre', 'descripcion', 'precio_tarjeta', 'precio_efectivo', 
+                'id', 'nombre', 'descripcion', 'precio',
                 'monto_minimo', 'porcentaje_comision', 'fecha_creacion', 'fecha_actualizacion'
             ];
             
@@ -128,8 +127,8 @@ class Servicio {
             if (precio_min !== null && precio_min !== '') {
                 const minPrice = parseFloat(precio_min);
                 if (!isNaN(minPrice) && minPrice >= 0) {
-                    baseQuery += ` AND s.precio_efectivo >= ?`;
-                    countQuery += ` AND s.precio_efectivo >= ?`;
+                    baseQuery += ` AND s.precio >= ?`;
+                    countQuery += ` AND s.precio >= ?`;
                     queryParams.push(minPrice);
                     countParams.push(minPrice);
                     console.log('💰 Filtro precio mínimo aplicado:', minPrice);
@@ -140,8 +139,8 @@ class Servicio {
             if (precio_max !== null && precio_max !== '') {
                 const maxPrice = parseFloat(precio_max);
                 if (!isNaN(maxPrice) && maxPrice >= 0) {
-                    baseQuery += ` AND s.precio_efectivo <= ?`;
-                    countQuery += ` AND s.precio_efectivo <= ?`;
+                    baseQuery += ` AND s.precio <= ?`;
+                    countQuery += ` AND s.precio <= ?`;
                     queryParams.push(maxPrice);
                     countParams.push(maxPrice);
                     console.log('💰 Filtro precio máximo aplicado:', maxPrice);
@@ -279,8 +278,7 @@ class Servicio {
             // Valores por defecto seguros
             const servicioData = {
                 nombre: nombre.trim(), // ✅ AQUÍ va la línea corregida
-                precio_tarjeta: parseFloat(data.precio_tarjeta) || 0,
-                precio_efectivo: parseFloat(data.precio_efectivo) || 0,
+                precio: parseFloat(data.precio) || parseFloat(data.precio_tarjeta) || 0,
                 monto_minimo: parseFloat(data.monto_minimo) || 0,
                 porcentaje_comision: parseFloat(data.porcentaje_comision) || parseFloat(data.comision_venta) || 0, // ✅ Acepta ambos campos
                 requiere_medicamentos: Boolean(data.requiere_medicamentos),
@@ -290,15 +288,14 @@ class Servicio {
 
             const query = `
                 INSERT INTO servicios (
-                    nombre, precio_tarjeta, precio_efectivo, monto_minimo, 
+                    nombre, precio, monto_minimo,
                     porcentaje_comision, requiere_medicamentos, requiere_extras, activo
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
 
             const params = [
                 servicioData.nombre,
-                servicioData.precio_tarjeta,
-                servicioData.precio_efectivo,
+                servicioData.precio,
                 servicioData.monto_minimo,
                 servicioData.porcentaje_comision,
                 servicioData.requiere_medicamentos ? 1 : 0,
@@ -338,13 +335,9 @@ class Servicio {
                 setClause.push('nombre = ?');
                 params.push(data.nombre.trim());
             }
-            if (data.precio_tarjeta !== undefined) {
-                setClause.push('precio_tarjeta = ?');
-                params.push(parseFloat(data.precio_tarjeta) || 0);
-            }
-            if (data.precio_efectivo !== undefined) {
-                setClause.push('precio_efectivo = ?');
-                params.push(parseFloat(data.precio_efectivo) || 0);
+            if (data.precio !== undefined || data.precio_tarjeta !== undefined) {
+                setClause.push('precio = ?');
+                params.push(parseFloat(data.precio) || parseFloat(data.precio_tarjeta) || 0);
             }
             if (data.monto_minimo !== undefined) {
                 setClause.push('monto_minimo = ?');
@@ -432,9 +425,9 @@ class Servicio {
                 inactivos: 'SELECT COUNT(*) as count FROM servicios WHERE activo = 0',
                 con_medicamentos: 'SELECT COUNT(*) as count FROM servicios WHERE requiere_medicamentos = 1',
                 sin_medicamentos: 'SELECT COUNT(*) as count FROM servicios WHERE requiere_medicamentos = 0',
-                precio_promedio: 'SELECT AVG(precio_efectivo) as promedio FROM servicios WHERE activo = 1',
-                precio_min: 'SELECT MIN(precio_efectivo) as minimo FROM servicios WHERE activo = 1',
-                precio_max: 'SELECT MAX(precio_efectivo) as maximo FROM servicios WHERE activo = 1'
+                precio_promedio: 'SELECT AVG(precio) as promedio FROM servicios WHERE activo = 1',
+                precio_min: 'SELECT MIN(precio) as minimo FROM servicios WHERE activo = 1',
+                precio_max: 'SELECT MAX(precio) as maximo FROM servicios WHERE activo = 1'
             };
 
             const stats = {};
@@ -561,8 +554,7 @@ class Servicio {
             return servicios.map(servicio => ({
                 'ID': servicio.id,
                 'Nombre': servicio.nombre,
-                'Precio Tarjeta': `$${servicio.precio_tarjeta}`,
-                'Precio Efectivo': `$${servicio.precio_efectivo}`,
+                'Precio': `$${servicio.precio}`,
                 'Estado': servicio.activo ? 'Activo' : 'Inactivo'
             }));
 

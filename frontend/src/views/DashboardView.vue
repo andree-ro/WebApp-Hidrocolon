@@ -520,7 +520,7 @@ export default {
           total_servicios: servicios.length,
           servicios_activos: servicios.filter(s => s.activo).length,
           precio_promedio: servicios.length > 0 ? 
-            servicios.reduce((sum, s) => sum + (s.precio_efectivo || 0), 0) / servicios.length : 0,
+            servicios.reduce((sum, s) => sum + (s.precio || 0), 0) / servicios.length : 0,
           con_medicamentos: servicios.filter(s => (s.total_medicamentos || 0) > 0).length
         }
         

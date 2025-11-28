@@ -104,8 +104,8 @@ const crearServicio = async (req, res) => {
 
         const {
             nombre_servicio,
-            precio_tarjeta,
-            precio_efectivo,
+            precio,
+            precio_tarjeta, // Compatibilidad temporal
             monto_minimo = 0,
             comision_venta = 0,
             descripcion = '',
@@ -122,17 +122,11 @@ const crearServicio = async (req, res) => {
             });
         }
 
-        if (!precio_tarjeta || precio_tarjeta <= 0) {
+        const precioFinal = precio || precio_tarjeta;
+        if (!precioFinal || precioFinal <= 0) {
             return res.status(400).json({
                 success: false,
-                message: 'El precio con tarjeta debe ser mayor a 0'
-            });
-        }
-
-        if (!precio_efectivo || precio_efectivo <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'El precio en efectivo debe ser mayor a 0'
+                message: 'El precio debe ser mayor a 0'
             });
         }
 
@@ -156,8 +150,7 @@ const crearServicio = async (req, res) => {
         // CORREGIDO: Mapear campos frontend -> BD
         const datosServicio = {
             nombre: nombre_servicio.trim(),
-            precio_tarjeta: parseFloat(precio_tarjeta),
-            precio_efectivo: parseFloat(precio_efectivo),
+            precio: parseFloat(precioFinal),
             monto_minimo: montoMinimoNum,
             porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',
@@ -217,8 +210,8 @@ const actualizarServicio = async (req, res) => {
 
         const {
             nombre_servicio,
-            precio_tarjeta,
-            precio_efectivo,
+            precio,
+            precio_tarjeta, // Compatibilidad temporal
             monto_minimo,
             comision_venta,
             descripcion,
@@ -235,17 +228,11 @@ const actualizarServicio = async (req, res) => {
             });
         }
 
-        if (!precio_tarjeta || precio_tarjeta <= 0) {
+        const precioFinal = precio || precio_tarjeta;
+        if (!precioFinal || precioFinal <= 0) {
             return res.status(400).json({
                 success: false,
-                message: 'El precio con tarjeta debe ser mayor a 0'
-            });
-        }
-
-        if (!precio_efectivo || precio_efectivo <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'El precio en efectivo debe ser mayor a 0'
+                message: 'El precio debe ser mayor a 0'
             });
         }
 
@@ -260,8 +247,7 @@ const actualizarServicio = async (req, res) => {
         // CORREGIDO: Mapear campos frontend -> BD
         const datosActualizacion = {
             nombre: nombre_servicio.trim(),
-            precio_tarjeta: parseFloat(precio_tarjeta),
-            precio_efectivo: parseFloat(precio_efectivo),
+            precio: parseFloat(precioFinal),
             monto_minimo: parseFloat(monto_minimo || 0),
             porcentaje_comision: comisionNum,
             descripcion: descripcion?.trim() || '',

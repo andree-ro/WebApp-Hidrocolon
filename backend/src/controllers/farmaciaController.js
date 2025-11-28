@@ -389,8 +389,7 @@ class FarmaciaController {
         Laboratorio: med.laboratorio_nombre,
         Existencias: med.existencias,
         'Fecha Vencimiento': med.fecha_vencimiento,
-        'Precio Tarjeta': med.precio_tarjeta,
-        'Precio Efectivo': med.precio_efectivo,
+        'Precio': med.precio,
         'Costo Compra': med.costo_compra,
         'Comisión %': med.comision_porcentaje,
         Indicaciones: med.indicaciones,
@@ -460,7 +459,7 @@ class FarmaciaController {
       }
 
       // Preparar datos para el carrito
-      const precio = precio_tipo === 'efectivo' ? med.precio_efectivo : med.precio_tarjeta;
+      const precio = med.precio; // Ahora siempre hay un solo precio
       const subtotal = precio * parseInt(cantidad);
 
       const itemCarrito = {

@@ -43,8 +43,7 @@ class Medicamento {
                     m.laboratorio_id,
                     m.existencias,
                     m.fecha_vencimiento,
-                    m.precio_tarjeta,
-                    m.precio_efectivo,
+                    m.precio,
                     m.costo_compra,
                     m.porcentaje_comision,
                     m.indicaciones,
@@ -187,10 +186,10 @@ class Medicamento {
             const query = `
                 INSERT INTO medicamentos (
                     nombre, presentacion_id, laboratorio_id, existencias,
-                    fecha_vencimiento, precio_tarjeta, precio_efectivo, costo_compra,
+                    fecha_vencimiento, precio, costo_compra,
                     indicaciones, contraindicaciones, dosis, porcentaje_comision,
                     requiere_extras, activo, fecha_creacion
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
             `;
 
             const params = [
@@ -199,8 +198,7 @@ class Medicamento {
                 medicamentoData.laboratorio_id,
                 medicamentoData.existencias || 0,
                 medicamentoData.fecha_vencimiento,
-                medicamentoData.precio_tarjeta || 0,
-                medicamentoData.precio_efectivo || 0,
+                medicamentoData.precio || medicamentoData.precio_tarjeta || 0,
                 medicamentoData.costo_compra || 0,
                 medicamentoData.indicaciones || '',
                 medicamentoData.contraindicaciones || '',
@@ -253,13 +251,9 @@ class Medicamento {
                 setClauses.push('fecha_vencimiento = ?');
                 params.push(medicamentoData.fecha_vencimiento);
             }
-            if (medicamentoData.precio_tarjeta !== undefined) {
-                setClauses.push('precio_tarjeta = ?');
-                params.push(medicamentoData.precio_tarjeta);
-            }
-            if (medicamentoData.precio_efectivo !== undefined) {
-                setClauses.push('precio_efectivo = ?');
-                params.push(medicamentoData.precio_efectivo);
+            if (medicamentoData.precio !== undefined || medicamentoData.precio_tarjeta !== undefined) {
+                setClauses.push('precio = ?');
+                params.push(medicamentoData.precio || medicamentoData.precio_tarjeta);
             }
             if (medicamentoData.costo_compra !== undefined) {
                 setClauses.push('costo_compra = ?');
@@ -384,7 +378,7 @@ class Medicamento {
                     SUM(CASE WHEN fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND fecha_vencimiento > NOW() THEN 1 ELSE 0 END) as proximo_vencer,
                     SUM(CASE WHEN fecha_vencimiento <= NOW() THEN 1 ELSE 0 END) as vencidos,
                     SUM(existencias) as total_existencias,
-                    ROUND(AVG(precio_tarjeta), 2) as precio_promedio
+                    ROUND(AVG(precio), 2) as precio_promedio
                 FROM medicamentos 
                 WHERE activo = 1
             `;

@@ -28,22 +28,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Precio Efectivo *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
               <input
-                v-model.number="form.precio_efectivo"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                class="input-base"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Precio Tarjeta *</label>
-              <input
-                v-model.number="form.precio_tarjeta"
+                v-model.number="form.precio"
                 type="number"
                 step="0.01"
                 min="0"
@@ -92,19 +79,6 @@
           <!-- Configuración de medicamentos, extras y estado -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-3">
-              <!-- Checkbox requiere medicamentos -->
-              <div class="flex items-center">
-                <input
-                  v-model="form.requiere_medicamentos"
-                  type="checkbox"
-                  id="requiere_medicamentos"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  @change="form.requiere_extras = false"
-                />
-                <label for="requiere_medicamentos" class="ml-2 text-sm text-gray-700">
-                  Requiere medicamentos específicos
-                </label>
-              </div>
               
               <!-- Botón gestionar medicamentos -->
               <div v-if="form.requiere_medicamentos && editando">
@@ -143,7 +117,7 @@
                   @change="form.requiere_medicamentos = false"
                 />
                 <label for="requiere_extras" class="ml-2 text-sm text-gray-700">
-                  Requiere extras directamente (sin medicamentos)
+                  Requiere extras especificos
                 </label>
               </div>
               
@@ -285,8 +259,7 @@ export default {
       },
       form: {
         nombre_servicio: '',
-        precio_efectivo: 0,
-        precio_tarjeta: 0,
+        precio: 0,
         monto_minimo: 0,
         porcentaje_comision: 0,
         requiere_medicamentos: false,
@@ -325,8 +298,7 @@ export default {
         // Modo editar - cargar datos del servicio
         this.form = {
           nombre_servicio: this.servicio.nombre || this.servicio.nombre_servicio || '',
-          precio_efectivo: parseFloat(this.servicio.precio_efectivo) || 0,
-          precio_tarjeta: parseFloat(this.servicio.precio_tarjeta) || 0,
+          precio: parseFloat(this.servicio.precio) || 0,
           monto_minimo: parseFloat(this.servicio.monto_minimo) || 0,
           porcentaje_comision: parseFloat(this.servicio.porcentaje_comision) || parseFloat(this.servicio.comision_venta) || 0,
           requiere_medicamentos: Boolean(this.servicio.requiere_medicamentos),
@@ -347,8 +319,7 @@ export default {
         // Modo crear - formulario limpio
         this.form = {
           nombre_servicio: '',
-          precio_efectivo: 0,
-          precio_tarjeta: 0,
+          precio: 0,
           monto_minimo: 0,
           porcentaje_comision: 0,
           requiere_medicamentos: false,
@@ -425,20 +396,14 @@ export default {
           return
         }
         
-        if (!this.form.precio_efectivo || this.form.precio_efectivo <= 0) {
-          alert('El precio en efectivo debe ser mayor a 0')
-          return
-        }
-        
-        if (!this.form.precio_tarjeta || this.form.precio_tarjeta <= 0) {
-          alert('El precio con tarjeta debe ser mayor a 0')
+        if (!this.form.precio || this.form.precio <= 0) {
+          alert('El precio debe ser mayor a 0')
           return
         }
         
         const datos = {
           nombre_servicio: this.form.nombre_servicio.trim(),
-          precio_efectivo: parseFloat(this.form.precio_efectivo),
-          precio_tarjeta: parseFloat(this.form.precio_tarjeta),
+          precio: parseFloat(this.form.precio),
           monto_minimo: parseFloat(this.form.monto_minimo) || 0,
           comision_venta: parseFloat(this.form.porcentaje_comision) || 0,
           requiere_medicamentos: Boolean(this.form.requiere_medicamentos),

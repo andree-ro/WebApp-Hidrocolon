@@ -156,7 +156,7 @@
                     <span v-if="tipoProductoSeleccionado === 'medicamento'" class="mr-3">
                       📦 Stock: {{ producto.existencias || 0 }}
                     </span>
-                    <span class="text-blue-700 font-semibold text-base">Q{{ producto.precio_tarjeta }}</span>
+                    <span class="text-blue-700 font-semibold text-base">Q{{ producto.precio }}</span>
                   </div>
                 </div>
                 
@@ -193,10 +193,7 @@
                     <span v-if="item.presentacion" class="ml-2">• {{ item.presentacion }}</span>
                   </div>
                   <div class="text-sm mt-1">
-                    <span :class="item.precio_tipo === 'efectivo' ? 'text-green-700' : 'text-blue-700'">
-                      {{ item.precio_tipo === 'efectivo' ? '💵 Efectivo' : '💳 Tarjeta' }}
-                    </span>
-                    <span class="ml-2 font-medium">Q{{ item.precio_unitario }}</span>
+                    <span class="font-medium text-gray-900">Q{{ item.precio_unitario }}</span>
                   </div>
                 </div>
                 
@@ -605,7 +602,7 @@ async function buscarProductos() {
 // Gestión del carrito
 function agregarAlCarrito(producto) {
   // ✅ Siempre usar precio de TARJETA
-  const precioUnitario = producto.precio_tarjeta
+  const precioUnitario = producto.precio
   
   // 🔧 Normalizar nombre del producto
   const nombreProducto = producto.nombre || producto.nombre_servicio || producto.nombre_medicamento || producto.nombre_extra

@@ -247,9 +247,8 @@
 
               <!-- Precios -->
               <td class="px-6 py-4">
-                <div class="text-sm">
-                  <div>💳 {{ formatearPrecio(medicamento.precio_tarjeta) }}</div>
-                  <div>💵 {{ formatearPrecio(medicamento.precio_efectivo) }}</div>
+                <div class="text-sm font-medium text-gray-900">
+                  {{ formatearPrecio(medicamento.precio) }}
                 </div>
               </td>
 
@@ -470,22 +469,9 @@
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Precio Tarjeta *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
                 <input
-                  v-model.number="modalFormulario.datos.precio_tarjeta"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  class="input-base"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Precio Efectivo *</label>
-                <input
-                  v-model.number="modalFormulario.datos.precio_efectivo"
+                  v-model.number="modalFormulario.datos.precio"
                   type="number"
                   step="0.01"
                   min="0"
@@ -813,8 +799,7 @@
                       {{ farmaciaService.getStockStatus(modalDetalle.medicamento.existencias).badge }}
                     </span>
                   </div>
-                  <div><span class="text-gray-500">💳 Precio Tarjeta:</span> {{ farmaciaService.formatPrice(modalDetalle.medicamento.precio_tarjeta) }}</div>
-                  <div><span class="text-gray-500">💵 Precio Efectivo:</span> {{ farmaciaService.formatPrice(modalDetalle.medicamento.precio_efectivo) }}</div>
+                  <div><span class="text-gray-500">💰 Precio:</span> {{ farmaciaService.formatPrice(modalDetalle.medicamento.precio) }}</div>
                   <div><span class="text-gray-500">💰 Costo Compra:</span> {{ farmaciaService.formatPrice(modalDetalle.medicamento.costo_compra) }}</div>
                 </div>
               </div>
@@ -996,8 +981,7 @@ export default {
           laboratorio_id: '',
           fecha_vencimiento: '',
           existencias: 0,
-          precio_tarjeta: 0,
-          precio_efectivo: 0,
+          precio: 0,
           costo_compra: 0,
           indicaciones: '',
           contraindicaciones: '',
@@ -1315,8 +1299,7 @@ export default {
           laboratorio_id: medicamento.laboratorio_id || '',
           fecha_vencimiento: medicamento.fecha_vencimiento || '',
           existencias: medicamento.existencias || 0,
-          precio_tarjeta: medicamento.precio_tarjeta || 0,
-          precio_efectivo: medicamento.precio_efectivo || 0,
+          precio: medicamento.precio || 0,
           costo_compra: medicamento.costo_compra || 0,
           indicaciones: medicamento.indicaciones || '',
           contraindicaciones: medicamento.contraindicaciones || '',
@@ -1582,8 +1565,7 @@ export default {
         console.log('🛒 Agregando al carrito:', {
           medicamento: medicamento.nombre,
           cantidad: parseInt(cantidad),
-          precio_tarjeta: medicamento.precio_tarjeta,
-          precio_efectivo: medicamento.precio_efectivo
+          precio: medicamento.precio
         })
         
         // Validar cantidad disponible
@@ -1640,7 +1622,7 @@ export default {
       
       const headers = [
         'ID', 'Nombre', 'Presentación', 'Laboratorio', 'Existencias',
-        'Fecha Vencimiento', 'Precio Tarjeta', 'Precio Efectivo', 'Costo Compra',
+        'Fecha Vencimiento', 'Precio', 'Costo Compra',
         'Indicaciones', 'Contraindicaciones', 'Dosis', 'Comisión (%)', 'Requiere Extras'
       ]
       
@@ -1679,8 +1661,8 @@ export default {
         const valores = [
           med.id || '', med.nombre || '', med.presentacion_nombre || '',
           med.laboratorio_nombre || '', med.existencias || 0,
-          formatearFecha(med.fecha_vencimiento), formatearDecimal(med.precio_tarjeta),
-          formatearDecimal(med.precio_efectivo), formatearDecimal(med.costo_compra),
+          formatearFecha(med.fecha_vencimiento), formatearDecimal(med.precio),
+          formatearDecimal(med.costo_compra),
           (med.indicaciones || '').trim(), (med.contraindicaciones || '').trim(),
           (med.dosis || '').trim(), formatearDecimal(med.porcentaje_comision),
           med.requiere_extras ? 'Sí' : 'No'
