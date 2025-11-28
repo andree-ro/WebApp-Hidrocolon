@@ -131,6 +131,18 @@
 
                 <li>
                   <router-link 
+                    to="/historial-ventas" 
+                    @click="closeMobileSidebar" 
+                    class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    active-class="bg-blue-100 text-blue-700"
+                  >
+                    <span class="text-lg mr-3">📋</span>
+                    Historial de Ventas
+                  </router-link>
+                </li>
+
+                <li>
+                  <router-link 
                     to="/financiero" 
                     @click="closeMobileSidebar" 
                     class="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"

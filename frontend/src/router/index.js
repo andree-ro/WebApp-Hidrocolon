@@ -19,6 +19,7 @@ import FinancieroView from '@/views/FinancieroView.vue'
 import LibroBancosView from '@/views/LibroBancosView.vue'
 import EstadoResultadosView from '@/views/EstadoResultadosView.vue'
 import UsuariosView from '@/views/UsuariosView.vue'
+import HistorialVentasView from '@/views/HistorialVentasView.vue'
 
 // =====================================
 // DEFINIR RUTAS - INCLUYENDO PACIENTES Y CARRITO
@@ -140,6 +141,19 @@ const routes = [
       title: 'Sistema de Ventas - Sistema Hidrocolon',
       breadcrumb: 'Carrito',
       description: 'GestiÃ³n de ventas y facturaciÃ³n'
+    }
+  },
+
+  // Historial de Ventas
+  {
+    path: '/historial-ventas',
+    name: 'HistorialVentas',
+    component: HistorialVentasView,
+    meta: { 
+      requiresAuth: true,
+      title: 'Historial de Ventas - Sistema Hidrocolon',
+      breadcrumb: 'Historial de Ventas',
+      description: 'Consulta y descarga comprobantes de ventas anteriores'
     }
   },
 
