@@ -310,8 +310,8 @@ router.post('/:id/extras', simpleAuth, async (req, res) => {
 });
 
 // DELETE /api/servicios/:id/extras/:extra_id - Desvincular extra
-router.delete('/:id/extras/:extra_id', simpleAuth, async (req, res) => {
-    console.log(`🔗 DELETE /api/servicios/${req.params.id}/extras/${req.params.extra_id} endpoint hit`);
+router.delete('/:id/extras/:extraId', simpleAuth, async (req, res) => {
+
     
     try {
         if (!ExtrasController) {
