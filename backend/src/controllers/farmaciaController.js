@@ -106,6 +106,7 @@ class FarmaciaController {
   static async crearMedicamento(req, res) {
     try {
       const medicamentoData = req.body;
+      console.log('🔍 DATOS RECIBIDOS EN BACKEND:', JSON.stringify(medicamentoData, null, 2));
 
       // Validar datos del medicamento
       const validation = validarMedicamento(medicamentoData);
