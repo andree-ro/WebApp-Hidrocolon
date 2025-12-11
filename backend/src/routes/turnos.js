@@ -88,22 +88,26 @@ router.get('/actual',
             
             console.log(`🔍 Buscando turno actual para usuario ${usuario_id}`);
             
+            // 🔧 FIX: Buscar CUALQUIER turno abierto, no solo del usuario
             const [turnos] = await pool.execute(
-                `SELECT * FROM turnos 
-                 WHERE usuario_id = ? 
-                 AND estado = 'abierto'
-                 ORDER BY fecha_apertura DESC
-                 LIMIT 1`,
-                [usuario_id]
+                `SELECT t.*, u.nombres, u.apellidos, u.usuario
+                 FROM turnos t
+                 INNER JOIN usuarios u ON t.usuario_id = u.id
+                 WHERE t.estado = 'abierto'
+                 ORDER BY t.fecha_apertura DESC
+                 LIMIT 1`
             );
             
             if (turnos.length === 0) {
+                console.log('⚠️ No hay ningún turno abierto');
                 return res.json({
                     success: true,
                     data: null,
                     message: 'No hay turno abierto'
                 });
             }
+            
+            console.log(`✅ Turno encontrado: #${turnos[0].id} del usuario ${turnos[0].nombres}`);
             
             res.json({
                 success: true,
@@ -114,7 +118,7 @@ router.get('/actual',
             console.error('❌ Error obteniendo turno actual:', error);
             res.status(500).json({
                 success: false,
-                message: 'Error al obtener turno actual',
+                message: 'Error al obtener el turno actual',
                 error: error.message
             });
         }
