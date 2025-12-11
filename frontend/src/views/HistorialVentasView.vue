@@ -140,7 +140,13 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="venta in ventasFormateadas" :key="venta.id" class="hover:bg-gray-50">
+              <tr 
+                v-for="venta in ventasFormateadas" 
+                :key="venta.id" 
+                :class="ventaEstaAnulada(venta) 
+                  ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500' 
+                  : 'hover:bg-gray-50'"
+              >
                 <!-- Número Factura -->
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">{{ venta.numero_factura }}</div>

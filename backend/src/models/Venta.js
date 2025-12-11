@@ -198,7 +198,7 @@ class Venta {
     // ACTUALIZAR TOTALES DEL TURNO
     // ============================================================================
     static async actualizarTotalesTurno(connection, ventaData) {
-        const { turno_id, metodo_pago, total, tarjeta_monto, transferencia_monto } = ventaData;
+        const { turno_id, metodo_pago, total, tarjeta_monto, transferencia_monto, deposito_monto } = ventaData;
 
         let updateQuery = '';
         let updateValue = 0;
@@ -216,16 +216,21 @@ class Venta {
                 updateQuery = 'total_ventas_transferencia = total_ventas_transferencia + ?';
                 updateValue = total;
                 break;
+            case 'deposito':
+                updateQuery = 'total_ventas_deposito = total_ventas_deposito + ?';
+                updateValue = total;
+                break;
             case 'mixto':
-                // Para pago mixto, actualizar efectivo y tarjeta
-                const efectivoMonto = total - (tarjeta_monto + (transferencia_monto || 0));
+                // Para pago mixto, actualizar todos los métodos usados
+                const efectivoMonto = total - (tarjeta_monto || 0) - (transferencia_monto || 0) - (deposito_monto || 0);
                 await connection.query(
                     `UPDATE turnos 
                      SET total_ventas_efectivo = total_ventas_efectivo + ?,
                          total_ventas_tarjeta = total_ventas_tarjeta + ?,
-                         total_ventas_transferencia = total_ventas_transferencia + ?
+                         total_ventas_transferencia = total_ventas_transferencia + ?,
+                         total_ventas_deposito = total_ventas_deposito + ?
                      WHERE id = ?`,
-                    [efectivoMonto, tarjeta_monto, transferencia_monto || 0, turno_id]
+                    [efectivoMonto, tarjeta_monto || 0, transferencia_monto || 0, deposito_monto || 0, turno_id]
                 );
                 return;
         }
