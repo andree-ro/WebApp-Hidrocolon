@@ -57,24 +57,6 @@ const ventasService = {
   },
   
   // ============================================================================
-  // 🗑️ ANULAR VENTA
-  // ============================================================================
-  
-  async anularVenta(id, motivo) {
-    try {
-      console.log(`🗑️ Anulando venta ID: ${id}, Motivo: ${motivo}`)
-      const response = await api.delete(`/ventas/${id}`, {
-        data: { motivo }
-      })
-      console.log('✅ Venta anulada exitosamente')
-      return response.data
-    } catch (error) {
-      console.error('❌ Error anulando venta:', error)
-      throw this.procesarError(error)
-    }
-  },
-  
-  // ============================================================================
   // 📊 ESTADÍSTICAS
   // ============================================================================
   
@@ -318,7 +300,34 @@ const ventasService = {
       valido: errores.length === 0,
       errores
     }
-  }
+  },
+
+  // Anular venta con autorización de administrador
+  async anularVenta(ventaId, datos) {
+    try {
+      console.log(`🗑️ Anulando venta ID: ${ventaId}`);
+      console.log('📦 Datos:', datos);
+
+      const response = await api.delete(`/ventas/${ventaId}/anular`, {
+        data: {
+          motivo: datos.motivo,
+          admin_usuario: datos.admin_usuario,
+          admin_password: datos.admin_password
+        }
+      });
+
+      console.log('✅ Venta anulada exitosamente:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error anulando venta:', error);
+      
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      
+      throw new Error('Error al anular la venta. Por favor intenta de nuevo.');
+    }
+  },
 }
 
 export default ventasService

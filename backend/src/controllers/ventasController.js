@@ -391,13 +391,27 @@ const anularVenta = async (req, res) => {
         }
 
         // 3. Validar que el usuario tenga rol de administrador
-        if (!administrador.rol_permisos || !administrador.rol_permisos.admin) {
+        console.log('🔍 Verificando permisos del usuario...');
+        console.log('   Rol nombre:', administrador.rol_nombre);
+        console.log('   Rol permisos:', administrador.rol_permisos);
+        
+        // Verificar si es administrador: por nombre de rol, "all", o "admin"
+        const esAdmin = 
+            administrador.rol_nombre?.toLowerCase().includes('admin') ||
+            (administrador.rol_permisos && (
+                administrador.rol_permisos.all === true ||
+                administrador.rol_permisos.admin === true
+            ));
+        
+        if (!esAdmin) {
             console.log('❌ Usuario no tiene permisos de administrador');
             return res.status(403).json({
                 success: false,
                 message: 'El usuario proporcionado no tiene permisos de administrador'
             });
         }
+        
+        console.log('✅ Usuario verificado como administrador');
 
         // 4. Validar la contraseña del administrador
         const passwordValida = await User.validatePassword(

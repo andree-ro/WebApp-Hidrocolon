@@ -200,6 +200,16 @@
                     >
                       📄
                     </button>
+
+                    <!-- Eliminar Venta -->
+                    <button
+                      @click="abrirModalAnular(venta)"
+                      class="btn-icon btn-red"
+                      title="Anular venta"
+                      :disabled="ventaEstaAnulada(venta)"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -398,6 +408,114 @@
         </div>
       </div>
     </div>
+    <!-- Modal de Anulación con Autorización -->
+    <div
+      v-if="modalAnular.visible"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="cerrarModalAnular"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-gray-900">
+            🗑️ Anular Venta
+          </h3>
+          <button
+            @click="cerrarModalAnular"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Información de la venta -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <p class="text-sm text-yellow-800 mb-2">
+            <strong>⚠️ Advertencia:</strong> Esta acción revertirá el inventario y los montos del turno.
+          </p>
+          <p class="text-sm text-gray-700">
+            <strong>Venta:</strong> {{ modalAnular.venta?.numero_factura }}<br>
+            <strong>Total:</strong> Q {{ formatearNumero(modalAnular.venta?.total) }}<br>
+            <strong>Cliente:</strong> {{ modalAnular.venta?.cliente_nombre }}
+          </p>
+        </div>
+
+        <!-- Formulario de autorización -->
+        <form @submit.prevent="confirmarAnulacion" class="space-y-4">
+          <!-- Usuario Administrador -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              👤 Usuario Administrador *
+            </label>
+            <input
+              v-model="modalAnular.admin_usuario"
+              type="text"
+              placeholder="admin@hidrocolon.com"
+              class="input-base"
+              required
+              autocomplete="username"
+            />
+          </div>
+
+          <!-- Contraseña Administrador -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              🔐 Contraseña Administrador *
+            </label>
+            <input
+              v-model="modalAnular.admin_password"
+              type="password"
+              placeholder="••••••••"
+              class="input-base"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+
+          <!-- Motivo -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              📝 Motivo de Anulación *
+            </label>
+            <textarea
+              v-model="modalAnular.motivo"
+              rows="3"
+              placeholder="Ej: Cliente solicitó devolución, error en facturación..."
+              class="input-base"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Error message -->
+          <div v-if="modalAnular.error" class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p class="text-sm text-red-800">❌ {{ modalAnular.error }}</p>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex gap-3 pt-2">
+            <button
+              type="button"
+              @click="cerrarModalAnular"
+              class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              :disabled="modalAnular.procesando"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="modalAnular.procesando"
+            >
+              <span v-if="!modalAnular.procesando">🗑️ Anular Venta</span>
+              <span v-else class="flex items-center justify-center gap-2">
+                <div class="spinner"></div>
+                Procesando...
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -409,17 +527,10 @@ export default {
   
   data() {
     return {
+      ventas: [],
       cargando: false,
       error: null,
-      ventas: [],
-      pagination: {
-        current_page: 1,
-        per_page: 20,
-        total: 0,
-        total_pages: 1
-      },
       
-      // Filtros
       filtros: {
         fecha_inicio: '',
         fecha_fin: '',
@@ -429,14 +540,23 @@ export default {
         limit: 20
       },
       
-      // Búsqueda con delay
+      pagination: {},
       searchTimeout: null,
       
-      // Modal Detalle
       modalDetalle: {
         visible: false,
         venta: null
-      }
+      },
+      
+      modalAnular: {
+        visible: false,
+        venta: null,
+        admin_usuario: '',
+        admin_password: '',
+        motivo: '',
+        procesando: false,
+        error: null
+      },
     }
   },
   
@@ -662,7 +782,76 @@ export default {
         'mixto': 'bg-gray-100 text-gray-800'
       }
       return colores[metodo] || 'bg-gray-100 text-gray-800'
-    }
+    },
+
+    // Métodos para anular venta
+    ventaEstaAnulada(venta) {
+      return venta.observaciones && venta.observaciones.includes('ANULADA:')
+    },
+    
+    abrirModalAnular(venta) {
+      if (this.ventaEstaAnulada(venta)) {
+        alert('⚠️ Esta venta ya fue anulada anteriormente')
+        return
+      }
+      
+      this.modalAnular = {
+        visible: true,
+        venta: venta,
+        admin_usuario: '',
+        admin_password: '',
+        motivo: '',
+        procesando: false,
+        error: null
+      }
+    },
+    
+    cerrarModalAnular() {
+      this.modalAnular = {
+        visible: false,
+        venta: null,
+        admin_usuario: '',
+        admin_password: '',
+        motivo: '',
+        procesando: false,
+        error: null
+      }
+    },
+    
+    async confirmarAnulacion() {
+      try {
+        this.modalAnular.procesando = true
+        this.modalAnular.error = null
+        
+        console.log('🗑️ Iniciando anulación de venta:', this.modalAnular.venta.id)
+        
+        const resultado = await ventasService.anularVenta(
+          this.modalAnular.venta.id,
+          {
+            motivo: this.modalAnular.motivo.trim(),
+            admin_usuario: this.modalAnular.admin_usuario.trim(),
+            admin_password: this.modalAnular.admin_password
+          }
+        )
+        
+        console.log('✅ Venta anulada exitosamente:', resultado)
+        
+        // Mostrar mensaje de éxito
+        alert(`✅ ${resultado.message}\n\nVenta: ${resultado.data.venta_numero}\nAutorizado por: ${resultado.data.autorizador}`)
+        
+        // Cerrar modal
+        this.cerrarModalAnular()
+        
+        // Recargar lista de ventas
+        await this.cargarVentas()
+        
+      } catch (error) {
+        console.error('❌ Error anulando venta:', error)
+        this.modalAnular.error = error.message
+      } finally {
+        this.modalAnular.procesando = false
+      }
+    },
   }
 }
 </script>
@@ -678,6 +867,10 @@ export default {
 
 .btn-blue { @apply bg-blue-100 hover:bg-blue-200 text-blue-700; }
 .btn-green { @apply bg-green-100 hover:bg-green-200 text-green-700; }
+
+.btn-red { 
+  @apply bg-red-100 hover:bg-red-200 text-red-700 disabled:opacity-50 disabled:cursor-not-allowed; 
+}
 
 .input-base {
   @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
