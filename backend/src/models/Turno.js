@@ -418,12 +418,12 @@ class Turno {
                     COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' THEN total ELSE 0 END), 0) as transferencia,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN efectivo_recibido ELSE 0 END), 0) as mixto_efectivo,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN tarjeta_monto ELSE 0 END), 0) as mixto_tarjeta,
-                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END), 0) as mixto_transferencia
-                    ,
+                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END), 0) as mixto_transferencia,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'deposito' THEN total ELSE 0 END), 0) as deposito,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN deposito_monto ELSE 0 END), 0) as mixto_deposito
                  FROM ventas
-                 WHERE turno_id = ?`,
+                 WHERE turno_id = ? 
+                 AND (observaciones IS NULL OR observaciones NOT LIKE '%ANULADA:%')`,
                 [turnoId]
             );
 
