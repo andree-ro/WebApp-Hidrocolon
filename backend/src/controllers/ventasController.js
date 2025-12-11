@@ -341,51 +341,119 @@ const obtenerEstadisticas = async (req, res) => {
 };
 
 // ============================================================================
-// ANULAR VENTA
+// ANULAR VENTA (Con autorización de administrador)
 // ============================================================================
 const anularVenta = async (req, res) => {
     try {
         const { id } = req.params;
-        const { motivo } = req.body;
+        const { motivo, admin_usuario, admin_password } = req.body;
 
-        console.log(`🚫 Anulando venta ID: ${id}, Motivo: ${motivo}`);
+        console.log(`🗑️ Iniciando anulación de venta ID: ${id}`);
+        console.log(`👤 Usuario solicitante: ${req.user.nombres} ${req.user.apellidos}`);
+        console.log(`🔐 Administrador autorizante: ${admin_usuario}`);
 
+        // ============================================================================
+        // VALIDACIONES
+        // ============================================================================
+
+        // 1. Validar que vengan todos los datos requeridos
         if (!motivo || motivo.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'Debe proporcionar un motivo para anular la venta'
+                message: 'Debe proporcionar un motivo para la anulación'
             });
         }
 
-        // Verificar que la venta existe
-        const venta = await Venta.findById(id);
-        if (!venta) {
-            return res.status(404).json({
+        if (!admin_usuario || admin_usuario.trim() === '') {
+            return res.status(400).json({
                 success: false,
-                message: 'Venta no encontrada'
+                message: 'Debe proporcionar el usuario del administrador'
             });
         }
 
-        // Verificar que la venta pertenece al turno del usuario (seguridad)
-        if (venta.usuario_vendedor_id !== req.user.id && req.user.rol !== 'administrador') {
+        if (!admin_password || admin_password.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Debe proporcionar la contraseña del administrador'
+            });
+        }
+
+        // 2. Buscar y validar el administrador
+        const User = require('../models/User');
+        const administrador = await User.findByEmail(admin_usuario.trim());
+
+        if (!administrador) {
+            console.log('❌ Usuario administrador no encontrado');
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales de administrador inválidas'
+            });
+        }
+
+        // 3. Validar que el usuario tenga rol de administrador
+        if (!administrador.rol_permisos || !administrador.rol_permisos.admin) {
+            console.log('❌ Usuario no tiene permisos de administrador');
             return res.status(403).json({
                 success: false,
-                message: 'No tiene permisos para anular esta venta'
+                message: 'El usuario proporcionado no tiene permisos de administrador'
             });
         }
 
-        const resultado = await Venta.anular(id, req.user.id, motivo);
+        // 4. Validar la contraseña del administrador
+        const passwordValida = await User.validatePassword(
+            admin_password.trim(), 
+            administrador.password_hash
+        );
+
+        if (!passwordValida) {
+            console.log('❌ Contraseña de administrador incorrecta');
+            return res.status(401).json({
+                success: false,
+                message: 'Contraseña de administrador incorrecta'
+            });
+        }
+
+        console.log('✅ Administrador autenticado correctamente');
+        console.log(`✅ Autorización concedida por: ${administrador.nombres} ${administrador.apellidos}`);
+
+        // ============================================================================
+        // ANULAR LA VENTA
+        // ============================================================================
+
+        const resultado = await Venta.anular(
+            id, 
+            req.user.id,           // Usuario que ejecuta la anulación
+            motivo.trim(),         // Motivo de la anulación
+            administrador.id       // ID del administrador que autoriza
+        );
+
+        console.log('✅ Venta anulada exitosamente:', resultado);
 
         res.json({
             success: true,
-            message: 'Venta anulada exitosamente'
+            message: resultado.message,
+            data: {
+                venta_numero: resultado.venta_numero,
+                autorizador: `${administrador.nombres} ${administrador.apellidos}`,
+                motivo: motivo.trim()
+            }
         });
 
     } catch (error) {
         console.error('❌ Error anulando venta:', error);
+        
+        // Mensajes de error más específicos
+        let mensaje = 'Error al anular la venta';
+        
+        if (error.message.includes('no encontrada')) {
+            mensaje = 'La venta no fue encontrada';
+        } else if (error.message.includes('ya fue anulada')) {
+            mensaje = 'Esta venta ya fue anulada anteriormente';
+        }
+
         res.status(500).json({
             success: false,
-            message: 'Error al anular la venta',
+            message: mensaje,
             error: error.message
         });
     }

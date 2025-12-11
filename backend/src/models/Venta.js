@@ -420,9 +420,9 @@ class Venta {
     }
 
     // ============================================================================
-    // ANULAR VENTA (Soft delete con reversa de inventario)
+    // ANULAR VENTA (Soft delete con reversa de inventario Y EXTRAS)
     // ============================================================================
-    static async anular(id, usuario_id, motivo) {
+    static async anular(id, usuario_id, motivo, usuario_autorizador_id) {
         let connection;
         
         try {
@@ -436,19 +436,29 @@ class Venta {
                 throw new Error('Venta no encontrada');
             }
 
-            // 2. Revertir inventario
+            // Validar que la venta no esté ya anulada
+            if (venta.observaciones && venta.observaciones.includes('ANULADA:')) {
+                throw new Error('Esta venta ya fue anulada anteriormente');
+            }
+
+            // 2. Revertir inventario de productos Y sus extras vinculados
             for (const item of venta.detalle) {
                 if (item.tipo_producto === 'medicamento') {
-                    // Primero obtener stock actual para el movimiento
+                    // 2.1 REVERTIR MEDICAMENTO
                     const [medicamentoActual] = await connection.query(
-                        'SELECT existencias FROM medicamentos WHERE id = ?',
+                        'SELECT existencias, requiere_extras FROM medicamentos WHERE id = ?',
                         [item.producto_id]
                     );
                     
+                    if (medicamentoActual.length === 0) {
+                        console.warn(`⚠️ Medicamento ID ${item.producto_id} no encontrado`);
+                        continue;
+                    }
+
                     const stockAnterior = medicamentoActual[0].existencias;
                     const stockNuevo = stockAnterior + item.cantidad;
                     
-                    // Actualizar stock
+                    // Actualizar stock del medicamento
                     await connection.query(
                         `UPDATE medicamentos 
                         SET existencias = existencias + ? 
@@ -456,7 +466,7 @@ class Venta {
                         [item.cantidad, item.producto_id]
                     );
 
-                    // Registrar movimiento con todos los valores correctos
+                    // Registrar movimiento de inventario del medicamento
                     await connection.query(
                         `INSERT INTO movimientos_inventario 
                         (tipo_producto, producto_id, tipo_movimiento, cantidad_anterior, 
@@ -471,6 +481,82 @@ class Venta {
                             usuario_id
                         ]
                     );
+
+                    // 2.2 REVERTIR EXTRAS VINCULADOS AL MEDICAMENTO
+                    if (medicamentoActual[0].requiere_extras) {
+                        const [extras] = await connection.query(
+                            `SELECT extra_id, cantidad_requerida 
+                             FROM medicamentos_extras 
+                             WHERE medicamento_id = ?`,
+                            [item.producto_id]
+                        );
+
+                        for (const extra of extras) {
+                            const cantidadTotalExtra = extra.cantidad_requerida * item.cantidad;
+                            
+                            // Obtener stock actual del extra
+                            const [extraActual] = await connection.query(
+                                'SELECT existencias FROM extras WHERE id = ?',
+                                [extra.extra_id]
+                            );
+
+                            if (extraActual.length > 0) {
+                                const stockAnteriorExtra = extraActual[0].existencias;
+                                const stockNuevoExtra = stockAnteriorExtra + cantidadTotalExtra;
+
+                                // Devolver el extra al inventario
+                                await connection.query(
+                                    `UPDATE extras 
+                                     SET existencias = existencias + ? 
+                                     WHERE id = ?`,
+                                    [cantidadTotalExtra, extra.extra_id]
+                                );
+
+                                console.log(`✅ Extra ID ${extra.extra_id}: +${cantidadTotalExtra} unidades (${stockAnteriorExtra} → ${stockNuevoExtra})`);
+                            }
+                        }
+                    }
+
+                } else if (item.tipo_producto === 'servicio') {
+                    // 2.3 REVERTIR EXTRAS VINCULADOS AL SERVICIO
+                    const [servicio] = await connection.query(
+                        `SELECT requiere_extras FROM servicios WHERE id = ?`,
+                        [item.producto_id]
+                    );
+
+                    if (servicio.length > 0 && servicio[0].requiere_extras) {
+                        const [extrasServicio] = await connection.query(
+                            `SELECT extra_id, cantidad_requerida
+                             FROM servicios_extras
+                             WHERE servicio_id = ?`,
+                            [item.producto_id]
+                        );
+
+                        for (const extra of extrasServicio) {
+                            const cantidadTotalExtra = extra.cantidad_requerida * item.cantidad;
+                            
+                            // Obtener stock actual del extra
+                            const [extraActual] = await connection.query(
+                                'SELECT existencias FROM extras WHERE id = ?',
+                                [extra.extra_id]
+                            );
+
+                            if (extraActual.length > 0) {
+                                const stockAnteriorExtra = extraActual[0].existencias;
+                                const stockNuevoExtra = stockAnteriorExtra + cantidadTotalExtra;
+
+                                // Devolver el extra al inventario
+                                await connection.query(
+                                    `UPDATE extras
+                                     SET existencias = existencias + ?
+                                     WHERE id = ?`,
+                                    [cantidadTotalExtra, extra.extra_id]
+                                );
+
+                                console.log(`✅ Extra ID ${extra.extra_id}: +${cantidadTotalExtra} unidades (${stockAnteriorExtra} → ${stockNuevoExtra})`);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -487,12 +573,31 @@ class Venta {
             } else if (venta.metodo_pago === 'transferencia') {
                 updateFields.push('total_ventas_transferencia = total_ventas_transferencia - ?');
                 updateValues.push(venta.total);
+            } else if (venta.metodo_pago === 'deposito') {
+                updateFields.push('total_ventas_deposito = total_ventas_deposito - ?');
+                updateValues.push(venta.total);
             } else if (venta.metodo_pago === 'mixto') {
-                const efectivoMonto = venta.total - (venta.tarjeta_monto + venta.transferencia_monto);
-                updateFields.push('total_ventas_efectivo = total_ventas_efectivo - ?');
-                updateFields.push('total_ventas_tarjeta = total_ventas_tarjeta - ?');
-                updateFields.push('total_ventas_transferencia = total_ventas_transferencia - ?');
-                updateValues.push(efectivoMonto, venta.tarjeta_monto, venta.transferencia_monto);
+                const efectivoMonto = venta.efectivo_recibido || 0;
+                const tarjetaMonto = venta.tarjeta_monto || 0;
+                const transferenciaMonto = venta.transferencia_monto || 0;
+                const depositoMonto = venta.deposito_monto || 0;
+
+                if (efectivoMonto > 0) {
+                    updateFields.push('total_ventas_efectivo = total_ventas_efectivo - ?');
+                    updateValues.push(efectivoMonto);
+                }
+                if (tarjetaMonto > 0) {
+                    updateFields.push('total_ventas_tarjeta = total_ventas_tarjeta - ?');
+                    updateValues.push(tarjetaMonto);
+                }
+                if (transferenciaMonto > 0) {
+                    updateFields.push('total_ventas_transferencia = total_ventas_transferencia - ?');
+                    updateValues.push(transferenciaMonto);
+                }
+                if (depositoMonto > 0) {
+                    updateFields.push('total_ventas_deposito = total_ventas_deposito - ?');
+                    updateValues.push(depositoMonto);
+                }
             }
 
             // Revertir comisiones
@@ -500,8 +605,11 @@ class Venta {
                 (sum, item) => sum + (parseFloat(item.monto_comision) || 0), 
                 0
             );
-            updateFields.push('total_comisiones = total_comisiones - ?');
-            updateValues.push(totalComisiones);
+            
+            if (totalComisiones > 0) {
+                updateFields.push('total_comisiones = total_comisiones - ?');
+                updateValues.push(totalComisiones);
+            }
 
             if (updateFields.length > 0) {
                 updateValues.push(venta.turno_id);
@@ -511,25 +619,46 @@ class Venta {
                 );
             }
 
-            // 4. Marcar venta como anulada (agregar campo en observaciones)
+            // 4. Marcar venta como anulada con información de autorización
+            const [autorizador] = await connection.query(
+                'SELECT nombres, apellidos FROM usuarios WHERE id = ?',
+                [usuario_autorizador_id]
+            );
+
+            const nombreAutorizador = autorizador.length > 0 
+                ? `${autorizador[0].nombres} ${autorizador[0].apellidos}` 
+                : 'Desconocido';
+
             await connection.query(
                 `UPDATE ventas 
-                SET observaciones = CONCAT(COALESCE(observaciones, ''), ' | ANULADA: ', ?)
+                SET observaciones = CONCAT(
+                    COALESCE(observaciones, ''), 
+                    ' | ANULADA: ', ?, 
+                    ' | Autorizado por: ', ?,
+                    ' | Fecha: ', NOW()
+                )
                 WHERE id = ?`,
-                [motivo, id]
+                [motivo, nombreAutorizador, id]
             );
 
             await connection.commit();
 
+            console.log(`✅ Venta ${venta.numero_factura} anulada exitosamente`);
+            console.log(`   📦 Inventario revertido (medicamentos + extras)`);
+            console.log(`   💰 Totales del turno actualizados`);
+            console.log(`   👤 Autorizado por: ${nombreAutorizador}`);
+
             return {
                 success: true,
-                message: 'Venta anulada exitosamente'
+                message: 'Venta anulada exitosamente',
+                venta_numero: venta.numero_factura
             };
 
         } catch (error) {
             if (connection) {
                 await connection.rollback();
             }
+            console.error('❌ Error anulando venta:', error);
             throw error;
         } finally {
             if (connection) {
