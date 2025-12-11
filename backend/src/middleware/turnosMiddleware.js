@@ -10,25 +10,20 @@ const { pool } = require('../config/database');
 const validarTurnoAbierto = async (req, res, next) => {
     try {
         const usuario_id = req.user.id;
-        
-        console.log(`🔍 Validando turno abierto para usuario ${usuario_id}`);
-        
-        // ⚠️ FIX TEMPORAL: Eliminar validación de fecha para testing
-        // Buscar turno abierto del usuario (sin importar la fecha)
         const [turnos] = await pool.execute(
             `SELECT 
-                id, 
-                usuario_id,
-                efectivo_inicial, 
-                fecha_apertura,
-                estado
-             FROM turnos 
-             WHERE usuario_id = ? 
-             AND estado = 'abierto' 
-             -- ⚠️ COMENTADO TEMPORALMENTE: AND DATE(fecha_apertura) = CURDATE()
-             ORDER BY fecha_apertura DESC
-             LIMIT 1`,
-            [usuario_id]
+                t.id, 
+                t.usuario_id,
+                t.efectivo_inicial, 
+                t.fecha_apertura,
+                t.estado,
+                u.nombres,
+                u.apellidos
+             FROM turnos t
+             INNER JOIN usuarios u ON t.usuario_id = u.id
+             WHERE t.estado = 'abierto' 
+             ORDER BY t.fecha_apertura DESC
+             LIMIT 1`
         );
         
         if (turnos.length === 0) {
@@ -42,7 +37,7 @@ const validarTurnoAbierto = async (req, res, next) => {
         }
         
         const turno = turnos[0];
-        console.log(`✅ Turno encontrado: ID ${turno.id}, Apertura: ${turno.fecha_apertura}`);
+        console.log(`✅ Turno encontrado: ID ${turno.id} del usuario ${turno.nombres} ${turno.apellidos}`);
         console.log(`⚠️  MODO TESTING: No se valida que el turno sea de hoy`);
         
         // Adjuntar información del turno al request para usarla en el controller
