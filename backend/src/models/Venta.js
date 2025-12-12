@@ -173,6 +173,70 @@ class Venta {
             // 7. Actualizar totales del turno
             await this.actualizarTotalesTurno(connection, ventaData);
 
+            // ============================================================================
+            // 8. REGISTRAR AUTOMÁTICAMENTE VOUCHERS/TRANSFERENCIAS/DEPÓSITOS
+            // ============================================================================
+            
+            // 8.1 REGISTRAR VOUCHER DE TARJETA (si aplica)
+            if ((ventaData.metodo_pago === 'tarjeta' || ventaData.metodo_pago === 'mixto') && 
+                ventaData.tarjeta_monto > 0 && 
+                ventaData.voucher_numero) {
+                
+                await connection.query(
+                    `INSERT INTO vouchers_tarjeta (turno_id, numero_voucher, paciente_nombre, monto, venta_id)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [
+                        ventaData.turno_id,
+                        ventaData.voucher_numero.trim(),
+                        ventaData.cliente_nombre.trim(),
+                        ventaData.tarjeta_monto,
+                        venta_id
+                    ]
+                );
+                
+                console.log(`✅ Voucher registrado: ${ventaData.voucher_numero} - Q${ventaData.tarjeta_monto}`);
+            }
+
+            // 8.2 REGISTRAR TRANSFERENCIA BANCARIA (si aplica)
+            if ((ventaData.metodo_pago === 'transferencia' || ventaData.metodo_pago === 'mixto') && 
+                ventaData.transferencia_monto > 0 && 
+                ventaData.transferencia_numero) {
+                
+                await connection.query(
+                    `INSERT INTO transferencias (turno_id, numero_boleta, paciente_nombre, monto, venta_id)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [
+                        ventaData.turno_id,
+                        ventaData.transferencia_numero.trim(),
+                        ventaData.cliente_nombre.trim(),
+                        ventaData.transferencia_monto,
+                        venta_id
+                    ]
+                );
+                
+                console.log(`✅ Transferencia registrada: ${ventaData.transferencia_numero} - Q${ventaData.transferencia_monto}`);
+            }
+
+            // 8.3 REGISTRAR DEPÓSITO BANCARIO (si aplica)
+            if ((ventaData.metodo_pago === 'deposito' || ventaData.metodo_pago === 'mixto') && 
+                ventaData.deposito_monto > 0 && 
+                ventaData.deposito_numero) {
+                
+                await connection.query(
+                    `INSERT INTO depositos (turno_id, numero_deposito, paciente_nombre, monto, venta_id)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [
+                        ventaData.turno_id,
+                        ventaData.deposito_numero.trim(),
+                        ventaData.cliente_nombre.trim(),
+                        ventaData.deposito_monto,
+                        venta_id
+                    ]
+                );
+                
+                console.log(`✅ Depósito registrado: ${ventaData.deposito_numero} - Q${ventaData.deposito_monto}`);
+            }
+
             await connection.commit();
 
             return {
@@ -622,6 +686,37 @@ class Venta {
                     `UPDATE turnos SET ${updateFields.join(', ')} WHERE id = ?`,
                     updateValues
                 );
+            }
+
+            // ============================================================================
+            // 3.5 ELIMINAR VOUCHERS/TRANSFERENCIAS/DEPÓSITOS ASOCIADOS A LA VENTA
+            // ============================================================================
+            
+            // Eliminar vouchers de tarjeta
+            const [vouchersEliminados] = await connection.query(
+                'DELETE FROM vouchers_tarjeta WHERE venta_id = ?',
+                [id]
+            );
+            if (vouchersEliminados.affectedRows > 0) {
+                console.log(`✅ ${vouchersEliminados.affectedRows} voucher(s) de tarjeta eliminado(s)`);
+            }
+
+            // Eliminar transferencias bancarias
+            const [transferenciasEliminadas] = await connection.query(
+                'DELETE FROM transferencias WHERE venta_id = ?',
+                [id]
+            );
+            if (transferenciasEliminadas.affectedRows > 0) {
+                console.log(`✅ ${transferenciasEliminadas.affectedRows} transferencia(s) eliminada(s)`);
+            }
+
+            // Eliminar depósitos bancarios
+            const [depositosEliminados] = await connection.query(
+                'DELETE FROM depositos WHERE venta_id = ?',
+                [id]
+            );
+            if (depositosEliminados.affectedRows > 0) {
+                console.log(`✅ ${depositosEliminados.affectedRows} depósito(s) eliminado(s)`);
             }
 
             // 4. Marcar venta como anulada con información de autorización

@@ -25,7 +25,11 @@ const crearVenta = async (req, res) => {
             cliente_telefono,
             cliente_nit,
             cliente_direccion,
-            observaciones
+            observaciones,
+            // NUEVOS CAMPOS PARA REGISTRO AUTOMÁTICO
+            voucher_numero,
+            transferencia_numero,
+            deposito_numero
         } = req.body;
 
         // ============================================================================
@@ -183,7 +187,11 @@ const crearVenta = async (req, res) => {
             cliente_nit: cliente_nit || 'CF',
             cliente_direccion: cliente_direccion || null,
             observaciones: observaciones || null,
-            detalle: detalleConCalculos
+            detalle: detalleConCalculos,
+            // NUEVOS CAMPOS PARA REGISTRO AUTOMÁTICO
+            voucher_numero: voucher_numero || null,
+            transferencia_numero: transferencia_numero || null,
+            deposito_numero: deposito_numero || null
         };
 
         console.log('💾 Guardando venta:', JSON.stringify(ventaData, null, 2));
