@@ -817,6 +817,20 @@ const datosDeposito = ref({
   monto: 0
 })
 
+// ============================================================================
+// VARIABLES PARA PAGO MIXTO
+// ============================================================================
+const modalesToShow = ref([]) // Array con los modales a mostrar: ['voucher', 'transferencia', 'deposito']
+const currentModalIndex = ref(0) // Índice del modal actual
+const datosPagoMixto = ref({
+  voucher_numero: null,
+  transferencia_numero: null,
+  deposito_numero: null,
+  tarjeta: 0,
+  transferencia: 0,
+  deposito: 0
+})
+
 onMounted(async () => {
   console.log('🛒 ===== CARRITO MONTADO =====')
   console.log('✅ CARRITO LISTO (modo testing)')
@@ -1149,14 +1163,58 @@ async function procesarVenta() {
   
   // 3.4 Si es MIXTO - solicitar datos según los métodos usados
   if (metodoPago === 'mixto') {
-    // Por ahora procesamos MIXTO normalmente
-    // TODO: Implementar modales múltiples para mixto
-    const confirmar = confirm(
-      `⚠️ PAGO MIXTO\n\n` +
-      `Para pagos mixtos, deberás registrar los vouchers/transferencias/depósitos manualmente en el módulo financiero.\n\n` +
-      `¿Confirmar venta por Q${carritoStore.total.toFixed(2)}?`
-    )
-    if (!confirmar) return
+    // Validar que los montos sumen el total
+    const totalIngresado = 
+      (carritoStore.montoEfectivo || 0) + 
+      (carritoStore.montoTarjeta || 0) + 
+      (carritoStore.montoTransferencia || 0) + 
+      (carritoStore.montoDeposito || 0)
+    
+    if (Math.abs(totalIngresado - carritoStore.total) > 0.01) {
+      alert(
+        `❌ Error en montos\n\n` +
+        `Total de la venta: Q${carritoStore.total.toFixed(2)}\n` +
+        `Total ingresado: Q${totalIngresado.toFixed(2)}\n\n` +
+        `Los montos deben sumar exactamente el total de la venta.`
+      )
+      return
+    }
+    
+    // Inicializar objeto para recolectar datos
+    datosPagoMixto.value = {
+      tarjeta: carritoStore.montoTarjeta || 0,
+      transferencia: carritoStore.montoTransferencia || 0,
+      deposito: carritoStore.montoDeposito || 0
+    }
+    
+    // Determinar qué modales mostrar según los montos
+    modalesToShow.value = []
+    
+    if (carritoStore.montoTarjeta > 0) {
+      modalesToShow.value.push('voucher')
+    }
+    if (carritoStore.montoTransferencia > 0) {
+      modalesToShow.value.push('transferencia')
+    }
+    if (carritoStore.montoDeposito > 0) {
+      modalesToShow.value.push('deposito')
+    }
+    
+    // Si no hay métodos no-efectivo, procesar directamente
+    if (modalesToShow.value.length === 0) {
+      const confirmar = confirm(
+        `¿Confirmar venta por Q${carritoStore.total.toFixed(2)}?\n\n` +
+        `Pago 100% en efectivo`
+      )
+      if (!confirmar) return
+      await ejecutarVenta()
+      return
+    }
+    
+    // Mostrar el primer modal
+    currentModalIndex.value = 0
+    mostrarSiguienteModalMixto()
+    return
   }
   
   // ✅ PASO 4: Si es EFECTIVO, confirmar y procesar directamente
@@ -1295,6 +1353,13 @@ async function ejecutarVenta(datosAdicionales = {}) {
 // ============================================================================
 
 function confirmarVoucher() {
+  // Si estamos en modo pago mixto
+  if (modalesToShow.value.length > 0) {
+    confirmarVoucherMixto()
+    return
+  }
+  
+  // Si es pago simple (solo tarjeta)
   if (!datosVoucher.value.numero || datosVoucher.value.numero.trim() === '') {
     alert('❌ Debe ingresar el número de voucher')
     return
@@ -1309,6 +1374,13 @@ function confirmarVoucher() {
 }
 
 function confirmarTransferencia() {
+  // Si estamos en modo pago mixto
+  if (modalesToShow.value.length > 0) {
+    confirmarTransferenciaMixto()
+    return
+  }
+  
+  // Si es pago simple (solo transferencia)
   if (!datosTransferencia.value.numero || datosTransferencia.value.numero.trim() === '') {
     alert('❌ Debe ingresar el número de boleta')
     return
@@ -1323,6 +1395,13 @@ function confirmarTransferencia() {
 }
 
 function confirmarDeposito() {
+  // Si estamos en modo pago mixto
+  if (modalesToShow.value.length > 0) {
+    confirmarDepositoMixto()
+    return
+  }
+  
+  // Si es pago simple (solo depósito)
   if (!datosDeposito.value.numero || datosDeposito.value.numero.trim() === '') {
     alert('❌ Debe ingresar el número de depósito')
     return
@@ -1337,6 +1416,13 @@ function confirmarDeposito() {
 }
 
 function cancelarModal() {
+  // Si estamos en pago mixto, usar función específica
+  if (modalesToShow.value.length > 0) {
+    cancelarModalMixto()
+    return
+  }
+  
+  // Si es pago simple
   mostrarModalVoucher.value = false
   mostrarModalTransferencia.value = false
   mostrarModalDeposito.value = false
@@ -1344,6 +1430,137 @@ function cancelarModal() {
   datosVoucher.value = { numero: '', monto: 0 }
   datosTransferencia.value = { numero: '', monto: 0 }
   datosDeposito.value = { numero: '', monto: 0 }
+}
+
+// ============================================================================
+// FUNCIONES PARA PAGO MIXTO
+// ============================================================================
+
+function mostrarSiguienteModalMixto() {
+  if (currentModalIndex.value >= modalesToShow.value.length) {
+    // Ya se completaron todos los modales, procesar venta
+    procesarVentaMixta()
+    return
+  }
+  
+  const modalActual = modalesToShow.value[currentModalIndex.value]
+  
+  if (modalActual === 'voucher') {
+    datosVoucher.value.monto = datosPagoMixto.value.tarjeta
+    mostrarModalVoucher.value = true
+  } else if (modalActual === 'transferencia') {
+    datosTransferencia.value.monto = datosPagoMixto.value.transferencia
+    mostrarModalTransferencia.value = true
+  } else if (modalActual === 'deposito') {
+    datosDeposito.value.monto = datosPagoMixto.value.deposito
+    mostrarModalDeposito.value = true
+  }
+}
+
+function confirmarVoucherMixto() {
+  if (!datosVoucher.value.numero || datosVoucher.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de voucher')
+    return
+  }
+  
+  // Guardar datos
+  datosPagoMixto.value.voucher_numero = datosVoucher.value.numero.trim()
+  
+  // Cerrar modal
+  mostrarModalVoucher.value = false
+  datosVoucher.value = { numero: '', monto: 0 }
+  
+  // Siguiente modal
+  currentModalIndex.value++
+  mostrarSiguienteModalMixto()
+}
+
+function confirmarTransferenciaMixto() {
+  if (!datosTransferencia.value.numero || datosTransferencia.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de boleta')
+    return
+  }
+  
+  // Guardar datos
+  datosPagoMixto.value.transferencia_numero = datosTransferencia.value.numero.trim()
+  
+  // Cerrar modal
+  mostrarModalTransferencia.value = false
+  datosTransferencia.value = { numero: '', monto: 0 }
+  
+  // Siguiente modal
+  currentModalIndex.value++
+  mostrarSiguienteModalMixto()
+}
+
+function confirmarDepositoMixto() {
+  if (!datosDeposito.value.numero || datosDeposito.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de depósito')
+    return
+  }
+  
+  // Guardar datos
+  datosPagoMixto.value.deposito_numero = datosDeposito.value.numero.trim()
+  
+  // Cerrar modal
+  mostrarModalDeposito.value = false
+  datosDeposito.value = { numero: '', monto: 0 }
+  
+  // Siguiente modal
+  currentModalIndex.value++
+  mostrarSiguienteModalMixto()
+}
+
+async function procesarVentaMixta() {
+  // Preparar datos adicionales
+  const datosAdicionales = {}
+  
+  if (datosPagoMixto.value.voucher_numero) {
+    datosAdicionales.voucher_numero = datosPagoMixto.value.voucher_numero
+  }
+  if (datosPagoMixto.value.transferencia_numero) {
+    datosAdicionales.transferencia_numero = datosPagoMixto.value.transferencia_numero
+  }
+  if (datosPagoMixto.value.deposito_numero) {
+    datosAdicionales.deposito_numero = datosPagoMixto.value.deposito_numero
+  }
+  
+  // Ejecutar venta
+  await ejecutarVenta(datosAdicionales)
+  
+  // Limpiar datos de pago mixto
+  datosPagoMixto.value = {
+    voucher_numero: null,
+    transferencia_numero: null,
+    deposito_numero: null,
+    tarjeta: 0,
+    transferencia: 0,
+    deposito: 0
+  }
+  modalesToShow.value = []
+  currentModalIndex.value = 0
+}
+
+function cancelarModalMixto() {
+  mostrarModalVoucher.value = false
+  mostrarModalTransferencia.value = false
+  mostrarModalDeposito.value = false
+  
+  datosVoucher.value = { numero: '', monto: 0 }
+  datosTransferencia.value = { numero: '', monto: 0 }
+  datosDeposito.value = { numero: '', monto: 0 }
+  
+  // Limpiar datos de pago mixto
+  datosPagoMixto.value = {
+    voucher_numero: null,
+    transferencia_numero: null,
+    deposito_numero: null,
+    tarjeta: 0,
+    transferencia: 0,
+    deposito: 0
+  }
+  modalesToShow.value = []
+  currentModalIndex.value = 0
 }
 
 // Función para manejar cambio de cantidad con validación
