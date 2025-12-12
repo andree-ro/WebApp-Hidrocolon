@@ -512,6 +512,10 @@ function formatearFechaCorta(fecha) {
                 <span class="text-gray-700">Total Transferencias</span>
                 <span class="font-semibold">Q{{ formatearNumero(cuadre.total_transferencias) }}</span>
               </div>
+              <div class="flex justify-between">
+                <span class="text-gray-700">Total Depósitos</span>
+                <span class="font-semibold">Q{{ formatearNumero(cuadre.total_depositos || 0) }}</span>
+              </div>
             </div>
           </div>
 

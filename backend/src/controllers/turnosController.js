@@ -361,6 +361,7 @@ const calcularCuadrePrevio = async (req, res) => {
         const totalesGastos = await Turno.obtenerTotalGastos(id);
         const totalesVouchers = await Turno.obtenerTotalVouchers(id);
         const totalesTransferencias = await Turno.obtenerTotalTransferencias(id);
+        const totalesDepositos = await Turno.obtenerTotalDepositos(id);
         const totalComisionesPagadas = parseFloat(turno.total_comisiones_pagadas || 0);
 
         // Calcular efectivo final contado
@@ -397,13 +398,15 @@ const calcularCuadrePrevio = async (req, res) => {
         const diferencias = {
             efectivo: efectivoFinalTotal - efectivoEsperado,
             vouchers: totalesVouchers - totalesVentas.tarjeta,
-            transferencias: totalesTransferencias - totalesVentas.transferencia
+            transferencias: totalesTransferencias - totalesVentas.transferencia,
+            depositos: totalesDepositos - totalesVentas.deposito
         };
 
         // Verificar si requiere autorización
         const requiereAutorizacion = Math.abs(diferencias.efectivo) > 0.50 || 
                                     Math.abs(diferencias.vouchers) > 0.50 || 
-                                    Math.abs(diferencias.transferencias) > 0.50;
+                                    Math.abs(diferencias.transferencias) > 0.50 || 
+                                    Math.abs(diferencias.depositos) > 0.50;;
 
         res.json({
             success: true,
@@ -432,10 +435,12 @@ const calcularCuadrePrevio = async (req, res) => {
                 total_comisiones_pagadas: totalComisionesPagadas,
                 total_vouchers: totalesVouchers,
                 total_transferencias: totalesTransferencias,
+                total_depositos: totalesDepositos,
                 diferencias: diferencias,
                 diferencia_efectivo: diferencias.efectivo,
                 diferencia_vouchers: diferencias.vouchers,
                 diferencia_transferencias: diferencias.transferencias,
+                diferencia_depositos: diferencias.depositos,
                 requiere_autorizacion: requiereAutorizacion,
                 puede_cerrar: !requiereAutorizacion,
                 alertas: {
