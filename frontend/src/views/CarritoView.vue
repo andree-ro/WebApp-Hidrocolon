@@ -422,6 +422,348 @@
         </div>
       </div>
     </div>
+
+    <!-- ============================================================================ -->
+    <!-- MODAL: VOUCHER DE TARJETA -->
+    <!-- ============================================================================ -->
+    <div v-if="mostrarModalVoucher" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-lg">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">💳</span>
+              <div>
+                <h2 class="text-xl font-bold">Datos del Voucher</h2>
+                <p class="text-sm text-blue-100">Pago con tarjeta</p>
+              </div>
+            </div>
+            <button
+              @click="cancelarModal"
+              class="text-white hover:text-blue-100 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4">
+          <!-- Monto (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Monto de la venta
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">Q</span>
+              <input
+                :value="formatearNumero(datosVoucher.monto)"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg font-bold text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Nombre del paciente (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nombre del paciente
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">👤</span>
+              <input
+                :value="carritoStore.pacienteSeleccionado ? `${carritoStore.pacienteSeleccionado.nombres || carritoStore.pacienteSeleccionado.nombre} ${carritoStore.pacienteSeleccionado.apellidos || carritoStore.pacienteSeleccionado.apellido}` : 'Sin paciente'"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Número de Voucher (ÚNICO CAMPO EDITABLE) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Número de Voucher *
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">#</span>
+              <input
+                v-model="datosVoucher.numero"
+                type="text"
+                class="w-full pl-10 pr-4 py-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+                placeholder="Ej: VOUCH-123456"
+                required
+                autofocus
+              />
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Ingresa el número del voucher físico de la terminal POS
+            </p>
+          </div>
+
+          <!-- Info -->
+          <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <span class="text-xl">💡</span>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-blue-800">Importante</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  Este voucher se registrará automáticamente en el módulo financiero vinculado a esta venta.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-lg border-t border-gray-200">
+          <div class="flex gap-3">
+            <button
+              @click="confirmarVoucher"
+              :disabled="!datosVoucher.numero || datosVoucher.numero.trim() === ''"
+              class="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ✅ Confirmar y Procesar Venta
+            </button>
+            <button
+              @click="cancelarModal"
+              class="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================================ -->
+    <!-- MODAL: TRANSFERENCIA BANCARIA -->
+    <!-- ============================================================================ -->
+    <div v-if="mostrarModalTransferencia" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-t-lg">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🏦</span>
+              <div>
+                <h2 class="text-xl font-bold">Datos de la Transferencia</h2>
+                <p class="text-sm text-green-100">Pago por transferencia bancaria</p>
+              </div>
+            </div>
+            <button
+              @click="cancelarModal"
+              class="text-white hover:text-green-100 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4">
+          <!-- Monto (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Monto de la venta
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">Q</span>
+              <input
+                :value="formatearNumero(datosTransferencia.monto)"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg font-bold text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Nombre del paciente (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nombre del paciente
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">👤</span>
+              <input
+                :value="carritoStore.pacienteSeleccionado ? `${carritoStore.pacienteSeleccionado.nombres || carritoStore.pacienteSeleccionado.nombre} ${carritoStore.pacienteSeleccionado.apellidos || carritoStore.pacienteSeleccionado.apellido}` : 'Sin paciente'"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Número de Boleta (ÚNICO CAMPO EDITABLE) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Número de Boleta *
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">#</span>
+              <input
+                v-model="datosTransferencia.numero"
+                type="text"
+                class="w-full pl-10 pr-4 py-3 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold"
+                placeholder="Ej: TRANS-987654"
+                required
+                autofocus
+              />
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Ingresa el número de boleta o referencia de la transferencia
+            </p>
+          </div>
+
+          <!-- Info -->
+          <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <span class="text-xl">💡</span>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-green-800">Importante</p>
+                <p class="text-xs text-green-700 mt-1">
+                  Esta transferencia se registrará automáticamente en el módulo financiero vinculada a esta venta.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-lg border-t border-gray-200">
+          <div class="flex gap-3">
+            <button
+              @click="confirmarTransferencia"
+              :disabled="!datosTransferencia.numero || datosTransferencia.numero.trim() === ''"
+              class="flex-1 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ✅ Confirmar y Procesar Venta
+            </button>
+            <button
+              @click="cancelarModal"
+              class="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================================ -->
+    <!-- MODAL: DEPÓSITO BANCARIO -->
+    <!-- ============================================================================ -->
+    <div v-if="mostrarModalDeposito" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-t-lg">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🏧</span>
+              <div>
+                <h2 class="text-xl font-bold">Datos del Depósito</h2>
+                <p class="text-sm text-purple-100">Pago por depósito bancario</p>
+              </div>
+            </div>
+            <button
+              @click="cancelarModal"
+              class="text-white hover:text-purple-100 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4">
+          <!-- Monto (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Monto de la venta
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">Q</span>
+              <input
+                :value="formatearNumero(datosDeposito.monto)"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg font-bold text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Nombre del paciente (prellenado y deshabilitado) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nombre del paciente
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">👤</span>
+              <input
+                :value="carritoStore.pacienteSeleccionado ? `${carritoStore.pacienteSeleccionado.nombres || carritoStore.pacienteSeleccionado.nombre} ${carritoStore.pacienteSeleccionado.apellidos || carritoStore.pacienteSeleccionado.apellido}` : 'Sin paciente'"
+                type="text"
+                disabled
+                class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-lg text-gray-700"
+              />
+            </div>
+          </div>
+
+          <!-- Número de Depósito (ÚNICO CAMPO EDITABLE) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Número de Depósito *
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-gray-500 text-lg">#</span>
+              <input
+                v-model="datosDeposito.numero"
+                type="text"
+                class="w-full pl-10 pr-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg font-semibold"
+                placeholder="Ej: DEP-456789"
+                required
+                autofocus
+              />
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Ingresa el número de boleta del depósito bancario
+            </p>
+          </div>
+
+          <!-- Info -->
+          <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <span class="text-xl">💡</span>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-purple-800">Importante</p>
+                <p class="text-xs text-purple-700 mt-1">
+                  Este depósito se registrará automáticamente en el módulo financiero vinculado a esta venta.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-lg border-t border-gray-200">
+          <div class="flex gap-3">
+            <button
+              @click="confirmarDeposito"
+              :disabled="!datosDeposito.numero || datosDeposito.numero.trim() === ''"
+              class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ✅ Confirmar y Procesar Venta
+            </button>
+            <button
+              @click="cancelarModal"
+              class="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -452,6 +794,28 @@ const busquedaProducto = ref('')
 const productosEncontrados = ref([])
 const procesandoVenta = ref(false)
 const descuentoTemporal = ref(0)
+
+// ============================================================================
+// NUEVAS VARIABLES PARA MODALES DE VOUCHERS/TRANSFERENCIAS/DEPÓSITOS
+// ============================================================================
+const mostrarModalVoucher = ref(false)
+const mostrarModalTransferencia = ref(false)
+const mostrarModalDeposito = ref(false)
+
+const datosVoucher = ref({
+  numero: '',
+  monto: 0
+})
+
+const datosTransferencia = ref({
+  numero: '',
+  monto: 0
+})
+
+const datosDeposito = ref({
+  numero: '',
+  monto: 0
+})
 
 onMounted(async () => {
   console.log('🛒 ===== CARRITO MONTADO =====')
@@ -718,7 +1082,7 @@ async function aplicarDescuentoConPassword() {
   }
 }
 
-// Procesar venta - FIX: Obtener usuario correctamente
+// Procesar venta - MODIFICADO para capturar datos de vouchers/transferencias/depósitos
 async function procesarVenta() {
   console.log('🛒 INICIANDO PROCESO DE VENTA')
   
@@ -759,13 +1123,56 @@ async function procesarVenta() {
     return
   }
   
-  // ✅ PASO 3: Confirmar venta
-  const confirmar = confirm(
-    `¿Confirmar venta por Q${carritoStore.total.toFixed(2)}?`
-  )
-  if (!confirmar) return
+  // ✅ PASO 3: CAPTURAR DATOS DE VOUCHER/TRANSFERENCIA/DEPÓSITO SEGÚN MÉTODO DE PAGO
+  const metodoPago = carritoStore.metodoPago
   
-  // ✅ PASO 4: Procesar venta
+  // 3.1 Si es TARJETA - solicitar número de voucher
+  if (metodoPago === 'tarjeta') {
+    datosVoucher.value.monto = carritoStore.total
+    mostrarModalVoucher.value = true
+    return // Esperar a que se complete el modal
+  }
+  
+  // 3.2 Si es TRANSFERENCIA - solicitar número de boleta
+  if (metodoPago === 'transferencia') {
+    datosTransferencia.value.monto = carritoStore.total
+    mostrarModalTransferencia.value = true
+    return // Esperar a que se complete el modal
+  }
+  
+  // 3.3 Si es DEPÓSITO - solicitar número de depósito
+  if (metodoPago === 'deposito') {
+    datosDeposito.value.monto = carritoStore.total
+    mostrarModalDeposito.value = true
+    return // Esperar a que se complete el modal
+  }
+  
+  // 3.4 Si es MIXTO - solicitar datos según los métodos usados
+  if (metodoPago === 'mixto') {
+    // Por ahora procesamos MIXTO normalmente
+    // TODO: Implementar modales múltiples para mixto
+    const confirmar = confirm(
+      `⚠️ PAGO MIXTO\n\n` +
+      `Para pagos mixtos, deberás registrar los vouchers/transferencias/depósitos manualmente en el módulo financiero.\n\n` +
+      `¿Confirmar venta por Q${carritoStore.total.toFixed(2)}?`
+    )
+    if (!confirmar) return
+  }
+  
+  // ✅ PASO 4: Si es EFECTIVO, confirmar y procesar directamente
+  if (metodoPago === 'efectivo') {
+    const confirmar = confirm(
+      `¿Confirmar venta por Q${carritoStore.total.toFixed(2)}?`
+    )
+    if (!confirmar) return
+  }
+  
+  // ✅ PASO 5: Ejecutar la venta
+  await ejecutarVenta()
+}
+
+// Nueva función auxiliar para ejecutar la venta
+async function ejecutarVenta(datosAdicionales = {}) {
   procesandoVenta.value = true
   
   try {
@@ -782,8 +1189,14 @@ async function procesarVenta() {
       throw new Error(datosVenta.message)
     }
     
-    console.log('📦 Enviando venta con datos:', datosVenta.data)
-    const response = await ventasService.crearVenta(datosVenta.data)
+    // Agregar datos de voucher/transferencia/depósito si existen
+    const ventaConDatos = {
+      ...datosVenta.data,
+      ...datosAdicionales
+    }
+    
+    console.log('📦 Enviando venta con datos:', ventaConDatos)
+    const response = await ventasService.crearVenta(ventaConDatos)
     
     if (response.success) {
       console.log('✅ Venta exitosa:', response.data)
@@ -838,6 +1251,11 @@ async function procesarVenta() {
       busquedaProducto.value = ''
       productosEncontrados.value = []
       descuentoTemporal.value = 0
+      
+      // Limpiar datos de vouchers/transferencias/depósitos
+      datosVoucher.value = { numero: '', monto: 0 }
+      datosTransferencia.value = { numero: '', monto: 0 }
+      datosDeposito.value = { numero: '', monto: 0 }
     }
     
   } catch (error) {
@@ -869,6 +1287,63 @@ async function procesarVenta() {
   } finally {
     procesandoVenta.value = false
   }
+}
+
+
+// ============================================================================
+// FUNCIONES PARA MANEJAR MODALES DE VOUCHERS/TRANSFERENCIAS/DEPÓSITOS
+// ============================================================================
+
+function confirmarVoucher() {
+  if (!datosVoucher.value.numero || datosVoucher.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de voucher')
+    return
+  }
+  
+  mostrarModalVoucher.value = false
+  
+  // Ejecutar venta con datos del voucher
+  ejecutarVenta({
+    voucher_numero: datosVoucher.value.numero.trim()
+  })
+}
+
+function confirmarTransferencia() {
+  if (!datosTransferencia.value.numero || datosTransferencia.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de boleta')
+    return
+  }
+  
+  mostrarModalTransferencia.value = false
+  
+  // Ejecutar venta con datos de la transferencia
+  ejecutarVenta({
+    transferencia_numero: datosTransferencia.value.numero.trim()
+  })
+}
+
+function confirmarDeposito() {
+  if (!datosDeposito.value.numero || datosDeposito.value.numero.trim() === '') {
+    alert('❌ Debe ingresar el número de depósito')
+    return
+  }
+  
+  mostrarModalDeposito.value = false
+  
+  // Ejecutar venta con datos del depósito
+  ejecutarVenta({
+    deposito_numero: datosDeposito.value.numero.trim()
+  })
+}
+
+function cancelarModal() {
+  mostrarModalVoucher.value = false
+  mostrarModalTransferencia.value = false
+  mostrarModalDeposito.value = false
+  
+  datosVoucher.value = { numero: '', monto: 0 }
+  datosTransferencia.value = { numero: '', monto: 0 }
+  datosDeposito.value = { numero: '', monto: 0 }
 }
 
 // Función para manejar cambio de cantidad con validación
