@@ -416,7 +416,7 @@ class Turno {
                     COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END), 0) as efectivo,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END), 0) as tarjeta,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' THEN total ELSE 0 END), 0) as transferencia,
-                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN efectivo_recibido ELSE 0 END), 0) as mixto_efectivo,
+                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN (efectivo_recibido - efectivo_cambio) ELSE 0 END), 0) as mixto_efectivo,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN tarjeta_monto ELSE 0 END), 0) as mixto_tarjeta,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END), 0) as mixto_transferencia,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'deposito' THEN total ELSE 0 END), 0) as deposito,
