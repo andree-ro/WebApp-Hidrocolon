@@ -422,12 +422,14 @@ const calcularCuadrePrevio = async (req, res) => {
                 ventas_tarjeta: totalesVentas.tarjeta,
                 ventas_transferencia: totalesVentas.transferencia,
                 ventas_deposito: totalesVentas.deposito,
-                // ✅ IMPUESTOS DESGLOSADOS
+                // ✅ COMISIÓN BANCARIA (separada)
+                comision_bancaria: impuestos.detalle_tarjeta.comision_bancaria,
+                // ✅ IMPUESTOS DESGLOSADOS (solo 16% en tarjeta)
                 impuesto_efectivo: impuestos.efectivo,
-                impuesto_tarjeta: impuestos.tarjeta,
+                impuesto_tarjeta: impuestos.detalle_tarjeta.impuesto_sobre_restante,
                 impuesto_transferencia: impuestos.transferencia,
                 impuesto_depositos: impuestos.depositos,
-                total_impuestos: impuestos.efectivo + impuestos.tarjeta + impuestos.transferencia + impuestos.depositos,
+                total_impuestos: impuestos.efectivo + impuestos.detalle_tarjeta.impuesto_sobre_restante + impuestos.transferencia + impuestos.depositos,
                 // ✅ VENTAS NETAS Y TOTAL A DEPOSITAR
                 ventas_netas: ventasNetas,
                 total_a_depositar: totalADepositar,

@@ -542,15 +542,20 @@ class ComprobanteGenerator {
                 y += 18;
 
                 const totalGastos = parseFloat(datosReporte.gastos_resumen.total) || 0;
-                const totalImpuestos = parseFloat(datosReporte.impuestos.total_impuestos) || 0;
+                const comisionBancaria = parseFloat(datosReporte.impuestos.tarjeta.comision) || 0;
+                const totalImpuestosSolos = parseFloat(datosReporte.impuestos.efectivo.impuesto) + 
+                                           parseFloat(datosReporte.impuestos.tarjeta.impuesto_restante) + 
+                                           parseFloat(datosReporte.impuestos.transferencia.impuesto) + 
+                                           parseFloat(datosReporte.impuestos.depositos?.impuesto || 0);
                 const totalComisiones = parseFloat(datosReporte.deposito.comisiones) || 0;
-                const totalDeducciones = totalGastos + totalImpuestos + totalComisiones;
+                const totalDeducciones = totalGastos + comisionBancaria + totalImpuestosSolos + totalComisiones;
 
                 const deducciones = [
                     ['Total Gastos', formatearMoneda(totalGastos)],
-                    ['Total Impuestos', formatearMoneda(totalImpuestos)],
+                    ['Comisiones Bancarias (6%)', formatearMoneda(comisionBancaria)],
+                    ['Total Impuestos', formatearMoneda(totalImpuestosSolos)],
                     ['  - Impuesto Efectivo (16%)', formatearMoneda(datosReporte.impuestos.efectivo.impuesto)],
-                    ['  - Impuesto Tarjeta (6% + 16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_total)],
+                    ['  - Impuesto Tarjeta (16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_restante)],
                     ['  - Impuesto Transferencia (16%)', formatearMoneda(datosReporte.impuestos.transferencia.impuesto)],
                     ['  - Impuesto Depósito (16%)', formatearMoneda(datosReporte.impuestos.depositos?.impuesto || 0)],
                     ['Comisiones', formatearMoneda(totalComisiones)],
