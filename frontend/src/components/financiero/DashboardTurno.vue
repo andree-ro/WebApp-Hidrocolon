@@ -72,20 +72,6 @@
         Ventas con depósito
       </p>
     </div>
-
-    <!-- Comisiones Bancarias -->
-    <div class="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
-      <div class="flex justify-between items-center">
-        <div>
-          <span class="text-orange-700 font-semibold flex items-center gap-2">
-            <span class="text-xl">💳</span>
-            Comisiones Bancarias (6%)
-          </span>
-          <p class="text-xs text-orange-600 mt-1">Comisión por pagos con tarjeta</p>
-        </div>
-        <span class="text-2xl font-bold text-orange-900">Q{{ formatearNumero(resumen.comision_bancaria || 0) }}</span>
-      </div>
-    </div>
     <!-- Sección de Impuestos y Gastos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Impuestos Desglosados -->
