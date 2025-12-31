@@ -391,8 +391,9 @@ const calcularCuadrePrevio = async (req, res) => {
                            impuestos.transferencia - 
                            impuestos.depositos;
         
-        // ✅ CALCULAR TOTAL A DEPOSITAR (con fórmula corregida)
-        const totalADepositar = ventasNetas - totalesGastos - totalComisionesPagadas;
+        // ✅ CALCULAR TOTAL A DEPOSITAR
+        // Total a depositar = Total Real - Ingresos Tarjeta - Gastos - Comisiones
+        const totalADepositar = totalesVentas.total - totalesVentas.tarjeta - totalesGastos - totalComisionesPagadas;
 
         // Calcular diferencias
         const diferencias = {

@@ -114,9 +114,9 @@ class Turno {
                         parseFloat(turno.total_comisiones_pagadas || 0);
 
             // 8. Calcular total a depositar
-            // Total a depositar = Ventas netas - Gastos - Comisiones pagadas
-            // NO se restan vouchers ni transferencias (son formas de pago, no salidas de dinero)
-            const totalADepositar = ventasNetas - 
+            // Total a depositar = Total Real - Ingresos Tarjeta - Gastos - Comisiones
+            const totalADepositar = totalesVentas.total - 
+                       totalesVentas.tarjeta - 
                        totalesGastos - 
                        parseFloat(turno.total_comisiones_pagadas || 0);
 
@@ -859,7 +859,8 @@ class Turno {
             const totalVentasNetas = ventaNetaEfectivo + ventaNetaTarjeta + ventaNetaTransferencia + ventaNetaDepositos;
             
             // 5. Calcular total a depositar
-            const totalADepositar = totalVentasNetas - totalGastos - (turno.total_comisiones_pagadas || 0);
+            // Total a depositar = Total Real - Ingresos Tarjeta - Gastos - Comisiones
+            const totalADepositar = totalesVentas.total - totalesVentas.tarjeta - totalGastos - (turno.total_comisiones_pagadas || 0);
             
             // 6. Calcular movimientos de efectivo
             const efectivoEsperado = parseFloat(turno.efectivo_inicial_total) + 

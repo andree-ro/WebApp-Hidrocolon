@@ -584,24 +584,6 @@ class ComprobanteGenerator {
 
                 y += 15;
 
-                // Resultado final
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Resultado Final:', margin, y);
-                y += 18;
-
-                // RESULTADO NETO - MUY VISTOSO con borde grueso y fondo verde brillante
-                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).fillAndStroke(colors.fondoCierreNeto, colors.cierreNeto);
-                doc.lineWidth(3);
-                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).stroke(colors.cierreNeto);
-                doc.lineWidth(1);
-                
-                const resultadoNeto = datosReporte.impuestos.total_ventas_netas - totalDeducciones;
-                
-                doc.fontSize(14).fillColor(colors.cierreNeto).font('Helvetica-Bold')
-                .text('RESULTADO NETO', margin + 25, y + 10, { width: 200 });
-                doc.fontSize(16).text(formatearMoneda(resultadoNeto), margin + 240, y + 9, { width: 120, align: 'right' });
-                y += 45;
-
                 // ============================================================
                 // TOTAL A DEPOSITAR EFECTIVO
                 // ============================================================
@@ -615,20 +597,32 @@ class ComprobanteGenerator {
                 y += 15;
 
                 // Desglose
-                const ventasServicios = resultadoNeto;
-                const impuestosTotal = datosReporte.impuestos.total_impuestos || 0;
-                const totalDepositarEfectivo = ventasServicios + impuestosTotal;
+                const totalReal = datosReporte.resumen_ventas.venta_total;
+                const ingresosTarjeta = datosReporte.resumen_ventas.ventas_tarjeta;
+                const gastosTotal = totalGastos;
+                const comisionesTotal = totalComisiones;
+                const totalDepositarEfectivo = totalReal - ingresosTarjeta - gastosTotal - comisionesTotal;
 
                 doc.fontSize(10).fillColor(colors.text).font('Helvetica');
                 
-                // Ventas/Servicios
-                doc.text('Ventas/Servicios', margin + 25, y, { width: 200 });
-                doc.fillColor(colors.text).font('Helvetica-Bold').text(formatearMoneda(ventasServicios), margin + 240, y, { width: 100, align: 'right' });
+                // Total Real
+                doc.text('Total Real', margin + 25, y, { width: 200 });
+                doc.fillColor(colors.text).font('Helvetica-Bold').text(formatearMoneda(totalReal), margin + 240, y, { width: 100, align: 'right' });
                 y += 18;
 
-                // Impuestos
-                doc.fillColor(colors.text).font('Helvetica').text('Impuestos', margin + 25, y, { width: 200 });
-                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(impuestosTotal), margin + 240, y, { width: 100, align: 'right' });
+                // Ingresos Tarjeta
+                doc.fillColor(colors.text).font('Helvetica').text('- Ingresos Tarjeta', margin + 25, y, { width: 200 });
+                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(ingresosTarjeta), margin + 240, y, { width: 100, align: 'right' });
+                y += 18;
+
+                // Gastos
+                doc.fillColor(colors.text).font('Helvetica').text('- Gastos', margin + 25, y, { width: 200 });
+                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(gastosTotal), margin + 240, y, { width: 100, align: 'right' });
+                y += 18;
+
+                // Comisiones Doctor(a)
+                doc.fillColor(colors.text).font('Helvetica').text('- Comisiones Doctor(a)', margin + 25, y, { width: 200 });
+                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(comisionesTotal), margin + 240, y, { width: 100, align: 'right' });
                 y += 25;
 
                 // Total a depositar - MUY VISTOSO
