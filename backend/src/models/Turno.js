@@ -758,9 +758,18 @@ class Turno {
 
         let total = 0;
         for (const [denominacion, cantidad] of Object.entries(billetes)) {
-            total += (denominaciones[denominacion] || 0) * (parseInt(cantidad) || 0);
+            const denormString = String(denominacion);
+            const valor = denominaciones[denormString] || 0;
+            const cantidadNum = parseInt(cantidad) || 0;
+            
+            if (cantidadNum > 0) {
+                console.log(`💵 Billete Q${denormString}: ${cantidadNum} × ${valor} = Q${valor * cantidadNum}`);
+            }
+            
+            total += valor * cantidadNum;
         }
 
+        console.log(`💵 Total billetes calculado: Q${total.toFixed(2)}`);
         return total;
     }
 
@@ -770,17 +779,29 @@ class Turno {
     static calcularTotalMonedas(monedas) {
         const denominaciones = {
             '1': 1.00,
+            '0.5': 0.50,
             '0.50': 0.50,
             '0.25': 0.25,
             '0.10': 0.10,
+            '0.1': 0.10,
             '0.05': 0.05
         };
 
         let total = 0;
         for (const [denominacion, cantidad] of Object.entries(monedas)) {
-            total += (denominaciones[denominacion] || 0) * (parseInt(cantidad) || 0);
+            // Normalizar la clave: convertir a string y asegurar que funcione con ambos formatos
+            const denormString = String(denominacion);
+            const valor = denominaciones[denormString] || 0;
+            const cantidadNum = parseInt(cantidad) || 0;
+            
+            if (cantidadNum > 0) {
+                console.log(`💰 Moneda Q${denormString}: ${cantidadNum} × ${valor} = Q${valor * cantidadNum}`);
+            }
+            
+            total += valor * cantidadNum;
         }
 
+        console.log(`💵 Total monedas calculado: Q${total.toFixed(2)}`);
         return total;
     }
 
