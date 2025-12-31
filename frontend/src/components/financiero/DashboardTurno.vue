@@ -74,7 +74,7 @@
     </div>
 
     <!-- Comisiones Bancarias -->
-    <div class="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6">
+    <div class="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
       <div class="flex justify-between items-center">
         <div>
           <span class="text-orange-700 font-semibold flex items-center gap-2">
