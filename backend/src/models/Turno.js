@@ -381,9 +381,10 @@ class Turno {
                     deposito: totalesVentas.deposito,
                     cantidad: totalesVentas.cantidad
                 },
+                comision_bancaria: impuestos.detalle_tarjeta.comision_bancaria,
                 impuestos: {
                     efectivo: impuestos.efectivo,
-                    tarjeta: impuestos.tarjeta,
+                    tarjeta: impuestos.detalle_tarjeta.impuesto_sobre_restante,
                     transferencia: impuestos.transferencia,
                     depositos: impuestos.depositos
                 },

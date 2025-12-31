@@ -73,6 +73,19 @@
       </p>
     </div>
 
+    <!-- Comisiones Bancarias -->
+    <div class="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <span class="text-orange-700 font-semibold flex items-center gap-2">
+            <span class="text-xl">💳</span>
+            Comisiones Bancarias (6%)
+          </span>
+          <p class="text-xs text-orange-600 mt-1">Comisión por pagos con tarjeta</p>
+        </div>
+        <span class="text-2xl font-bold text-orange-900">Q{{ formatearNumero(resumen.comision_bancaria || 0) }}</span>
+      </div>
+    </div>
     <!-- Sección de Impuestos y Gastos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Impuestos Desglosados -->
@@ -92,7 +105,7 @@
           <div class="flex justify-between items-center py-2 border-b border-gray-100">
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
-              <span class="text-gray-700">Tarjeta (21.04%)</span>
+              <span class="text-gray-700">Tarjeta (16%)</span>
             </div>
             <span class="font-semibold text-gray-900">Q{{ formatearNumero(resumen.impuestos?.tarjeta || 0) }}</span>
           </div>
@@ -420,6 +433,7 @@ const emit = defineEmits(['registrar-gasto', 'registrar-voucher', 'registrar-tra
 /**
  * Calcular total de impuestos
  */
+
 function calcularTotalImpuestos() {
   const imp = props.resumen.impuestos || {}
   return (imp.efectivo || 0) + (imp.tarjeta || 0) + (imp.transferencia || 0) + (imp.depositos || 0)
