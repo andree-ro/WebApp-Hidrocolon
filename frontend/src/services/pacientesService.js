@@ -171,6 +171,11 @@ const pacientesService = {
       datosLimpios.dpi = datos.dpi.trim()
     }
     
+    // NIT requerido
+    if (datos.nit && datos.nit.trim()) {
+      datosLimpios.nit = datos.nit.trim()
+    }
+    
     // Fechas
     if (datos.fecha_primer_cita) datosLimpios.fecha_primer_cita = datos.fecha_primer_cita
     if (datos.proxima_cita) datosLimpios.proxima_cita = datos.proxima_cita
@@ -195,6 +200,10 @@ const pacientesService = {
     
     if (!datos.telefono || !datos.telefono.trim()) {
       errores.push('El teléfono es requerido')
+    }
+    
+    if (!datos.nit || !datos.nit.trim()) {
+      errores.push('El NIT es requerido')
     }
     
     if (!datos.fecha_primer_cita) {
