@@ -460,6 +460,21 @@
               </p>
             </div>
 
+            <!-- NIT -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                NIT *
+              </label>
+              <input
+                v-model="formulario.nit"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                placeholder="123456-7"
+                maxlength="20"
+              />
+            </div>
+
             <!-- Fecha primera cita -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -601,6 +616,15 @@
                 <span class="text-sm font-medium text-gray-500">DPI:</span>
                 <p class="text-gray-900 font-mono">
                   {{ pacienteDetalle.dpi || 'No registrado' }}
+                  <span v-if="!pacienteDetalle.dpi" class="text-gray-500 text-xs ml-2">
+                    (Común en menores)
+                  </span>
+                </p>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-500">NIT:</span>
+                <p class="text-gray-900 font-mono">
+                  {{ pacienteDetalle.nit || 'No registrado' }}
                   <span v-if="!pacienteDetalle.dpi" class="text-gray-500 text-xs ml-2">
                     (Común en menores)
                   </span>
@@ -756,6 +780,7 @@ export default {
       apellido: '',
       telefono: '',
       dpi: '',
+      nit: '',
       fecha_primer_cita: '',
       proxima_cita: '',
       cumpleanos: ''
@@ -819,6 +844,7 @@ export default {
         apellido: paciente.apellidos,
         telefono: paciente.telefono,
         dpi: paciente.dpi || '',
+        nit: paciente.nit || '',
         fecha_primer_cita: pacientesService.formatearFechaInput(paciente.fecha_primer_cita),
         proxima_cita: paciente.proxima_cita ? pacientesService.formatearFechaInput(paciente.proxima_cita) : '',
         cumpleanos: pacientesService.formatearFechaInput(paciente.fecha_nacimiento)

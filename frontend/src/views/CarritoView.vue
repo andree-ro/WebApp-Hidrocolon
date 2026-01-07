@@ -97,6 +97,9 @@
                   <span v-if="carritoStore.pacienteSeleccionado.dpi" class="ml-3">
                     🆔 {{ carritoStore.pacienteSeleccionado.dpi }}
                   </span>
+                  <span v-if="carritoStore.pacienteSeleccionado.nit" class="ml-3">
+                    💳 NIT: {{ carritoStore.pacienteSeleccionado.nit }}
+                  </span>
                 </div>
               </div>
             </div>

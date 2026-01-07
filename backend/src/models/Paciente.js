@@ -13,6 +13,7 @@ class Paciente {
         this.nombre_completo = data.nombre_completo || (data.nombres && data.apellidos ? `${data.nombres} ${data.apellidos}` : null);
         this.telefono = data.telefono;
         this.dpi = data.dpi;
+        this.nit = data.nit;
         this.fecha_primer_cita = data.fecha_primer_cita;
         this.proxima_cita = data.proxima_cita;
         this.fecha_nacimiento = data.fecha_nacimiento;
@@ -110,6 +111,7 @@ class Paciente {
                     CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                     p.telefono,
                     p.dpi,
+                    p.nit,
                     p.fecha_primer_cita,
                     p.proxima_cita,
                     p.fecha_nacimiento,
@@ -181,6 +183,7 @@ class Paciente {
                     CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                     p.telefono,
                     p.dpi,
+                    p.nit,
                     p.fecha_primer_cita,
                     p.proxima_cita,
                     p.fecha_nacimiento,
@@ -237,10 +240,10 @@ class Paciente {
 
             const query = `
                 INSERT INTO pacientes (
-                    nombres, apellidos, telefono, dpi, 
+                    nombres, apellidos, telefono, dpi, nit,
                     fecha_primer_cita, proxima_cita, fecha_nacimiento,
                     activo, fecha_creacion, fecha_actualizacion
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             `;
 
             const [result] = await connection.execute(query, [
@@ -248,6 +251,7 @@ class Paciente {
                 data.apellidos.trim(),
                 data.telefono.trim(),
                 data.dpi ? data.dpi.trim() : null,
+                data.nit ? data.nit.trim() : null,
                 data.fecha_primer_cita,
                 data.proxima_cita || null,
                 data.fecha_nacimiento || data.cumpleanos
@@ -282,7 +286,7 @@ class Paciente {
 
             const query = `
                 UPDATE pacientes 
-                SET nombres = ?, apellidos = ?, telefono = ?, dpi = ?,
+                SET nombres = ?, apellidos = ?, telefono = ?, dpi = ?, nit = ?,
                     fecha_primer_cita = ?, proxima_cita = ?, fecha_nacimiento = ?,
                     fecha_actualizacion = NOW()
                 WHERE id = ? AND activo = 1
@@ -293,6 +297,7 @@ class Paciente {
                 data.apellidos?.trim(),
                 data.telefono?.trim(),
                 data.dpi ? data.dpi.trim() : null,
+                data.nit ? data.nit.trim() : null,
                 data.fecha_primer_cita,
                 data.proxima_cita || null,
                 data.fecha_nacimiento || data.cumpleanos,
@@ -399,6 +404,7 @@ class Paciente {
                     CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
                     p.telefono,
                     COALESCE(p.dpi, 'No registrado') as dpi,
+                    COALESCE(p.nit, 'No registrado') as nit,
                     DATE_FORMAT(p.fecha_primer_cita, '%d/%m/%Y') as fecha_primer_cita,
                     CASE 
                         WHEN p.proxima_cita IS NOT NULL 
@@ -420,7 +426,7 @@ class Paciente {
                 data: pacientes,
                 headers: [
                     'ID', 'Nombres', 'Apellidos', 'Nombre Completo', 
-                    'Teléfono', 'DPI', 'Fecha Primera Cita', 
+                    'Teléfono', 'DPI', 'NIT', 'Fecha Primera Cita', 
                     'Próxima Cita', 'Cumpleaños', 'Fecha Registro'
                 ]
             };

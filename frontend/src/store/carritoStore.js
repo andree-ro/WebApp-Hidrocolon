@@ -288,7 +288,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
       deposito_monto: depositoMonto,
       cliente_nombre: (pacienteSeleccionado.value?.nombres || pacienteSeleccionado.value?.nombre) + ' ' + (pacienteSeleccionado.value?.apellidos || pacienteSeleccionado.value?.apellido) || 'Cliente General',
       cliente_telefono: pacienteSeleccionado.value?.telefono || null,
-      cliente_nit: 'CF',
+      cliente_nit: pacienteSeleccionado.value?.nit || 'CF',
       cliente_direccion: pacienteSeleccionado.value?.direccion || null,
       observaciones: observaciones.value || null,
       detalle: detalle

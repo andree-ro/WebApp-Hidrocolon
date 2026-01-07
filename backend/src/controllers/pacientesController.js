@@ -96,13 +96,14 @@ class PacientesController {
                 apellidos: req.body.apellido || req.body.apellidos,
                 telefono: req.body.telefono,
                 dpi: req.body.dpi || null,
+                nit: req.body.nit || null,
                 fecha_primer_cita: req.body.fecha_primer_cita,
                 proxima_cita: req.body.proxima_cita || null,
                 fecha_nacimiento: req.body.cumpleanos || req.body.fecha_nacimiento
             };
 
             // Validaciones básicas
-            const camposRequeridos = ['nombres', 'apellidos', 'telefono', 'fecha_primer_cita', 'fecha_nacimiento'];
+            const camposRequeridos = ['nombres', 'apellidos', 'telefono', 'nit', 'fecha_primer_cita', 'fecha_nacimiento'];
             for (const campo of camposRequeridos) {
                 if (!data[campo]) {
                     return res.status(400).json({
@@ -175,6 +176,7 @@ class PacientesController {
                 apellidos: req.body.apellido || req.body.apellidos,
                 telefono: req.body.telefono,
                 dpi: req.body.dpi,
+                nit: req.body.nit,
                 fecha_primer_cita: req.body.fecha_primer_cita,
                 proxima_cita: req.body.proxima_cita,
                 fecha_nacimiento: req.body.cumpleanos || req.body.fecha_nacimiento
