@@ -68,6 +68,7 @@ class EstadoResultados {
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'medicamento'
                  AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  GROUP BY dv.doctora_id, d.nombre
                  ORDER BY dv.doctora_id`,
                 [fechaInicio, fechaFin]
@@ -84,6 +85,7 @@ class EstadoResultados {
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'servicio'
                  AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  GROUP BY dv.doctora_id, d.nombre
                  ORDER BY dv.doctora_id`,
                 [fechaInicio, fechaFin]
