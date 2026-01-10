@@ -21,6 +21,12 @@ router.post('/',
     gastosController.crearGasto
 );
 
+// GET /api/gastos/por-fechas - Listar gastos por rango de fechas
+router.get('/por-fechas',
+    authenticate,
+    gastosController.listarGastosPorFechas
+);
+
 // GET /api/gastos/turno/:turno_id - Listar gastos de un turno
 router.get('/turno/:turno_id',
     authenticate,

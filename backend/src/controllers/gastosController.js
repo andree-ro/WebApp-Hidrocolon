@@ -356,11 +356,88 @@ const obtenerResumenPorCategoria = async (req, res) => {
     }
 };
 
+// ============================================================================
+// LISTAR GASTOS POR RANGO DE FECHAS (PARA ESTADO DE RESULTADOS)
+// ============================================================================
+const listarGastosPorFechas = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin } = req.query;
+
+        // Validaciones
+        if (!fecha_inicio || !fecha_fin) {
+            return res.status(400).json({
+                success: false,
+                message: 'Se requieren fecha_inicio y fecha_fin'
+            });
+        }
+
+        // Obtener gastos del período
+        const [gastos] = await pool.execute(
+            `SELECT 
+                g.id,
+                g.descripcion,
+                g.monto,
+                g.tipo_gasto,
+                g.fecha_creacion,
+                t.id as turno_id,
+                t.fecha_apertura
+             FROM gastos g
+             INNER JOIN turnos t ON g.turno_id = t.id
+             WHERE DATE(g.fecha_creacion) BETWEEN ? AND ?
+             ORDER BY g.fecha_creacion DESC, g.id DESC`,
+            [fecha_inicio, fecha_fin]
+        );
+
+        // Calcular total
+        const total = gastos.reduce((sum, gasto) => sum + parseFloat(gasto.monto), 0);
+
+        // Agrupar por tipo de gasto
+        const resumenPorTipo = gastos.reduce((acc, gasto) => {
+            const tipo = gasto.tipo_gasto;
+            if (!acc[tipo]) {
+                acc[tipo] = {
+                    tipo: tipo,
+                    cantidad: 0,
+                    total: 0,
+                    gastos: []
+                };
+            }
+            acc[tipo].cantidad++;
+            acc[tipo].total += parseFloat(gasto.monto);
+            acc[tipo].gastos.push(gasto);
+            return acc;
+        }, {});
+
+        res.json({
+            success: true,
+            data: {
+                gastos,
+                total: parseFloat(total.toFixed(2)),
+                cantidad: gastos.length,
+                resumen_por_tipo: Object.values(resumenPorTipo),
+                periodo: {
+                    fecha_inicio,
+                    fecha_fin
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error listando gastos por fechas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener gastos',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     crearGasto,
     listarGastosPorTurno,
     obtenerGasto,
     actualizarGasto,
     eliminarGasto,
-    obtenerResumenPorCategoria
+    obtenerResumenPorCategoria,
+    listarGastosPorFechas
 };

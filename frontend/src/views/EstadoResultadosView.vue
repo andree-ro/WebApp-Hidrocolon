@@ -222,11 +222,23 @@
             <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(comision.total) }}</span>
           </div>
 
-          <!-- Gastos Clínica -->
-          <div v-if="store.estadoResultados.costos_operacion.gastos_clinica > 0" class="flex justify-between text-sm items-center py-1">
-            <span class="text-gray-700 flex-1">Gastos en Clínica</span>
+        <!-- Gastos en clínica -->
+        <div
+          v-if="store.estadoResultados.costos_operacion.gastos_clinica > 0"
+          class="flex justify-between text-sm items-center py-1 group"
+        >
+          <span class="text-gray-700 flex-1">Gastos en Clínica</span>
+          <div class="flex items-center gap-2">
             <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.costos_operacion.gastos_clinica) }}</span>
+            <button
+              @click="abrirModalGastos"
+              class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              title="Ver detalle de gastos"
+            >
+              ➕ Ver detalle
+            </button>
           </div>
+        </div>
 
           <!-- Conceptos Manuales -->
           <div
@@ -422,6 +434,13 @@
       @cerrar="store.cerrarModalConcepto()"
       @guardar="guardarConcepto"
     />
+
+    <!-- Modal de Detalle de Gastos -->
+    <ModalDetalleGastos
+      v-if="modalGastosAbierto && store.periodo"
+      :periodo="store.periodo"
+      @cerrar="cerrarModalGastos"
+    />
   </div>
 </template>
 
@@ -429,12 +448,16 @@
 import { ref, onMounted } from 'vue'
 import { useEstadoResultadosStore } from '@/store/estadoResultadosStore'
 import ModalConcepto from '@/components/estadoResultados/ModalConcepto.vue'
+import ModalDetalleGastos from '@/components/estadoResultados/ModalDetalleGastos.vue'
 
 const store = useEstadoResultadosStore()
 
 // Fechas locales
 const fechaInicio = ref(null)
 const fechaFin = ref(null)
+
+// Modal de detalle de gastos
+const modalGastosAbierto = ref(false)
 
 // ============================================================================
 // LIFECYCLE
@@ -476,6 +499,20 @@ function limpiarPeriodo() {
   fechaInicio.value = null
   fechaFin.value = null
   store.estadoResultados = null
+}
+
+/**
+ * Abrir modal de detalle de gastos
+ */
+function abrirModalGastos() {
+  modalGastosAbierto.value = true
+}
+
+/**
+ * Cerrar modal de detalle de gastos
+ */
+function cerrarModalGastos() {
+  modalGastosAbierto.value = false
 }
 
 /**
