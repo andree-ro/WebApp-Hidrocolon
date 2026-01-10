@@ -1087,15 +1087,15 @@ export default {
           filtro: 'todos'
         })
         
-        if (!response.servicios || response.servicios.length === 0) {
+        if (!response.data || response.data.length === 0) {
           alert('❌ No hay servicios para exportar')
           return
         }
         
-        console.log(`✅ ${response.servicios.length} servicios cargados para exportar`)
+        console.log(`✅ ${response.data.length} servicios cargados para exportar`)
         
         // Generar CSV con todos los servicios
-        const csvContent = this.generarCSV(response.servicios)
+        const csvContent = this.generarCSV(response.data)
         
         // ✅ CRÍTICO: Agregar BOM para UTF-8
         const BOM = '\uFEFF'
@@ -1117,7 +1117,7 @@ export default {
         URL.revokeObjectURL(url)
         
         console.log('✅ Servicios exportados exitosamente')
-        alert(`✅ Excel exportado: ${response.servicios.length} servicios\n\n💡 Si las columnas no se separan:\n1. Abre en Excel\n2. Selecciona columna A\n3. Datos > Texto en columnas\n4. Delimitado > Punto y coma`)
+        alert(`✅ Excel exportado: ${response.data.length} servicios`)
         
       } catch (error) {
         console.error('❌ Error exportando servicios:', error)

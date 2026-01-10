@@ -1595,14 +1595,14 @@ export default {
           filtro: 'todos'
         })
         
-        if (!response.medicamentos || response.medicamentos.length === 0) {
+        if (!response.data || !response.data.medicamentos || response.data.medicamentos.length === 0) {
           alert('❌ No hay medicamentos para exportar')
           return
         }
         
-        console.log(`✅ ${response.medicamentos.length} medicamentos cargados para exportar`)
+        console.log(`✅ ${response.data.medicamentos.length} medicamentos cargados para exportar`)
         
-        const csvContent = this.convertirCSVMejorado(response.medicamentos)
+        const csvContent = this.convertirCSVMejorado(response.data.medicamentos)
         const BOM = '\uFEFF'
         const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement('a')
@@ -1617,7 +1617,7 @@ export default {
         URL.revokeObjectURL(url)
         
         console.log('✅ Excel exportado exitosamente')
-        alert(`✅ Excel exportado: ${response.medicamentos.length} medicamentos`)
+        alert(`✅ Excel exportado: ${response.data.medicamentos.length} medicamentos`)
         
       } catch (error) {
         console.error('❌ Error exportando Excel:', error)
