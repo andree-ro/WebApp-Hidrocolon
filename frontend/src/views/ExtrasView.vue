@@ -960,7 +960,7 @@ export default {
         console.log('📊 Exportando extras...')
         
         // Cargar todos los extras
-        const todosExtras = await extrasService.getExtras({ limit: 1000 })
+        const todosExtras = await extrasService.getExtras({ limit: 10000 })
         
         if (!todosExtras.extras || todosExtras.extras.length === 0) {
           alert('❌ No hay extras para exportar')

@@ -1583,16 +1583,26 @@ export default {
     },
 
     // Exportar a Excel
-    exportarExcel() {
+    async exportarExcel() {
       try {
         console.log('📊 Exportando medicamentos a Excel...')
         
-        if (!this.medicamentos.length) {
+        // Cargar TODOS los medicamentos sin paginación
+        console.log('🔄 Cargando todos los medicamentos...')
+        const response = await farmaciaService.getMedicamentos({ 
+          limit: 10000,  // Límite alto para obtener todos
+          page: 1,
+          filtro: 'todos'
+        })
+        
+        if (!response.medicamentos || response.medicamentos.length === 0) {
           alert('❌ No hay medicamentos para exportar')
           return
         }
         
-        const csvContent = this.convertirCSVMejorado(this.medicamentos)
+        console.log(`✅ ${response.medicamentos.length} medicamentos cargados para exportar`)
+        
+        const csvContent = this.convertirCSVMejorado(response.medicamentos)
         const BOM = '\uFEFF'
         const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement('a')
@@ -1607,7 +1617,7 @@ export default {
         URL.revokeObjectURL(url)
         
         console.log('✅ Excel exportado exitosamente')
-        alert(`✅ Excel exportado: ${this.medicamentos.length} medicamentos`)
+        alert(`✅ Excel exportado: ${response.medicamentos.length} medicamentos`)
         
       } catch (error) {
         console.error('❌ Error exportando Excel:', error)
