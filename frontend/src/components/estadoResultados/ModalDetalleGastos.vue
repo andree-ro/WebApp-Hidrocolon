@@ -183,22 +183,42 @@ async function cargarGastos() {
     cargando.value = true
     error.value = null
 
+    console.log('🔍 Cargando gastos para período:', props.periodo)
+
     const params = {
       fecha_inicio: props.periodo.fecha_inicio,
       fecha_fin: props.periodo.fecha_fin
     }
 
+    console.log('📤 Enviando petición a /gastos/por-fechas con params:', params)
+
     const response = await api.get('/gastos/por-fechas', { params })
+
+    console.log('📥 Respuesta recibida:', response)
 
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al cargar gastos')
     }
 
     datos.value = response.data.data
+    console.log('✅ Gastos cargados:', datos.value)
 
   } catch (err) {
     console.error('❌ Error cargando gastos:', err)
-    error.value = err.message || 'Error al cargar gastos'
+    console.error('❌ Error completo:', {
+      message: err.message,
+      response: err.response,
+      request: err.request
+    })
+    
+    // Mejorar el mensaje de error
+    if (err.response) {
+      error.value = `Error del servidor: ${err.response.data?.message || err.response.statusText}`
+    } else if (err.request) {
+      error.value = 'No se pudo conectar con el servidor. Verifica tu conexión.'
+    } else {
+      error.value = err.message || 'Error al cargar gastos'
+    }
   } finally {
     cargando.value = false
   }
