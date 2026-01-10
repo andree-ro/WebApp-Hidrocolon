@@ -35,7 +35,7 @@ class PagoComision {
             );
 
             // Calcular totales
-            const montoTotal = detalles.reduce((sum, d) => sum + parseFloat(d.monto_comision), 0);
+            const montoTotal = Math.round(detalles.reduce((sum, d) => sum + parseFloat(d.monto_comision), 0));
             const cantidadVentas = new Set(detalles.map(d => d.venta_id)).size;
 
             console.log(`âœ… Comisiones pendientes calculadas: Q${montoTotal.toFixed(2)}`);
@@ -93,7 +93,7 @@ class PagoComision {
             return doctoras.map(d => ({
                 doctora_id: d.id,
                 doctora_nombre: d.nombre,
-                monto_pendiente: parseFloat(d.monto_pendiente),
+                monto_pendiente: Math.round(parseFloat(d.monto_pendiente)),
                 cantidad_ventas: d.cantidad_ventas,
                 fecha_primera_venta: d.fecha_primera_venta,
                 fecha_ultima_venta: d.fecha_ultima_venta
