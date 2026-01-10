@@ -45,7 +45,7 @@ class PagoComision {
                 resumen: {
                     doctora_id: doctoraId,
                     fecha_corte: fechaLimite,
-                    monto_total: parseFloat(montoTotal.toFixed(2)),
+                    monto_total: montoTotal,
                     cantidad_ventas: cantidadVentas,
                     cantidad_items: detalles.length
                 }
@@ -138,7 +138,7 @@ class PagoComision {
                 throw new Error('No hay comisiones pendientes para esta doctora');
             }
 
-            const montoTotal = comisionesPendientes.resumen.monto_total;
+            const montoTotal = Math.round(comisionesPendientes.resumen.monto_total);
             const cantidadVentas = comisionesPendientes.resumen.cantidad_ventas;
 
             // Determinar estado del pago

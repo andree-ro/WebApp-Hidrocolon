@@ -183,7 +183,7 @@
                     Q{{ ventasAgrupadas.ventas_agrupadas.totales.total_ventas.toFixed(2) }}
                   </td>
                   <td class="px-4 py-3 text-right text-sm text-green-700">
-                    Q{{ ventasAgrupadas.ventas_agrupadas.totales.total_comisiones.toFixed(2) }}
+                    Q{{ Math.round(ventasAgrupadas.ventas_agrupadas.totales.total_comisiones).toFixed(0) }}
                   </td>
                 </tr>
               </tbody>
@@ -202,7 +202,7 @@
             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
               <p class="text-sm text-green-700 font-medium">Total Comisiones</p>
               <p class="text-2xl font-bold text-green-900 mt-1">
-                Q{{ ventasAgrupadas.ventas_agrupadas.totales.total_comisiones.toFixed(2) }}
+                Q{{ Math.round(ventasAgrupadas.ventas_agrupadas.totales.total_comisiones).toFixed(0) }}
               </p>
             </div>
           </div>
@@ -397,7 +397,7 @@ async function confirmarPago() {
 
   // Confirmar con el usuario
   const confirmacion = confirm(
-    `¿Está seguro de pagar Q${ventasAgrupadas.value.ventas_agrupadas.totales.total_comisiones.toFixed(2)} ` +
+    `¿Está seguro de pagar Q${Math.round(ventasAgrupadas.value.ventas_agrupadas.totales.total_comisiones).toFixed(0)} ` +
     `a ${props.doctora.nombre}?\n\n` +
     `Período: ${fechaInicio.value} al ${fechaFin.value}`
   )

@@ -112,7 +112,7 @@ const crearVenta = async (req, res) => {
 
         for (const item of detalle) {
             const precio_total = parseFloat(item.precio_unitario) * parseInt(item.cantidad);
-            const monto_comision = Math.round((precio_total * parseFloat(item.porcentaje_comision || 0)) / 100);
+            const monto_comision = (precio_total * parseFloat(item.porcentaje_comision || 0)) / 100;
 
             detalleConCalculos.push({
                 tipo_producto: item.tipo_producto,
