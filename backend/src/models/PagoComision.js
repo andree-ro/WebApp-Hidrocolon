@@ -687,13 +687,15 @@ class PagoComision {
             };
 
             console.log(`✅ Ventas agrupadas: ${productos.length} productos, ${fechasUnicas.length} días`);
+            console.log(`🔍 Total comisiones SIN redondear: Q${totales.total_comisiones}`);
+            console.log(`🔍 Total comisiones REDONDEADO: Q${Math.round(totales.total_comisiones)}`);
 
             return {
                 productos,
                 fechas: fechasUnicas,
                 totales: {
                     total_ventas: parseFloat(totales.total_ventas.toFixed(2)),
-                    total_comisiones: parseFloat(totales.total_comisiones.toFixed(2))
+                    total_comisiones: Math.round(totales.total_comisiones)
                 },
                 tiene_pagos_previos
             };
