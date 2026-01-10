@@ -154,6 +154,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { api } from '@/services/authService'
 
 const props = defineProps({
   periodo: {
@@ -182,28 +183,22 @@ async function cargarGastos() {
     cargando.value = true
     error.value = null
 
-    const params = new URLSearchParams({
+    const params = {
       fecha_inicio: props.periodo.fecha_inicio,
       fecha_fin: props.periodo.fecha_fin
-    })
-
-    const response = await fetch(`/api/gastos/por-fechas?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-
-    const result = await response.json()
-
-    if (!result.success) {
-      throw new Error(result.message || 'Error al cargar gastos')
     }
 
-    datos.value = result.data
+    const response = await api.get('/gastos/por-fechas', { params })
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Error al cargar gastos')
+    }
+
+    datos.value = response.data.data
 
   } catch (err) {
     console.error('❌ Error cargando gastos:', err)
-    error.value = err.message
+    error.value = err.message || 'Error al cargar gastos'
   } finally {
     cargando.value = false
   }

@@ -235,7 +235,7 @@
               class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
               title="Ver detalle de gastos"
             >
-              ➕ Ver detalle
+              ➕
             </button>
           </div>
         </div>
