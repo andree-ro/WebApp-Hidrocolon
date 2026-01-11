@@ -2,6 +2,7 @@
 // VERSIÓN CORREGIDA CON FILTROS FUNCIONANDO
 
 const mysql = require('mysql2/promise');
+const historialInventario = require('./HistorialInventario');
 
 class Medicamento {
     constructor() {
@@ -313,7 +314,7 @@ class Medicamento {
     }
 
     // Actualizar stock específico
-    async updateStock(id, cantidad, motivo = 'Ajuste manual', usuarioId = 1) {
+    async updateStock(id, cantidad, motivo = 'Ajuste manual', usuarioId = 1, detalleExtra = {}) {
         const connection = await this.getConnection();
         try {
             console.log('📦 Actualizando stock ID:', id, 'Nueva cantidad:', cantidad);
@@ -324,6 +325,10 @@ class Medicamento {
                 throw new Error('Medicamento no encontrado');
             }
 
+            // Guardar cantidad anterior
+            const cantidadAnterior = medicamento.existencias;
+            const cantidadMovimiento = cantidad - cantidadAnterior;
+
             // Actualizar stock
             const query = `UPDATE medicamentos SET existencias = ?, fecha_actualizacion = NOW() WHERE id = ? AND activo = 1`;
             const [result] = await connection.execute(query, [cantidad, id]);
@@ -333,6 +338,35 @@ class Medicamento {
             }
 
             console.log('✅ Stock actualizado exitosamente');
+
+            // Registrar en historial de inventario
+            try {
+                const tipoMovimiento = cantidadMovimiento > 0 ? 'entrada' : 
+                                     cantidadMovimiento < 0 ? 'salida' : 'ajuste';
+
+                await historialInventario.registrarMovimiento({
+                    tipo_producto: 'medicamento',
+                    producto_id: id,
+                    producto_nombre: medicamento.nombre,
+                    tipo_movimiento: tipoMovimiento,
+                    cantidad_anterior: cantidadAnterior,
+                    cantidad_movimiento: cantidadMovimiento,
+                    cantidad_nueva: cantidad,
+                    motivo: motivo,
+                    detalle: detalleExtra.detalle || null,
+                    venta_id: detalleExtra.venta_id || null,
+                    proveedor: detalleExtra.proveedor || null,
+                    numero_documento: detalleExtra.numero_documento || null,
+                    costo_unitario: detalleExtra.costo_unitario || null,
+                    usuario_id: usuarioId,
+                    fecha_movimiento: new Date()
+                });
+
+                console.log('✅ Movimiento registrado en historial');
+            } catch (historialError) {
+                console.error('⚠️ Error registrando en historial (continuando):', historialError);
+                // No lanzamos error para no bloquear la operación principal
+            }
 
             // Obtener medicamento actualizado
             return await this.findById(id);

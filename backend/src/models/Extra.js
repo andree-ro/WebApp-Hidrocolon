@@ -1,5 +1,7 @@
+// src/models/Extra.js
 
 const mysql = require('mysql2/promise');
+const historialInventario = require('./HistorialInventario');
 
 class Extra {
     constructor() {
@@ -232,9 +234,21 @@ class Extra {
     }
 
     // Actualizar stock específicamente
-    async updateStock(id, nuevasExistencias, motivo = 'Ajuste manual') {
+    async updateStock(id, nuevasExistencias, motivo = 'Ajuste manual', usuarioId = 1, detalleExtra = {}) {
         const connection = await this.getConnection();
         try {
+            console.log('📦 Actualizando stock de extra ID:', id, 'Nueva cantidad:', nuevasExistencias);
+
+            // Verificar que el extra existe
+            const extra = await this.findById(id);
+            if (!extra) {
+                throw new Error('Extra no encontrado');
+            }
+
+            // Guardar cantidad anterior
+            const cantidadAnterior = extra.existencias;
+            const cantidadMovimiento = nuevasExistencias - cantidadAnterior;
+
             const query = `
                 UPDATE extras SET
                     existencias = ?,
@@ -248,11 +262,36 @@ class Extra {
                 throw new Error('Extra no encontrado');
             }
 
-            console.log('✅ Stock de extra actualizado:', {
-                id: id,
-                nuevasExistencias: nuevasExistencias,
-                motivo: motivo
-            });
+            console.log('✅ Stock de extra actualizado exitosamente');
+
+            // Registrar en historial de inventario
+            try {
+                const tipoMovimiento = cantidadMovimiento > 0 ? 'entrada' : 
+                                     cantidadMovimiento < 0 ? 'salida' : 'ajuste';
+
+                await historialInventario.registrarMovimiento({
+                    tipo_producto: 'extra',
+                    producto_id: id,
+                    producto_nombre: extra.nombre,
+                    tipo_movimiento: tipoMovimiento,
+                    cantidad_anterior: cantidadAnterior,
+                    cantidad_movimiento: cantidadMovimiento,
+                    cantidad_nueva: nuevasExistencias,
+                    motivo: motivo,
+                    detalle: detalleExtra.detalle || null,
+                    venta_id: detalleExtra.venta_id || null,
+                    proveedor: detalleExtra.proveedor || null,
+                    numero_documento: detalleExtra.numero_documento || null,
+                    costo_unitario: detalleExtra.costo_unitario || null,
+                    usuario_id: usuarioId,
+                    fecha_movimiento: new Date()
+                });
+
+                console.log('✅ Movimiento de extra registrado en historial');
+            } catch (historialError) {
+                console.error('⚠️ Error registrando extra en historial (continuando):', historialError);
+                // No lanzamos error para no bloquear la operación principal
+            }
 
             return true;
         } catch (error) {
@@ -371,9 +410,6 @@ class Extra {
             await connection.end();
         }
     }
-
-
-
 
     // =============================================
     // MÉTODOS PARA RELACIÓN CON SERVICIOS

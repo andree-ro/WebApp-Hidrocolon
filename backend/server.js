@@ -52,6 +52,7 @@ const libroBancosRoutes = require('./src/routes/libroBancos');
 const estadoResultadosRoutes = require('./src/routes/estadoResultados');
 const presentacionesRoutes = require('./src/routes/presentaciones');
 const casasMedicasRoutes = require('./src/routes/casasMedicas');
+const historialInventarioRoutes = require('./src/routes/historialInventario');
 
 const app = express();
 
@@ -321,6 +322,9 @@ console.log('📋 Rutas de presentaciones configuradas');
 
 app.use('/api/casas-medicas', casasMedicasRoutes);
 console.log('🏭 Rutas de casas médicas configuradas');
+
+app.use('/api/historial-inventario', historialInventarioRoutes);
+console.log('📊 Rutas de historial inventario configuradas');
 
 
 // ============================================================================
