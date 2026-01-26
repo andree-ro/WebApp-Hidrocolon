@@ -427,7 +427,25 @@ class ComprobanteGenerator {
                 // ============================================================
                 // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
                 // ============================================================
-                y = nuevaPaginaSiNecesario(200);
+                // Calcular espacio necesario para esta sección completa:
+                // - Encabezado: 40px
+                // - "Datos de Entrada" título: 28px
+                // - 7 líneas de datos entrada: 7 * 14 = 98px
+                // - Separación: 10px
+                // - "Resultados del Cierre" título: 28px
+                // - 3 líneas de resultados: 3 * 16 = 48px (última más alta)
+                // - Espacio final: 15px
+                // TOTAL: ~267px
+                const espacioNecesarioCierreConImpuestos = 350;
+                const espacioDisponible1 = pageHeight - margin - y;
+                
+                // Si no hay suficiente espacio, crear nueva página
+                if (espacioDisponible1 < espacioNecesarioCierreConImpuestos) {
+                    console.log('⚠️ Espacio insuficiente para CIERRE CON IMPUESTOS, creando nueva página...');
+                    doc.addPage();
+                    y = margin;
+                }
+                
                 // Encabezado con color azul oscuro
                 doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreConImpuestos, colors.cierreConImpuestos);
                 doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
@@ -494,9 +512,27 @@ class ComprobanteGenerator {
                 y += 15;
 
                 // ============================================================
-                // SECCIÓN 3: CIERRE NETO (CON IMPUESTOS)
+                // SECCIÓN 3: CIERRE NETO (SIN IMPUESTOS)
                 // ============================================================
-                y = nuevaPaginaSiNecesario(250);
+                // Calcular espacio necesario para esta sección completa:
+                // - Encabezado: 40px
+                // - "Ingresos Netos" título: 28px
+                // - 5 líneas de ingresos: 5 * 16 = 80px (última más alta)
+                // - Separación: 15px
+                // - "Gastos y Deducciones" título: 28px
+                // - 9 líneas de deducciones: 9 * 16 = 144px (última más alta)
+                // - Separación: 15px
+                // TOTAL: ~350px
+                const espacioNecesarioCierreNeto = 400;
+                const espacioDisponible2 = pageHeight - margin - y;
+                
+                // Si no hay suficiente espacio, crear nueva página
+                if (espacioDisponible2 < espacioNecesarioCierreNeto) {
+                    console.log('⚠️ Espacio insuficiente para CIERRE NETO SIN IMPUESTOS, creando nueva página...');
+                    doc.addPage();
+                    y = margin;
+                }
+                
                 // Encabezado con color verde oscuro
                 doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreNeto, colors.cierreNeto);
                 doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
