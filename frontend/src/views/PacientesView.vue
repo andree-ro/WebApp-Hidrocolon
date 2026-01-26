@@ -915,76 +915,76 @@ export default {
       }
     })()
 
-    const guardarPaciente = async () => {
-      // Validar datos antes de enviar
-      const erroresValidacion = pacientesService.validarPaciente(formulario)
-      if (erroresValidacion.length > 0) {
-        error.value = erroresValidacion.join(', ')
-        return
-      }
+const guardarPaciente = async () => {
+  // Validar datos antes de enviar
+  const erroresValidacion = pacientesService.validarPaciente(formulario)
+  if (erroresValidacion.length > 0) {
+    error.value = erroresValidacion.join(', ')
+    return
+  }
 
-      guardando.value = true
-      error.value = ''
-      mensaje.value = ''
+  guardando.value = true
+  error.value = ''
+  mensaje.value = ''
+  
+  try {
+    let response
+    if (modalEditando.value) {
+      response = await pacientesService.actualizarPaciente(pacienteEditando.value.id, formulario)
+    } else {
+      response = await pacientesService.crearPaciente(formulario)
+    }
+
+    if (response.success) {
+      mensaje.value = response.message
       
-      try {
-        let response
-        if (modalEditando.value) {
-          response = await pacientesService.actualizarPaciente(pacienteEditando.value.id, formulario)
+      // Si es un paciente nuevo (no es edición)
+      if (!modalEditando.value) {
+        // Verificar de dónde viene el usuario
+        const fromCarrito = route.query.from === 'carrito'
+        
+        if (fromCarrito) {
+          // Si viene del carrito, seleccionar paciente y regresar al carrito
+          carritoStore.setPaciente(response.data)
+          alert('✅ Paciente creado exitosamente y seleccionado en el carrito')
+          router.push('/carrito')
+          return
         } else {
-          response = await pacientesService.crearPaciente(formulario)
-        }
-
-        if (response.success) {
-          mensaje.value = response.message
-          
-          // Si es un paciente nuevo (no es edición)
-          if (!modalEditando.value) {
-            // Verificar de dónde viene el usuario
-            const fromCarrito = route.query.from === 'carrito'
-            
-            if (fromCarrito) {
-              // Si viene del carrito, seleccionar paciente y regresar al carrito
-              carritoStore.setPaciente(response.data)
-              alert('✅ Paciente creado exitosamente y seleccionado en el carrito')
-              router.push('/carrito')
-              return
-            } else {
-              // Si viene del módulo de pacientes, quedarse aquí
-              alert('✅ Paciente creado exitosamente')
-              cerrarModal()
-              await cargarPacientes()
-              await cargarEstadisticas()
-              pacientesService.limpiarCache()
-              return
-            }
-          }
-          
-          // Si es edición, comportamiento normal
+          // Si viene del módulo de pacientes, quedarse aquí
+          alert('✅ Paciente creado exitosamente')
           cerrarModal()
           await cargarPacientes()
           await cargarEstadisticas()
           pacientesService.limpiarCache()
-        } else {
-          error.value = response.message || 'Error guardando paciente'
+          return
         }
-      } catch (err) {
-        console.error('Error guardando paciente:', err)
-        
-        // Manejo especial para DPI duplicado
-        if (err.response?.data?.error_type === 'duplicate_dpi') {
-          error.value = '❌ Ya existe un paciente con ese DPI en el sistema'
-        } else if (err.response?.data?.message?.includes('DPI')) {
-          error.value = err.response.data.message
-        } else if (err.message?.includes('DPI')) {
-          error.value = err.message
-        } else {
-          error.value = pacientesService.procesarError(err)
-        }
-      } finally {
-        guardando.value = false
       }
+      
+      // Si es edición, comportamiento normal
+      cerrarModal()
+      await cargarPacientes()
+      await cargarEstadisticas()
+      pacientesService.limpiarCache()
+    } else {
+      error.value = response.message || 'Error guardando paciente'
     }
+  } catch (err) {
+    console.error('Error guardando paciente:', err)
+    
+    // Manejo especial para DPI duplicado
+    if (err.response?.data?.error_type === 'duplicate_dpi') {
+      error.value = '❌ Ya existe un paciente con ese DPI en el sistema'
+    } else if (err.response?.data?.message?.includes('DPI')) {
+      error.value = err.response.data.message
+    } else if (err.message?.includes('DPI')) {
+      error.value = err.message
+    } else {
+      error.value = pacientesService.procesarError(err)
+    }
+  } finally {
+    guardando.value = false
+  }
+}
 
     const eliminarPaciente = async (paciente) => {
       const confirmacion = confirm(
