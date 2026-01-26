@@ -95,9 +95,9 @@ class Venta {
                         [item.cantidad, item.producto_id]
                     );
 
-                    // 5. Registrar movimiento de inventario
+                    // 5. Registrar movimiento en historial de inventario
                     const [medicamentoActual] = await connection.query(
-                        'SELECT existencias FROM medicamentos WHERE id = ?',
+                        'SELECT existencias, nombre FROM medicamentos WHERE id = ?',
                         [item.producto_id]
                     );
                     
@@ -105,16 +105,21 @@ class Venta {
                     const stockNuevo = medicamentoActual[0].existencias;
                     
                     await connection.query(
-                        `INSERT INTO movimientos_inventario 
-                         (tipo_producto, producto_id, tipo_movimiento, cantidad_anterior, 
-                          cantidad_movimiento, cantidad_nueva, motivo, usuario_id)
-                         VALUES ('medicamento', ?, 'salida', ?, ?, ?, ?, ?)`,
+                        `INSERT INTO historial_inventario 
+                         (tipo_producto, producto_id, producto_nombre, tipo_movimiento, 
+                          cantidad_anterior, cantidad_movimiento, cantidad_nueva, 
+                          motivo, venta_id, usuario_id, fecha_movimiento)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
                         [
+                            'medicamento',
                             item.producto_id,
+                            medicamentoActual[0].nombre,
+                            'salida',
                             stockAnterior,
-                            item.cantidad,
+                            -item.cantidad,  // Negativo porque es salida
                             stockNuevo,
                             `Venta ${numeroFactura}`,
+                            venta_id,
                             ventaData.usuario_vendedor_id
                         ]
                     );
