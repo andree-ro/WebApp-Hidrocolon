@@ -69,7 +69,7 @@
             </div>
 
             <button 
-              @click="$router.push('/pacientes')"
+              @click="$router.push({ path: '/pacientes', query: { from: 'carrito' } })"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               + Nuevo Cliente

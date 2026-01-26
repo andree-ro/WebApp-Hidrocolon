@@ -724,7 +724,7 @@
 
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCarritoStore } from '@/store/carritoStore'
 import pacientesService from '@/services/pacientesService'
 import { usePermisos } from '@/composables/usePermisos'
@@ -733,6 +733,7 @@ export default {
   name: 'PacientesView',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const carritoStore = useCarritoStore()
     const { puedeEditar, puedeEliminar } = usePermisos()
     // Estado reactivo
@@ -937,12 +938,26 @@ export default {
         if (response.success) {
           mensaje.value = response.message
           
-          // Si es un paciente nuevo (no es edición), regresar al carrito
+          // Si es un paciente nuevo (no es edición)
           if (!modalEditando.value) {
-            carritoStore.setPaciente(response.data)
-            alert('✅ Paciente creado exitosamente y seleccionado en el carrito')
-            router.push('/carrito')
-            return
+            // Verificar de dónde viene el usuario
+            const fromCarrito = route.query.from === 'carrito'
+            
+            if (fromCarrito) {
+              // Si viene del carrito, seleccionar paciente y regresar al carrito
+              carritoStore.setPaciente(response.data)
+              alert('✅ Paciente creado exitosamente y seleccionado en el carrito')
+              router.push('/carrito')
+              return
+            } else {
+              // Si viene del módulo de pacientes, quedarse aquí
+              alert('✅ Paciente creado exitosamente')
+              cerrarModal()
+              await cargarPacientes()
+              await cargarEstadisticas()
+              pacientesService.limpiarCache()
+              return
+            }
           }
           
           // Si es edición, comportamiento normal
