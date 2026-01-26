@@ -384,31 +384,35 @@ class Servicio {
     }
 
     static async delete(id) {
-        let connection;
-        try {
-            connection = await this.getConnection();
+    let connection;
+    try {
+        connection = await this.getConnection();
 
-            // Verificar que el servicio existe
-            const existingService = await this.findById(id);
-            if (!existingService) {
-                throw new Error('Servicio no encontrado');
-            }
-
-            // Soft delete - marcar como inactivo
-            const query = `UPDATE servicios SET activo = 0, fecha_actualizacion = NOW() WHERE id = ?`;
-
-            await connection.execute(query, [id]);
-            
-            console.log(`✅ Servicio ${id} marcado como inactivo`);
-            return { id, eliminado: true };
-
-        } catch (error) {
-            console.error('❌ Error en delete:', error);
-            throw new Error(`Error eliminando servicio: ${error.message}`);
-        } finally {
-            if (connection) await connection.end();
+        // Verificar que el servicio existe
+        const [rows] = await connection.execute('SELECT * FROM servicios WHERE id = ?', [id]);
+        
+        const existingService = rows[0];
+        if (!existingService) {
+            throw new Error('Servicio no encontrado');
         }
+
+        // HARD DELETE - Eliminar físicamente el servicio
+        // Primero eliminar relaciones en servicios_medicamentos (por el ON DELETE CASCADE se hace automáticamente)
+        // Primero eliminar relaciones en servicios_extras (por el ON DELETE CASCADE se hace automáticamente)
+        const query = `DELETE FROM servicios WHERE id = ?`;
+
+        await connection.execute(query, [id]);
+        
+        console.log(`✅ Servicio ${id} eliminado permanentemente de la base de datos`);
+        return { id, eliminado: true, message: 'Servicio eliminado permanentemente' };
+
+    } catch (error) {
+        console.error('❌ Error en delete:', error);
+        throw new Error(`Error eliminando servicio: ${error.message}`);
+    } finally {
+        if (connection) await connection.end();
     }
+}
 
     // ========================================================================
     // ESTADÍSTICAS SIMPLES
