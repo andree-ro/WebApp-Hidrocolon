@@ -1,6 +1,6 @@
 <template>
   <div class="farmacia-module">
-    <!-- Header con título y botón agregar -->
+    <!-- Header con título y botones -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 
       <!-- Botón Volver al Dashboard -->
@@ -19,14 +19,40 @@
         <p class="text-gray-600 mt-1">Gestión de medicamentos e inventario</p>
       </div>
       
-      <!-- Botón Agregar Nuevo Medicamento -->
-      <button
-        @click="abrirModalAgregar"
-        class="btn-primary flex items-center space-x-2"
-      >
-        <span class="text-lg">➕</span>
-        <span>Agregar Medicamento</span>
-      </button>
+      <!-- Botones de acciones -->
+      <div class="flex flex-wrap gap-2">
+        <button
+          @click="$router.push('/historial-inventario')"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          <span class="text-lg">📊</span>
+          <span>Ver Historial</span>
+        </button>
+
+        <button
+          @click="abrirModalEntrada"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+        >
+          <span class="text-lg">📦</span>
+          <span>Registrar Entrada</span>
+        </button>
+        
+        <button
+          @click="abrirModalSalida"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+        >
+          <span class="text-lg">🔙</span>
+          <span>Registrar Salida</span>
+        </button>
+        
+        <button
+          @click="abrirModalAgregar"
+          class="btn-primary flex items-center space-x-2"
+        >
+          <span class="text-lg">➕</span>
+          <span>Agregar Medicamento</span>
+        </button>
+      </div>
     </header>
 
     <!-- Mensaje de error -->
@@ -896,6 +922,20 @@
       @close="cerrarModalExtras"
       @saved="recargarDatosExtras"
     />
+
+    <!-- Modal Registrar Entrada -->
+    <ModalRegistrarEntrada 
+      :mostrar="mostrarModalEntrada"
+      @cerrar="cerrarModalEntrada"
+      @entrada-registrada="manejarEntradaRegistrada"
+    />
+
+    <!-- Modal Registrar Salida -->
+    <ModalRegistrarSalida 
+      :mostrar="mostrarModalSalida"
+      @cerrar="cerrarModalSalida"
+      @salida-registrada="manejarSalidaRegistrada"
+    />
   </div>
 </template>
 
@@ -904,11 +944,15 @@ import farmaciaService from '@/services/farmaciaService'
 import extrasService from '@/services/extrasService'
 import ExtrasModal from '@/components/ExtrasModal.vue'
 import { usePermisos } from '@/composables/usePermisos'
+import ModalRegistrarEntrada from '../components/ModalRegistrarEntrada.vue';
+import ModalRegistrarSalida from '../components/ModalRegistrarSalida.vue';
 
 export default {
   name: 'FarmaciaView',
   
   components: {
+    ModalRegistrarEntrada,
+    ModalRegistrarSalida,
     ExtrasModal
   },
   setup() {
@@ -918,11 +962,15 @@ export default {
   
   data() {
     return {
+
+      
       // Estados principales
       farmaciaService: farmaciaService,
       extrasService: extrasService,
       cargando: false,
       error: null,
+      mostrarModalEntrada: false,
+      mostrarModalSalida: false,
       
       // Datos
       medicamentos: [],
@@ -1814,6 +1862,43 @@ export default {
         console.error('Error eliminando casa médica:', error)
         alert(error.response?.data?.message || 'Error al eliminar casa médica')
       }
+    },
+
+    // ============================================================================
+    // ✅ NUEVOS MÉTODOS: HISTORIAL DE INVENTARIO
+    // ============================================================================
+    abrirModalEntrada() {
+      this.mostrarModalEntrada = true;
+    },
+
+    cerrarModalEntrada() {
+      this.mostrarModalEntrada = false;
+    },
+
+    abrirModalSalida() {
+      this.mostrarModalSalida = true;
+    },
+
+    cerrarModalSalida() {
+      this.mostrarModalSalida = false;
+    },
+
+    async manejarEntradaRegistrada(datos) {
+      console.log('Entrada registrada:', datos);
+      // Recargar medicamentos
+      await Promise.all([
+        this.cargarMedicamentos(),
+        this.cargarEstadisticas()
+      ]);
+    },
+
+    async manejarSalidaRegistrada(datos) {
+      console.log('Salida registrada:', datos);
+      // Recargar medicamentos
+      await Promise.all([
+        this.cargarMedicamentos(),
+        this.cargarEstadisticas()
+      ]);
     }
   }
 }

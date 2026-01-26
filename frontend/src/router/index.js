@@ -13,6 +13,7 @@ import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import FarmaciaView from '@/views/FarmaciaView.vue'
 import ExtrasView from '@/views/ExtrasView.vue'
+import HistorialInventarioView from '../views/HistorialInventarioView.vue'
 import ServiciosView from '@/views/ServiciosView.vue'
 import PacientesView from '@/views/PacientesView.vue'
 import FinancieroView from '@/views/FinancieroView.vue'
@@ -155,6 +156,12 @@ const routes = [
       breadcrumb: 'Historial de Ventas',
       description: 'Consulta y descarga comprobantes de ventas anteriores'
     }
+  },
+  {
+    path: '/historial-inventario',
+    name: 'HistorialInventario',
+    component: HistorialInventarioView,
+    meta: { requiresAuth: true }
   },
 
 
