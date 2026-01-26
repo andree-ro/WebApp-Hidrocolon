@@ -877,9 +877,28 @@ class ComprobanteGenerator {
                 y += 25;
 
                 // ============================================================
-                // FIRMAS
+                // FIRMAS - SOLUCIÓN DINÁMICA CON VALIDACIÓN
                 // ============================================================
-                y = Math.max(y + 30, pageHeight - 160);
+                
+                // Añadir espacio después de observaciones
+                y += 30;
+                
+                // Espacio necesario para las firmas (estimado):
+                // - Firma: 25px
+                // - Nombre: 25px  
+                // - Fecha: 25px
+                // - Pie de página: 25px
+                // - Margen de seguridad: 50px
+                // TOTAL: ~150px
+                const espacioNecesarioParaFirmas = 150;
+                const espacioDisponible = pageHeight - margin - y;
+                
+                // VALIDACIÓN: Si quedan menos de 200px, crear nueva página
+                if (espacioDisponible < 200) {
+                    console.log('⚠️ Espacio insuficiente para firmas, creando nueva página...');
+                    doc.addPage();
+                    y = margin + 40; // Empezar con margen superior en la nueva página
+                }
 
                 // Ajuste de posición vertical de los textos (subirlos un poco)
                 const ajusteY = -3;
