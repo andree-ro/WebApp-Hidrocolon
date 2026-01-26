@@ -623,7 +623,23 @@ class ComprobanteGenerator {
                 // ============================================================
                 // TOTAL A DEPOSITAR EFECTIVO
                 // ============================================================
-                y = nuevaPaginaSiNecesario(100);
+                // Calcular espacio necesario para esta sección completa:
+                // - Encabezado: 40px
+                // - Total Real: 18px
+                // - Ingresos Tarjeta: 18px
+                // - Gastos: 18px
+                // - Comisiones: 25px
+                // - Total a depositar (caja destacada): 40px
+                // TOTAL: ~159px
+                const espacioNecesarioDeposito = 200;
+                const espacioDisponible3 = pageHeight - margin - y;
+                
+                // Si no hay suficiente espacio, crear nueva página
+                if (espacioDisponible3 < espacioNecesarioDeposito) {
+                    console.log('⚠️ Espacio insuficiente para TOTAL A DEPOSITAR EFECTIVO, creando nueva página...');
+                    doc.addPage();
+                    y = margin;
+                }
                 
                 // Encabezado con color turquesa/cyan
                 doc.rect(margin, y, contentWidth, 25).fillAndStroke('#14b8a6', '#14b8a6');
