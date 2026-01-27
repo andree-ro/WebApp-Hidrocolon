@@ -210,8 +210,13 @@ const crearVenta = async (req, res) => {
         try {
             const descripcion = `Venta ${resultado.numero_factura} - ${cliente_nombre} (${metodo_pago})`;
             
+            // Obtener la fecha de la venta desde la BD (en zona horaria local)
+            const fechaVenta = ventaCompleta.fecha_creacion 
+                ? new Date(ventaCompleta.fecha_creacion).toLocaleDateString('en-CA') // formato YYYY-MM-DD
+                : new Date().toLocaleDateString('en-CA');
+            
             await LibroBancos.crearOperacion({
-                fecha: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
+                fecha: fechaVenta, // ✅ Usa fecha real de la venta
                 beneficiario: cliente_nombre,
                 descripcion: descripcion,
                 clasificacion: 'Ventas',

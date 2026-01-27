@@ -36,8 +36,13 @@ const registrarDeposito = async (req, res) => {
 
         // Registrar en libro de bancos
         try {
+            // Obtener fecha del depósito creado
+            const fechaDeposito = deposito.fecha_creacion
+                ? new Date(deposito.fecha_creacion).toLocaleDateString('en-CA')
+                : new Date().toLocaleDateString('en-CA');
+            
             await LibroBancos.crearOperacion({
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: fechaDeposito,
                 beneficiario: paciente_nombre.trim(),
                 descripcion: `Depósito ${numero_deposito.trim()} - ${paciente_nombre.trim()}`,
                 clasificacion: 'Depósitos bancarios',

@@ -78,8 +78,13 @@ const crearTransferencia = async (req, res) => {
 
         // Registrar en libro de bancos
         try {
+            // Obtener fecha de la transferencia creada
+            const fechaTransferencia = transferencias[0].fecha_creacion
+                ? new Date(transferencias[0].fecha_creacion).toLocaleDateString('en-CA')
+                : new Date().toLocaleDateString('en-CA');
+            
             await LibroBancos.crearOperacion({
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: fechaTransferencia,
                 beneficiario: paciente_nombre.trim(),
                 descripcion: `Transferencia ${numero_boleta.trim()} - ${paciente_nombre.trim()}`,
                 clasificacion: 'Transferencias bancarias',

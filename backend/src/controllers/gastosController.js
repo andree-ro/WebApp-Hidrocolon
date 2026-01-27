@@ -73,8 +73,13 @@ const crearGasto = async (req, res) => {
         console.log(`✅ Gasto ${result.insertId} creado: ${tipo_gasto} - Q${montoNumerico}`);
         // Registrar en libro de bancos
         try {
+            // Obtener fecha del gasto creado
+            const fechaGasto = gastos[0].fecha_creacion
+                ? new Date(gastos[0].fecha_creacion).toLocaleDateString('en-CA')
+                : new Date().toLocaleDateString('en-CA');
+            
             await LibroBancos.crearOperacion({
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: fechaGasto,
                 beneficiario: 'Gastos operativos',
                 descripcion: `Gasto: ${descripcion} (${tipo_gasto})`,
                 clasificacion: `Gastos - ${tipo_gasto}`,

@@ -78,8 +78,13 @@ const crearVoucher = async (req, res) => {
 
         // Registrar en libro de bancos
         try {
+            // Obtener fecha del voucher creado
+            const fechaVoucher = vouchers[0].fecha_creacion
+                ? new Date(vouchers[0].fecha_creacion).toLocaleDateString('en-CA')
+                : new Date().toLocaleDateString('en-CA');
+            
             await LibroBancos.crearOperacion({
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: fechaVoucher,
                 beneficiario: paciente_nombre.trim(),
                 descripcion: `Voucher tarjeta ${numero_voucher.trim()} - ${paciente_nombre.trim()}`,
                 clasificacion: 'Vouchers tarjeta',
