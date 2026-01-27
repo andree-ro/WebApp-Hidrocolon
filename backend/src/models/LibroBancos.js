@@ -487,6 +487,85 @@ class LibroBancos {
             throw error;
         }
     }
+
+    // ============================================================================
+    // LISTAR OPERACIONES AGRUPADAS POR FECHA (para vista consolidada diaria)
+    // ============================================================================
+    static async listarAgrupadasPorFecha(filtros = {}) {
+        try {
+            // Query para obtener operaciones agrupadas por fecha
+            let query = `
+                SELECT 
+                    lb.fecha,
+                    SUM(lb.ingreso) as total_ingresos_dia,
+                    SUM(lb.egreso) as total_egresos_dia,
+                    SUM(lb.ingreso) - SUM(lb.egreso) as movimiento_neto_dia,
+                    COUNT(*) as cantidad_operaciones,
+                    MAX(lb.saldo_bancos) as saldo_final_dia
+                FROM libro_bancos lb
+                WHERE 1=1
+            `;
+            const params = [];
+
+            // Aplicar filtros
+            if (filtros.fecha_inicio && filtros.fecha_fin) {
+                query += ' AND lb.fecha BETWEEN ? AND ?';
+                params.push(filtros.fecha_inicio, filtros.fecha_fin);
+            }
+
+            if (filtros.tipo_operacion) {
+                query += ' AND lb.tipo_operacion = ?';
+                params.push(filtros.tipo_operacion);
+            }
+
+            // Agrupar por fecha
+            query += ' GROUP BY lb.fecha';
+            query += ' ORDER BY lb.fecha DESC';
+
+            if (filtros.limit) {
+                query += ' LIMIT ?';
+                params.push(parseInt(filtros.limit));
+            }
+
+            const [operacionesAgrupadas] = await pool.execute(query, params);
+
+            return operacionesAgrupadas.map(op => ({
+                fecha: op.fecha,
+                total_ingresos_dia: parseFloat(op.total_ingresos_dia || 0),
+                total_egresos_dia: parseFloat(op.total_egresos_dia || 0),
+                movimiento_neto_dia: parseFloat(op.movimiento_neto_dia || 0),
+                cantidad_operaciones: parseInt(op.cantidad_operaciones),
+                saldo_final_dia: parseFloat(op.saldo_final_dia || 0)
+            }));
+
+        } catch (error) {
+            console.error('❌ Error listando operaciones agrupadas:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // OBTENER DETALLE DE OPERACIONES DE UN DÍA ESPECÍFICO
+    // ============================================================================
+    static async obtenerDetalleDelDia(fecha) {
+        try {
+            const query = `
+                SELECT lb.*, u.nombres, u.apellidos
+                FROM libro_bancos lb
+                LEFT JOIN usuarios u ON lb.usuario_registro_id = u.id
+                WHERE lb.fecha = ?
+                ORDER BY lb.id ASC
+            `;
+
+            const [operaciones] = await pool.execute(query, [fecha]);
+
+            return operaciones;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo detalle del día:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = LibroBancos;

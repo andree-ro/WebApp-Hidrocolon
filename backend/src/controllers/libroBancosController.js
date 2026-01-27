@@ -606,6 +606,75 @@ const exportarExcel = async (req, res) => {
     }
 };
 
+// ============================================================================
+// LISTAR OPERACIONES AGRUPADAS POR FECHA
+// ============================================================================
+const listarOperacionesAgrupadasPorFecha = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin, tipo_operacion, limit } = req.query;
+
+        const filtros = {};
+        if (fecha_inicio && fecha_fin) {
+            filtros.fecha_inicio = fecha_inicio;
+            filtros.fecha_fin = fecha_fin;
+        }
+        if (tipo_operacion) {
+            filtros.tipo_operacion = tipo_operacion;
+        }
+        if (limit) {
+            filtros.limit = parseInt(limit);
+        }
+
+        const operacionesAgrupadas = await LibroBancos.listarAgrupadasPorFecha(filtros);
+
+        res.json({
+            success: true,
+            data: operacionesAgrupadas,
+            total: operacionesAgrupadas.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error listando operaciones agrupadas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al listar operaciones agrupadas',
+            error: error.message
+        });
+    }
+};
+
+// ============================================================================
+// OBTENER DETALLE DE OPERACIONES DE UN DÍA ESPECÍFICO
+// ============================================================================
+const obtenerDetalleDelDia = async (req, res) => {
+    try {
+        const { fecha } = req.params;
+
+        if (!fecha) {
+            return res.status(400).json({
+                success: false,
+                message: 'La fecha es requerida'
+            });
+        }
+
+        const operaciones = await LibroBancos.obtenerDetalleDelDia(fecha);
+
+        res.json({
+            success: true,
+            data: operaciones,
+            total: operaciones.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo detalle del día:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener detalle del día',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     obtenerSaldoInicial,
     registrarSaldoInicial,
@@ -617,5 +686,7 @@ module.exports = {
     eliminarOperacion,
     obtenerResumen,
     exportarPDF,
-    exportarExcel
+    exportarExcel,
+    listarOperacionesAgrupadasPorFecha,
+    obtenerDetalleDelDia
 };

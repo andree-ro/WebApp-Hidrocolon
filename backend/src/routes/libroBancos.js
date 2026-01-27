@@ -27,7 +27,34 @@ router.post('/saldo-inicial', auth, libroBancosController.registrarSaldoInicial)
 router.get('/saldo-actual', auth, libroBancosController.calcularSaldoActual);
 
 // ============================================================================
-// RUTAS DE OPERACIONES
+// RUTAS DE REPORTES
+// ============================================================================
+
+// GET /api/libro-bancos/resumen - Obtener resumen por período
+router.get('/resumen/periodo', auth, libroBancosController.obtenerResumen);
+
+// ============================================================================
+// RUTAS DE EXPORTACIÓN
+// ============================================================================
+
+// GET /api/libro-bancos/exportar/pdf - Exportar a PDF
+router.get('/exportar/pdf', auth, libroBancosController.exportarPDF);
+
+// GET /api/libro-bancos/exportar/excel - Exportar a Excel
+router.get('/exportar/excel', auth, libroBancosController.exportarExcel);
+
+// ============================================================================
+// RUTAS PARA VISTA AGRUPADA POR FECHA (NUEVAS)
+// ============================================================================
+
+// GET /api/libro-bancos/agrupadas - Listar operaciones agrupadas por fecha
+router.get('/agrupadas', auth, libroBancosController.listarOperacionesAgrupadasPorFecha);
+
+// GET /api/libro-bancos/detalle-dia/:fecha - Obtener detalle de operaciones de un día
+router.get('/detalle-dia/:fecha', auth, libroBancosController.obtenerDetalleDelDia);
+
+// ============================================================================
+// RUTAS DE OPERACIONES (DEBEN IR AL FINAL)
 // ============================================================================
 
 // GET /api/libro-bancos - Listar operaciones con filtros
@@ -44,22 +71,5 @@ router.put('/:id', auth, libroBancosController.actualizarOperacion);
 
 // DELETE /api/libro-bancos/:id - Eliminar operación
 router.delete('/:id', auth, libroBancosController.eliminarOperacion);
-
-// ============================================================================
-// RUTAS DE REPORTES
-// ============================================================================
-
-// GET /api/libro-bancos/resumen - Obtener resumen por período
-router.get('/resumen/periodo', auth, libroBancosController.obtenerResumen);
-
-// ============================================================================
-// RUTAS DE EXPORTACIÓN
-// ============================================================================
-
-// GET /api/libro-bancos/exportar/pdf - Exportar a PDF
-router.get('/exportar/pdf', auth, libroBancosController.exportarPDF);
-
-// GET /api/libro-bancos/exportar/excel - Exportar a Excel
-router.get('/exportar/excel', auth, libroBancosController.exportarExcel);
 
 module.exports = router;
