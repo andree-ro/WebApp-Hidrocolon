@@ -30,7 +30,12 @@ export const useLibroBancosStore = defineStore('libroBancos', {
     modalOperacionAbierto: false,
     modalSaldoInicialAbierto: false,
     operacionSeleccionada: null,
-    modoEdicion: false
+    modoEdicion: false,
+
+    // Vista agrupada
+    vistaAgrupada: true, // true = vista agrupada, false = vista detallada
+    operacionesAgrupadas: [],
+    detallesDiaExpandidos: {} // { 'YYYY-MM-DD': [operaciones] }
   }),
 
   getters: {
@@ -368,7 +373,13 @@ export const useLibroBancosStore = defineStore('libroBancos', {
      */
     aplicarFiltros(filtros) {
       this.filtros = { ...this.filtros, ...filtros }
-      this.cargarOperaciones()
+      
+      // Cargar según la vista activa
+      if (this.vistaAgrupada) {
+        this.cargarOperacionesAgrupadas()
+      } else {
+        this.cargarOperaciones()
+      }
     },
 
     /**
@@ -381,7 +392,13 @@ export const useLibroBancosStore = defineStore('libroBancos', {
         tipo_operacion: null,
         clasificacion: null
       }
-      this.cargarOperaciones()
+      
+      // Cargar según la vista activa
+      if (this.vistaAgrupada) {
+        this.cargarOperacionesAgrupadas()
+      } else {
+        this.cargarOperaciones()
+      }
     },
 
     /**
@@ -396,6 +413,82 @@ export const useLibroBancosStore = defineStore('libroBancos', {
      */
     limpiarError() {
       this.error = null
+    }
+    ,
+
+    // ============================================================================
+    // VISTA AGRUPADA POR FECHA
+    // ============================================================================
+
+    /**
+     * Cargar operaciones agrupadas por fecha
+     */
+    async cargarOperacionesAgrupadas() {
+      try {
+        this.cargando = true
+        this.error = null
+        
+        // Construir parámetros de filtro
+        const params = {}
+        if (this.filtros.fecha_inicio) params.fecha_inicio = this.filtros.fecha_inicio
+        if (this.filtros.fecha_fin) params.fecha_fin = this.filtros.fecha_fin
+        if (this.filtros.tipo_operacion) params.tipo_operacion = this.filtros.tipo_operacion
+        
+        const response = await libroBancosService.obtenerOperacionesAgrupadas(params)
+        
+        if (response.success) {
+          this.operacionesAgrupadas = response.data
+          
+          // Actualizar saldo actual
+          await this.cargarSaldoActual()
+        }
+      } catch (error) {
+        console.error('Error al cargar operaciones agrupadas:', error)
+        this.error = error.response?.data?.message || 'Error al cargar operaciones agrupadas'
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    /**
+     * Obtener detalle de un día específico
+     */
+    async obtenerDetalleDelDia(fecha) {
+      try {
+        // Si ya tenemos los detalles cargados, no hacer la petición
+        if (this.detallesDiaExpandidos[fecha]) {
+          return
+        }
+
+        const response = await libroBancosService.obtenerDetalleDelDia(fecha)
+        
+        if (response.success) {
+          this.detallesDiaExpandidos[fecha] = response.data
+        }
+      } catch (error) {
+        console.error('Error al obtener detalle del día:', error)
+        this.error = error.response?.data?.message || 'Error al obtener detalle del día'
+      }
+    },
+
+    /**
+     * Alternar vista entre agrupada y detallada
+     */
+    alternarVista() {
+      this.vistaAgrupada = !this.vistaAgrupada
+      
+      if (this.vistaAgrupada) {
+        this.cargarOperacionesAgrupadas()
+      } else {
+        this.cargarOperaciones()
+      }
+    },
+
+    /**
+     * Colapsar detalle de un día
+     */
+    colapsarDetalleDelDia(fecha) {
+      delete this.detallesDiaExpandidos[fecha]
     }
   }
 })

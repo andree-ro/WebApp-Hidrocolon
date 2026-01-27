@@ -2,6 +2,7 @@
 // Controlador para gestión de vouchers de tarjeta del Sistema Hidrocolon
 
 const { pool } = require('../config/database');
+const LibroBancos = require('../models/LibroBancos');
 
 // ============================================================================
 // CREAR NUEVO VOUCHER
@@ -74,6 +75,23 @@ const crearVoucher = async (req, res) => {
         );
 
         console.log(`✅ Voucher ${result.insertId} creado: ${numero_voucher} - Q${montoNumerico}`);
+
+        // Registrar en libro de bancos
+        try {
+            await LibroBancos.crearOperacion({
+                fecha: new Date().toISOString().split('T')[0],
+                beneficiario: paciente_nombre.trim(),
+                descripcion: `Voucher tarjeta ${numero_voucher.trim()} - ${paciente_nombre.trim()}`,
+                clasificacion: 'Vouchers tarjeta',
+                tipo_operacion: 'ingreso',
+                ingreso: montoNumerico,
+                egreso: 0,
+                usuario_registro_id: req.user?.id || 1
+            });
+            console.log('✅ Voucher registrado en libro de bancos');
+        } catch (libroError) {
+            console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
+        }
 
         res.status(201).json({
             success: true,

@@ -2,6 +2,7 @@
 // Controlador para gestión de transferencias bancarias del Sistema Hidrocolon
 
 const { pool } = require('../config/database');
+const LibroBancos = require('../models/LibroBancos');
 
 // ============================================================================
 // CREAR NUEVA TRANSFERENCIA
@@ -74,6 +75,23 @@ const crearTransferencia = async (req, res) => {
         );
 
         console.log(`✅ Transferencia ${result.insertId} creada: ${numero_boleta} - Q${montoNumerico}`);
+
+        // Registrar en libro de bancos
+        try {
+            await LibroBancos.crearOperacion({
+                fecha: new Date().toISOString().split('T')[0],
+                beneficiario: paciente_nombre.trim(),
+                descripcion: `Transferencia ${numero_boleta.trim()} - ${paciente_nombre.trim()}`,
+                clasificacion: 'Transferencias bancarias',
+                tipo_operacion: 'ingreso',
+                ingreso: montoNumerico,
+                egreso: 0,
+                usuario_registro_id: req.user?.id || 1
+            });
+            console.log('✅ Transferencia registrada en libro de bancos');
+        } catch (libroError) {
+            console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
+        }
 
         res.status(201).json({
             success: true,

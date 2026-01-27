@@ -2,6 +2,7 @@
 const PagoComision = require('../models/PagoComision');
 const Doctora = require('../models/Doctora');
 const { pool } = require('../config/database');
+const LibroBancos = require('../models/LibroBancos');
 
 // ============================================================================
 // OBTENER DASHBOARD DE COMISIONES PENDIENTES
@@ -188,6 +189,23 @@ const registrarPago = async (req, res) => {
             turno_id,
             usuario_registro_id
         });
+
+        // Registrar en libro de bancos
+        try {
+            await LibroBancos.crearOperacion({
+                fecha: fecha_pago || hoy,
+                beneficiario: doctora.nombre,
+                descripcion: `Pago de comisiones - ${doctora.nombre}`,
+                clasificacion: 'Pagos de comisiones',
+                tipo_operacion: 'egreso',
+                ingreso: 0,
+                egreso: parseFloat(resultado.monto_total),
+                usuario_registro_id: usuario_registro_id
+            });
+            console.log('✅ Pago de comisión registrado en libro de bancos');
+        } catch (libroError) {
+            console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
+        }
 
         res.status(201).json({
             success: true,

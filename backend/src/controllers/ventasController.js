@@ -4,6 +4,7 @@
 const Venta = require('../models/Venta');
 const DetalleVenta = require('../models/DetalleVenta');
 const { pool } = require('../config/database');
+const LibroBancos = require('../models/LibroBancos');
 
 // ============================================================================
 // CREAR NUEVA VENTA
@@ -203,6 +204,28 @@ const crearVenta = async (req, res) => {
         const resultado = await Venta.create(ventaData);
 
         console.log('✅ Venta creada exitosamente:', resultado);
+        // ============================================================================
+        // REGISTRAR AUTOMÁTICAMENTE EN LIBRO DE BANCOS
+        // ============================================================================
+        try {
+            const descripcion = `Venta ${resultado.numero_factura} - ${cliente_nombre} (${metodo_pago})`;
+            
+            await LibroBancos.crearOperacion({
+                fecha: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
+                beneficiario: cliente_nombre,
+                descripcion: descripcion,
+                clasificacion: 'Ventas',
+                tipo_operacion: 'ingreso',
+                ingreso: total,
+                egreso: 0,
+                usuario_registro_id: req.user.id
+            });
+            
+            console.log('✅ Venta registrada automáticamente en libro de bancos');
+        } catch (libroError) {
+            console.error('⚠️ Error registrando en libro de bancos (no crítico):', libroError.message);
+            // No detenemos el proceso si falla el registro en libro de bancos
+        }
 
         // Obtener la venta completa para devolverla Y generar el PDF
         const ventaCompleta = await Venta.findById(resultado.venta_id);

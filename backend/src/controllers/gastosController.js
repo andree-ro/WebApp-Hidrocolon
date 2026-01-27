@@ -2,6 +2,7 @@
 // Controlador para gestión de gastos del Sistema Hidrocolon
 
 const { pool } = require('../config/database');
+const LibroBancos = require('../models/LibroBancos');
 
 // ============================================================================
 // CREAR NUEVO GASTO
@@ -70,6 +71,22 @@ const crearGasto = async (req, res) => {
         );
 
         console.log(`✅ Gasto ${result.insertId} creado: ${tipo_gasto} - Q${montoNumerico}`);
+        // Registrar en libro de bancos
+        try {
+            await LibroBancos.crearOperacion({
+                fecha: new Date().toISOString().split('T')[0],
+                beneficiario: 'Gastos operativos',
+                descripcion: `Gasto: ${descripcion} (${tipo_gasto})`,
+                clasificacion: `Gastos - ${tipo_gasto}`,
+                tipo_operacion: 'egreso',
+                ingreso: 0,
+                egreso: montoNumerico,
+                usuario_registro_id: req.user?.id || 1
+            });
+            console.log('✅ Gasto registrado en libro de bancos');
+        } catch (libroError) {
+            console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
+        }
 
         res.status(201).json({
             success: true,

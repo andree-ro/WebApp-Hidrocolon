@@ -90,6 +90,26 @@ const libroBancosService = {
       responseType: 'blob'
     })
     return response.data
+  },
+
+  // ============================================================================
+  // VISTA AGRUPADA POR FECHA
+  // ============================================================================
+
+  /**
+   * Obtener operaciones agrupadas por fecha
+   */
+  async obtenerOperacionesAgrupadas(params = {}) {
+    const response = await api.get('/libro-bancos/agrupadas', { params })
+    return response.data
+  },
+
+  /**
+   * Obtener detalle de operaciones de un día específico
+   */
+  async obtenerDetalleDelDia(fecha) {
+    const response = await api.get(`/libro-bancos/detalle-dia/${fecha}`)
+    return response.data
   }
 }
 export default libroBancosService
