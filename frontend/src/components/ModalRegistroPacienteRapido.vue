@@ -12,7 +12,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
             </svg>
-            <h3 class="text-xl font-bold">⚡ Registro Rápido</h3>
+            <h3 class="text-xl font-bold">Nuevo Paciente</h3>
           </div>
           <button 
             @click="cerrar"
@@ -23,7 +23,6 @@
             </svg>
           </button>
         </div>
-        <p class="text-green-100 text-sm mt-1">Solo información básica para agilizar el registro</p>
       </div>
 
       <!-- Body -->
@@ -88,20 +87,6 @@
           </div>
 
         </div>
-
-        <!-- Nota informativa -->
-        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div class="flex gap-2">
-            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-            </svg>
-            <div class="text-sm text-blue-800">
-              <p class="font-medium">Registro simplificado</p>
-              <p class="mt-1">Podrás completar los datos restantes (teléfono, DPI, fechas) desde el módulo de Pacientes cuando sea conveniente.</p>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <!-- Footer -->
