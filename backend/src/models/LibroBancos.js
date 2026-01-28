@@ -529,14 +529,21 @@ class LibroBancos {
 
             const [operacionesAgrupadas] = await pool.execute(query, params);
 
-            return operacionesAgrupadas.map(op => ({
-                fecha: op.fecha,
-                total_ingresos_dia: parseFloat(op.total_ingresos_dia || 0),
-                total_egresos_dia: parseFloat(op.total_egresos_dia || 0),
-                movimiento_neto_dia: parseFloat(op.movimiento_neto_dia || 0),
-                cantidad_operaciones: parseInt(op.cantidad_operaciones),
-                saldo_final_dia: parseFloat(op.saldo_final_dia || 0)
-            }));
+            return operacionesAgrupadas.map(op => {
+                // Convertir fecha a string YYYY-MM-DD
+                const fecha = op.fecha instanceof Date 
+                    ? op.fecha.toISOString().split('T')[0]
+                    : op.fecha;
+                
+                return {
+                    fecha: fecha,
+                    total_ingresos_dia: parseFloat(op.total_ingresos_dia || 0),
+                    total_egresos_dia: parseFloat(op.total_egresos_dia || 0),
+                    movimiento_neto_dia: parseFloat(op.movimiento_neto_dia || 0),
+                    cantidad_operaciones: parseInt(op.cantidad_operaciones),
+                    saldo_final_dia: parseFloat(op.saldo_final_dia || 0)
+                };
+            });
 
         } catch (error) {
             console.error('❌ Error listando operaciones agrupadas:', error);

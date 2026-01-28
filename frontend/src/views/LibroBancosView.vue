@@ -649,7 +649,9 @@ function formatearMoneda(valor) {
  */
 function formatearFecha(fecha) {
   if (!fecha) return '-'
-  const date = new Date(fecha)
+  // Agregar hora al mediodía para evitar problemas de zona horaria
+  const fechaStr = fecha.includes('T') ? fecha : fecha + 'T12:00:00'
+  const date = new Date(fechaStr)
   return date.toLocaleDateString('es-GT', {
     year: 'numeric',
     month: '2-digit',
