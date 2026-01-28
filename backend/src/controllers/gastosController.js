@@ -73,13 +73,19 @@ const crearGasto = async (req, res) => {
         console.log(`✅ Gasto ${result.insertId} creado: ${tipo_gasto} - Q${montoNumerico}`);
         // Registrar en libro de bancos
         try {
-            // Obtener fecha del gasto creado
-            const fechaGasto = gastos[0].fecha_creacion
-                ? new Date(gastos[0].fecha_creacion).toLocaleDateString('en-CA')
-                : new Date().toLocaleDateString('en-CA');
+            // Obtener fecha en zona horaria de Guatemala (UTC-6)
+            const fechaUTC = new Date(gastos[0].fecha_creacion);
+            const offsetGuatemala = -6 * 60; // -6 horas en minutos
+            const fechaGuatemala = new Date(fechaUTC.getTime() + (offsetGuatemala * 60 * 1000));
+            
+            // Formatear como YYYY-MM-DD
+            const year = fechaGuatemala.getFullYear();
+            const month = String(fechaGuatemala.getMonth() + 1).padStart(2, '0');
+            const day = String(fechaGuatemala.getDate()).padStart(2, '0');
+            const fechaFormateada = `${year}-${month}-${day}`;
             
             await LibroBancos.crearOperacion({
-                fecha: fechaGasto,
+                fecha: fechaFormateada,
                 beneficiario: 'Gastos operativos',
                 descripcion: `Gasto: ${descripcion} (${tipo_gasto})`,
                 clasificacion: `Gastos - ${tipo_gasto}`,
@@ -88,7 +94,7 @@ const crearGasto = async (req, res) => {
                 egreso: montoNumerico,
                 usuario_registro_id: req.user?.id || 1
             });
-            console.log('✅ Gasto registrado en libro de bancos');
+            console.log(`✅ Gasto registrado en libro de bancos con fecha: ${fechaFormateada}`);
         } catch (libroError) {
             console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
         }

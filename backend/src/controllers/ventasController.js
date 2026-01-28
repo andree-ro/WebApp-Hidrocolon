@@ -204,19 +204,29 @@ const crearVenta = async (req, res) => {
         const resultado = await Venta.create(ventaData);
 
         console.log('✅ Venta creada exitosamente:', resultado);
+        
+        // Obtener la venta completa para devolverla Y generar el PDF
+        const ventaCompleta = await Venta.findById(resultado.venta_id);
+
         // ============================================================================
         // REGISTRAR AUTOMÁTICAMENTE EN LIBRO DE BANCOS
         // ============================================================================
         try {
             const descripcion = `Venta ${resultado.numero_factura} - ${cliente_nombre} (${metodo_pago})`;
             
-            // Obtener la fecha de la venta desde la BD (en zona horaria local)
-            const fechaVenta = ventaCompleta.fecha_creacion 
-                ? new Date(ventaCompleta.fecha_creacion).toLocaleDateString('en-CA') // formato YYYY-MM-DD
-                : new Date().toLocaleDateString('en-CA');
+            // Obtener fecha en zona horaria de Guatemala (UTC-6)
+            const fechaUTC = new Date(ventaCompleta.fecha_creacion);
+            const offsetGuatemala = -6 * 60; // -6 horas en minutos
+            const fechaGuatemala = new Date(fechaUTC.getTime() + (offsetGuatemala * 60 * 1000));
+            
+            // Formatear como YYYY-MM-DD
+            const year = fechaGuatemala.getFullYear();
+            const month = String(fechaGuatemala.getMonth() + 1).padStart(2, '0');
+            const day = String(fechaGuatemala.getDate()).padStart(2, '0');
+            const fechaFormateada = `${year}-${month}-${day}`;
             
             await LibroBancos.crearOperacion({
-                fecha: fechaVenta, // ✅ Usa fecha real de la venta
+                fecha: fechaFormateada,
                 beneficiario: cliente_nombre,
                 descripcion: descripcion,
                 clasificacion: 'Ventas',
@@ -226,14 +236,10 @@ const crearVenta = async (req, res) => {
                 usuario_registro_id: req.user.id
             });
             
-            console.log('✅ Venta registrada automáticamente en libro de bancos');
+            console.log(`✅ Venta registrada en libro de bancos con fecha: ${fechaFormateada}`);
         } catch (libroError) {
             console.error('⚠️ Error registrando en libro de bancos (no crítico):', libroError.message);
-            // No detenemos el proceso si falla el registro en libro de bancos
         }
-
-        // Obtener la venta completa para devolverla Y generar el PDF
-        const ventaCompleta = await Venta.findById(resultado.venta_id);
 
         // ============================================================================
         // ✅ GENERAR PDF AUTOMÁTICAMENTE
