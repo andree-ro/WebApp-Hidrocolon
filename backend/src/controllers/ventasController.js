@@ -214,10 +214,15 @@ const crearVenta = async (req, res) => {
         try {
             const descripcion = `Venta ${resultado.numero_factura} - ${cliente_nombre} (${metodo_pago})`;
             
-            // Obtener fecha en zona horaria de Guatemala (UTC-6)
-            const fechaUTC = new Date(ventaCompleta.fecha_creacion);
+            // Obtener la fecha ACTUAL en zona horaria de Guatemala
+            const ahora = new Date();
+            
+            // Crear fecha en zona horaria local de Guatemala (UTC-6)
             const offsetGuatemala = -6 * 60; // -6 horas en minutos
-            const fechaGuatemala = new Date(fechaUTC.getTime() + (offsetGuatemala * 60 * 1000));
+            const offsetLocal = ahora.getTimezoneOffset(); // offset del servidor
+            const diferenciaMinutos = offsetGuatemala - offsetLocal;
+            
+            const fechaGuatemala = new Date(ahora.getTime() + (diferenciaMinutos * 60 * 1000));
             
             // Formatear como YYYY-MM-DD
             const year = fechaGuatemala.getFullYear();

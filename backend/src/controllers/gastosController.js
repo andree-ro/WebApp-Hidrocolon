@@ -73,10 +73,15 @@ const crearGasto = async (req, res) => {
         console.log(`✅ Gasto ${result.insertId} creado: ${tipo_gasto} - Q${montoNumerico}`);
         // Registrar en libro de bancos
         try {
-            // Obtener fecha en zona horaria de Guatemala (UTC-6)
-            const fechaUTC = new Date(gastos[0].fecha_creacion);
+            // Obtener la fecha ACTUAL en zona horaria de Guatemala
+            const ahora = new Date();
+            
+            // Crear fecha en zona horaria local de Guatemala (UTC-6)
             const offsetGuatemala = -6 * 60; // -6 horas en minutos
-            const fechaGuatemala = new Date(fechaUTC.getTime() + (offsetGuatemala * 60 * 1000));
+            const offsetLocal = ahora.getTimezoneOffset(); // offset del servidor
+            const diferenciaMinutos = offsetGuatemala - offsetLocal;
+            
+            const fechaGuatemala = new Date(ahora.getTime() + (diferenciaMinutos * 60 * 1000));
             
             // Formatear como YYYY-MM-DD
             const year = fechaGuatemala.getFullYear();
