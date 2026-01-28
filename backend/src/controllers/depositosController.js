@@ -1,6 +1,5 @@
 // backend/src/controllers/depositosController.js
 const Deposito = require('../models/Deposito');
-const LibroBancos = require('../models/LibroBancos');
 
 /**
  * Registrar un nuevo depósito
@@ -33,29 +32,6 @@ const registrarDeposito = async (req, res) => {
         };
 
         const deposito = await Deposito.create(depositoData);
-
-        // Registrar en libro de bancos
-        try {
-            // Obtener fecha del depósito creado
-            const fechaDeposito = deposito.fecha_creacion
-                ? new Date(deposito.fecha_creacion).toLocaleDateString('en-CA')
-                : new Date().toLocaleDateString('en-CA');
-            
-            await LibroBancos.crearOperacion({
-                fecha: fechaDeposito,
-                beneficiario: paciente_nombre.trim(),
-                descripcion: `Depósito ${numero_deposito.trim()} - ${paciente_nombre.trim()}`,
-                clasificacion: 'Depósitos bancarios',
-                tipo_operacion: 'ingreso',
-                numero_deposito: numero_deposito.trim(),
-                ingreso: parseFloat(monto),
-                egreso: 0,
-                usuario_registro_id: req.user?.id || 1
-            });
-            console.log('✅ Depósito registrado en libro de bancos');
-        } catch (libroError) {
-            console.error('⚠️ Error registrando en libro de bancos:', libroError.message);
-        }
 
         res.status(201).json({
             success: true,
