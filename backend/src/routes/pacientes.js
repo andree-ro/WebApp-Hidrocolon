@@ -29,6 +29,9 @@ router.get('/cumpleanos-mes', PacientesController.getCumpleanosMes);
 // GET /api/pacientes/citas-manana - Filtro citas mañana
 router.get('/citas-manana', PacientesController.getCitasManana);
 
+// POST /api/pacientes/rapido - Crear paciente rápido (solo nombres, apellidos, nit)
+router.post('/rapido', PacientesController.crearPacienteRapido);
+
 // ============================================================================
 // 📋 CRUD BÁSICO
 // ============================================================================
@@ -47,25 +50,5 @@ router.put('/:id', PacientesController.actualizarPaciente);
 
 // DELETE /api/pacientes/:id - Eliminar paciente (soft delete)
 router.delete('/:id', PacientesController.eliminarPaciente);
-
-// ============================================================================
-// 📝 LOGGING DE RUTAS CONFIGURADAS
-// ============================================================================
-
-console.log('✅ Rutas del módulo PACIENTES configuradas:');
-console.log('   📊 Especiales:');
-console.log('      GET    /api/pacientes/stats/general');
-console.log('      GET    /api/pacientes/export/excel');
-console.log('      GET    /api/pacientes/cumpleanos-mes');
-console.log('      GET    /api/pacientes/citas-manana');
-console.log('   📋 CRUD:');
-console.log('      GET    /api/pacientes');
-console.log('      GET    /api/pacientes/:id');
-console.log('      POST   /api/pacientes');
-console.log('      PUT    /api/pacientes/:id');
-console.log('      DELETE /api/pacientes/:id');
-console.log('');
-console.log('🔒 Todas las rutas protegidas con autenticación JWT');
-console.log('🎯 Controller pattern implementado correctamente');
 
 module.exports = router;

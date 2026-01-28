@@ -156,6 +156,52 @@ class PacientesController {
         }
     }
 
+    // POST /api/pacientes/rapido - Crear paciente rápido (solo nombres, apellidos, nit)
+    static async crearPacienteRapido(req, res) {
+        try {
+            console.log('⚡ Controller crearPacienteRapido:', req.body);
+
+            // Mapear nombres de campos
+            const data = {
+                nombres: req.body.nombres || req.body.nombre,
+                apellidos: req.body.apellidos || req.body.apellido,
+                nit: req.body.nit
+            };
+
+            // Validaciones básicas
+            const camposRequeridos = ['nombres', 'apellidos', 'nit'];
+            for (const campo of camposRequeridos) {
+                if (!data[campo] || !data[campo].trim()) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Campo requerido faltante: ${campo}`,
+                        campo_faltante: campo
+                    });
+                }
+            }
+
+            const paciente = await Paciente.createRapido(data);
+
+            console.log(`✅ Controller: Paciente rápido creado con ID: ${paciente.id}`);
+
+            res.status(201).json({
+                success: true,
+                message: 'Paciente creado correctamente (registro rápido)',
+                data: paciente
+            });
+
+        } catch (error) {
+            console.error('❌ Error en crearPacienteRapido:', error);
+
+            // Error genérico
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Error creando paciente rápido',
+                error: error.message
+            });
+        }
+    }
+    
     // PUT /api/pacientes/:id - Actualizar
     static async actualizarPaciente(req, res) {
         try {

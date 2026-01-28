@@ -69,10 +69,10 @@
             </div>
 
             <button 
-              @click="$router.push({ path: '/pacientes', query: { from: 'carrito' } })"
+              @click="mostrarModalRegistroRapido = true"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              + Nuevo Cliente
+              ⚡ Registro Rápido
             </button>
             
             <button 
@@ -767,6 +767,11 @@
         </div>
       </div>
     </div>
+    <ModalRegistroPacienteRapido
+      :mostrar="mostrarModalRegistroRapido"
+      @cerrar="mostrarModalRegistroRapido = false"
+      @paciente-creado="manejarPacienteCreado"
+    />
   </div>
 </template>
 
@@ -781,8 +786,8 @@ import serviciosService from '../services/serviciosService'
 import extrasService from '../services/extrasService'
 import authService from '../services/authService'
 import SelectorDoctora from '@/components/SelectorDoctora.vue'
+import ModalRegistroPacienteRapido from '@/components/ModalRegistroPacienteRapido.vue'
 
-console.log('🛒 ===== CARRITO VIEW CARGANDO =====')
 
 const carritoStore = useCarritoStore()
 
@@ -804,6 +809,7 @@ const descuentoTemporal = ref(0)
 const mostrarModalVoucher = ref(false)
 const mostrarModalTransferencia = ref(false)
 const mostrarModalDeposito = ref(false)
+const mostrarModalRegistroRapido = ref(false)
 
 const datosVoucher = ref({
   numero: '',
@@ -892,6 +898,27 @@ function seleccionarPaciente(paciente) {
   carritoStore.setPaciente(pacienteNormalizado)
   busquedaPaciente.value = ''
   pacientesEncontrados.value = []
+}
+
+// Función para manejar el paciente creado desde el modal rápido
+function manejarPacienteCreado(paciente) {
+  console.log('✅ Paciente creado desde modal rápido:', paciente)
+  
+  // Normalizar nombres para el carrito
+  const pacienteNormalizado = {
+    ...paciente,
+    nombre: paciente.nombres || paciente.nombre,
+    apellido: paciente.apellidos || paciente.apellido
+  }
+  
+  // Seleccionar el paciente recién creado
+  carritoStore.setPaciente(pacienteNormalizado)
+  
+  // Limpiar búsqueda
+  busquedaPaciente.value = ''
+  pacientesEncontrados.value = []
+  
+  console.log('✅ Paciente seleccionado en el carrito')
 }
 
 // Búsqueda de productos

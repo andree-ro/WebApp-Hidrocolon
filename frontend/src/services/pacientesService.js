@@ -57,6 +57,27 @@ const pacientesService = {
     }
   },
 
+  // Crear paciente rápido (solo nombres, apellidos, nit)
+  async crearPacienteRapido(pacienteData) {
+    try {
+      console.log('⚡ Creando paciente rápido:', `${pacienteData.nombres} ${pacienteData.apellidos}`)
+      
+      const datosMinimos = {
+        nombres: pacienteData.nombres.trim(),
+        apellidos: pacienteData.apellidos.trim(),
+        nit: pacienteData.nit.trim()
+      }
+      
+      const response = await api.post('/pacientes/rapido', datosMinimos)
+      
+      console.log('✅ Paciente rápido creado exitosamente:', response.data.data?.id)
+      return response.data
+    } catch (error) {
+      console.error('❌ Error creando paciente rápido:', error.response?.data)
+      throw new Error(error.response?.data?.message || 'Error creando paciente rápido')
+    }
+  },
+
   // Actualizar paciente existente
   async actualizarPaciente(id, pacienteData) {
     try {

@@ -270,6 +270,55 @@ class Paciente {
         }
     }
 
+    // CREATE RÁPIDO - Registro rápido con solo nombres, apellidos y NIT
+    static async createRapido(data) {
+        console.log('⚡ Paciente.createRapido:', data);
+        
+        let connection;
+        try {
+            connection = await this.getConnection();
+
+            // Validaciones mínimas para registro rápido
+            if (!data.nombres || !data.nombres.trim()) {
+                throw new Error('El nombre es requerido');
+            }
+
+            if (!data.apellidos || !data.apellidos.trim()) {
+                throw new Error('El apellido es requerido');
+            }
+
+            if (!data.nit || !data.nit.trim()) {
+                throw new Error('El NIT es requerido');
+            }
+
+            // Insertar paciente con datos mínimos
+            const query = `
+                INSERT INTO pacientes (
+                    nombres, apellidos, nit,
+                    telefono, dpi, fecha_primer_cita, proxima_cita, fecha_nacimiento,
+                    activo, fecha_creacion, fecha_actualizacion
+                ) VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, 1, NOW(), NOW())
+            `;
+
+            const [result] = await connection.execute(query, [
+                data.nombres.trim(),
+                data.apellidos.trim(),
+                data.nit.trim()
+            ]);
+
+            console.log(`✅ Paciente rápido creado con ID: ${result.insertId}`);
+
+            // Devolver el paciente creado
+            return await this.findById(result.insertId);
+
+        } catch (error) {
+            console.error('❌ Error en Paciente.createRapido:', error);
+            throw error;
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
     // UPDATE - Actualizar paciente
     static async update(id, data) {
         console.log(`📝 Paciente.update(${id}):`, data);
