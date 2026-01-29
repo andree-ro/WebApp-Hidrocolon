@@ -730,6 +730,46 @@ class Venta {
                 console.log(`✅ ${depositosEliminados.affectedRows} depósito(s) eliminado(s)`);
             }
 
+            // ============================================================================
+            // 3.6 ELIMINAR REGISTRO EN LIBRO DE BANCOS
+            // ============================================================================
+            const [libroBancosEliminado] = await connection.query(
+                `DELETE FROM libro_bancos 
+                 WHERE clasificacion = 'Ventas' 
+                 AND descripcion LIKE ?`,
+                [`%${venta.numero_factura}%`]
+            );
+            if (libroBancosEliminado.affectedRows > 0) {
+                console.log(`✅ Registro eliminado del libro de bancos`);
+                
+                // Recalcular saldos desde la operación anterior
+                const [operaciones] = await connection.query(`
+                    SELECT id, ingreso, egreso
+                    FROM libro_bancos
+                    ORDER BY fecha ASC, id ASC
+                `);
+                
+                // Obtener saldo inicial
+                const [saldoInicial] = await connection.query(`
+                    SELECT saldo_inicial FROM saldo_inicial_bancos WHERE activo = 1 LIMIT 1
+                `);
+                
+                let saldoActual = parseFloat(saldoInicial[0].saldo_inicial);
+                
+                // Recalcular todos los saldos
+                for (const operacion of operaciones) {
+                    saldoActual = saldoActual + parseFloat(operacion.ingreso) - parseFloat(operacion.egreso);
+                    
+                    await connection.query(`
+                        UPDATE libro_bancos 
+                        SET saldo_bancos = ?
+                        WHERE id = ?
+                    `, [saldoActual, operacion.id]);
+                }
+                
+                console.log(`✅ Saldos recalculados en libro de bancos`);
+            }
+
             // 4. Marcar venta como anulada con información de autorización
             const [autorizador] = await connection.query(
                 'SELECT nombres, apellidos FROM usuarios WHERE id = ?',
