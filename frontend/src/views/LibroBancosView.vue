@@ -248,21 +248,13 @@
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">
-              📋 Operaciones Registradas
+              📋 Operaciones Agrupadas por Fecha
               <span class="text-sm font-normal text-gray-500 ml-2">
-                ({{ store.vistaAgrupada ? store.operacionesAgrupadas.length : store.totalOperaciones }} registros)
+                ({{ store.operacionesAgrupadas.length }} días)
               </span>
             </h2>
           </div>
-          
-          <!-- Toggle Vista -->
-          <button
-            @click="alternarVista"
-            class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2"
-          >
-            <span v-if="store.vistaAgrupada">📊 Ver Detalle</span>
-            <span v-else>📅 Ver Agrupado</span>
-          </button>
+        
         </div>
 
         <!-- Loader -->
@@ -278,14 +270,8 @@
           <p class="text-gray-500 text-sm mt-2">Comienza registrando tu primera operación</p>
         </div>
 
-        <div v-else-if="!store.vistaAgrupada && store.operaciones.length === 0" class="p-8 text-center">
-          <div class="text-6xl mb-4">🔭</div>
-          <p class="text-gray-600 text-lg font-medium">No hay operaciones registradas</p>
-          <p class="text-gray-500 text-sm mt-2">Comienza registrando tu primera operación</p>
-        </div>
-
         <!-- VISTA AGRUPADA POR FECHA -->
-        <div v-else-if="store.vistaAgrupada" class="overflow-x-auto">
+        <div v-else class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
@@ -468,114 +454,6 @@
             </tbody>
           </table>
         </div>
-
-        <!-- VISTA DETALLADA (original) -->
-        <div v-else class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Beneficiario</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clasificación</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ingreso</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Egreso</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr
-                v-for="operacion in store.operacionesOrdenadas"
-                :key="operacion.id"
-                class="hover:bg-gray-50"
-              >
-                <!-- Fecha -->
-                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                  {{ formatearFecha(operacion.fecha) }}
-                </td>
-
-                <!-- Beneficiario -->
-                <td class="px-4 py-3 text-sm text-gray-900">
-                  {{ operacion.beneficiario }}
-                </td>
-
-                <!-- Descripción -->
-                <td class="px-4 py-3 text-sm text-gray-600">
-                  {{ operacion.descripcion }}
-                  <div v-if="operacion.numero_cheque || operacion.numero_deposito" class="text-xs text-gray-400 mt-1">
-                    <span v-if="operacion.numero_cheque">Cheque: {{ operacion.numero_cheque }}</span>
-                    <span v-if="operacion.numero_deposito">{{ operacion.numero_cheque ? ' | ' : '' }}Dep: {{ operacion.numero_deposito }}</span>
-                  </div>
-                </td>
-
-                <!-- Clasificación -->
-                <td class="px-4 py-3 text-sm">
-                  <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                    {{ operacion.clasificacion }}
-                  </span>
-                </td>
-
-                <!-- Tipo -->
-                <td class="px-4 py-3 text-center">
-                  <span
-                    :class="[
-                      'px-2 py-1 rounded text-xs font-medium',
-                      operacion.tipo_operacion === 'ingreso'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    {{ operacion.tipo_operacion === 'ingreso' ? '💰 Ingreso' : '💸 Egreso' }}
-                  </span>
-                </td>
-
-                <!-- Ingreso -->
-                <td class="px-4 py-3 text-right text-sm font-medium text-green-600">
-                  <span v-if="parseFloat(operacion.ingreso) > 0">
-                    Q{{ formatearMoneda(operacion.ingreso) }}
-                  </span>
-                  <span v-else class="text-gray-300">-</span>
-                </td>
-
-                <!-- Egreso -->
-                <td class="px-4 py-3 text-right text-sm font-medium text-red-600">
-                  <span v-if="parseFloat(operacion.egreso) > 0">
-                    Q{{ formatearMoneda(operacion.egreso) }}
-                  </span>
-                  <span v-else class="text-gray-300">-</span>
-                </td>
-
-                <!-- Saldo -->
-                <td class="px-4 py-3 text-right text-sm font-bold text-purple-600">
-                  Q{{ formatearMoneda(operacion.saldo_bancos) }}
-                </td>
-
-                <!-- Acciones -->
-                <td class="px-4 py-3">
-                  <div class="flex items-center justify-center gap-2">
-                    <button
-                      @click="editarOperacion(operacion)"
-                      class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      @click="confirmarEliminarOperacion(operacion)"
-                      class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                      title="Eliminar"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
       </div>
     </div>
 
@@ -649,7 +527,6 @@ function formatearMoneda(valor) {
  */
 function formatearFecha(fecha) {
   if (!fecha) return '-'
-  // Agregar hora al mediodía para evitar problemas de zona horaria
   const fechaStr = fecha.includes('T') ? fecha : fecha + 'T12:00:00'
   const date = new Date(fechaStr)
   return date.toLocaleDateString('es-GT', {
@@ -719,13 +596,6 @@ function confirmarEliminarOperacion(operacion) {
   if (confirm(`¿Está seguro de eliminar esta operación?\n\nBeneficiario: ${operacion.beneficiario}\nMonto: Q${formatearMoneda(operacion.ingreso || operacion.egreso)}`)) {
     store.eliminarOperacion(operacion.id)
   }
-}
-
-/**
- * Alternar vista entre agrupada y detallada
- */
-function alternarVista() {
-  store.alternarVista()
 }
 
 /**
