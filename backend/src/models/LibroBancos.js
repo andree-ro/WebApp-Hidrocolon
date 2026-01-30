@@ -501,7 +501,11 @@ class LibroBancos {
                     SUM(lb.egreso) as total_egresos_dia,
                     SUM(lb.ingreso) - SUM(lb.egreso) as movimiento_neto_dia,
                     COUNT(*) as cantidad_operaciones,
-                    MAX(lb.saldo_bancos) as saldo_final_dia
+                    (SELECT lb2.saldo_bancos 
+                    FROM libro_bancos lb2 
+                    WHERE lb2.fecha = lb.fecha 
+                    ORDER BY lb2.id DESC 
+                    LIMIT 1) as saldo_final_dia
                 FROM libro_bancos lb
                 WHERE 1=1
             `;
