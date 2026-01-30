@@ -94,6 +94,7 @@
               <option value="devolucion">Devolución a proveedor</option>
               <option value="dañado">Producto dañado</option>
               <option value="ajuste">Ajuste de inventario</option>
+              <option value="traslado">Traslado</option>
               <option value="otro">Otro</option>
             </select>
           </div>

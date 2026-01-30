@@ -52,7 +52,7 @@
             <!-- Card Fecha -->
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
               <p class="text-sm text-orange-700 font-medium mb-1">Fecha de Pago</p>
-              <p class="text-lg font-bold text-orange-900">{{ formatearFecha(pago.fecha_pago) }}</p>
+              <p class="text-lg font-bold text-orange-900">{{ formatearFecha(pago.fecha_creacion) }}</p>
             </div>
           </div>
         </div>

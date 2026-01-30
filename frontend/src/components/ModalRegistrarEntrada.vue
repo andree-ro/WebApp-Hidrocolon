@@ -80,6 +80,7 @@
               <option value="Recepción de mercadería">Recepción de mercadería</option>
               <option value="Devolución de cliente">Devolución de cliente</option>
               <option value="Ajuste de inventario">Ajuste de inventario</option>
+              <option value="Traslado">Traslado</option>
               <option value="Otro">Otro</option>
             </select>
           </div>

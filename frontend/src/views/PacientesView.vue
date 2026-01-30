@@ -366,11 +366,9 @@
     <div
       v-if="modalVisible"
       class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-      @click="cerrarModal"
     >
       <div
         class="relative top-20 mx-auto p-5 border w-full max-w-2xl bg-white rounded-lg shadow-lg"
-        @click.stop
       >
         <div class="flex justify-between items-center pb-4 border-b">
           <h3 class="text-lg font-semibold text-gray-900">

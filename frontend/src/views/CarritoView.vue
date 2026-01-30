@@ -356,17 +356,6 @@
             </div>
           </div>
           
-          <!-- Observaciones -->
-          <div class="mt-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones (opcional)</label>
-            <textarea
-              v-model="carritoStore.observaciones"
-              rows="2"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
-              placeholder="Notas adicionales..."
-            ></textarea>
-          </div>
-          
           <!-- Botones -->
           <div class="mt-4 space-y-2">
             <button
