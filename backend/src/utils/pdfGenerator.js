@@ -712,6 +712,58 @@ class ComprobanteGenerator {
                 doc.on('data', chunk => chunks.push(chunk));
                 doc.on('end', () => resolve(Buffer.concat(chunks)));
                 doc.on('error', reject);
+                // ============================================================
+                // LÓGICA DE AJUSTE DINÁMICO SEGÚN CANTIDAD DE PRODUCTOS
+                // ============================================================
+                const cantidadProductos = datosPDF.ventas_agrupadas ? datosPDF.ventas_agrupadas.length : 0;
+                
+                // Configuración dinámica según cantidad de productos
+                let config = {
+                    tablaFontSize: 8,
+                    tablaRowHeight: 16,
+                    headerFontSize: 11,
+                    espacioEntreEncabezado: 30,
+                    espacioAntesObservaciones: 10,
+                    espacioAntesRecibo: 15,
+                    espacioAntesFirmas: 30
+                };
+                
+                if (cantidadProductos > 40) {
+                    // Ultra compacto (41+ productos)
+                    config = {
+                        tablaFontSize: 6,
+                        tablaRowHeight: 10,
+                        headerFontSize: 10,
+                        espacioEntreEncabezado: 15,
+                        espacioAntesObservaciones: 5,
+                        espacioAntesRecibo: 8,
+                        espacioAntesFirmas: 15
+                    };
+                } else if (cantidadProductos > 30) {
+                    // Muy compacto (31-40 productos)
+                    config = {
+                        tablaFontSize: 6.5,
+                        tablaRowHeight: 11,
+                        headerFontSize: 10,
+                        espacioEntreEncabezado: 20,
+                        espacioAntesObservaciones: 6,
+                        espacioAntesRecibo: 10,
+                        espacioAntesFirmas: 20
+                    };
+                } else if (cantidadProductos > 20) {
+                    // Compacto (21-30 productos)
+                    config = {
+                        tablaFontSize: 7,
+                        tablaRowHeight: 13,
+                        headerFontSize: 10,
+                        espacioEntreEncabezado: 25,
+                        espacioAntesObservaciones: 8,
+                        espacioAntesRecibo: 12,
+                        espacioAntesFirmas: 25
+                    };
+                }
+                
+                console.log(`📊 Cantidad de productos: ${cantidadProductos} | Usando configuración: ${cantidadProductos > 40 ? 'ULTRA-COMPACTO' : cantidadProductos > 30 ? 'MUY-COMPACTO' : cantidadProductos > 20 ? 'COMPACTO' : 'NORMAL'}`);
 
                 const pageWidth = 612;
                 const pageHeight = 792;
@@ -765,7 +817,7 @@ class ComprobanteGenerator {
                 y += 22;
 
                 doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
-                y += 20;
+                y += config.espacioEntreEncabezado;
 
                 // RANGO DE FECHAS EN MAYÚSCULAS - Agregar T12:00:00 para evitar desfase
                 const fechaInicioString = datosPDF.fecha_inicio instanceof Date 
@@ -799,7 +851,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 // TABLA DE PRODUCTOS
                 // ============================================================
-                doc.fontSize(11).fillColor(colors.text).font('Helvetica-Bold')
+                doc.fontSize(config.headerFontSize).fillColor(colors.text).font('Helvetica-Bold')
                    .text('DETALLE DE VENTAS:', margin, y);
                 y += 18;
 
@@ -810,7 +862,7 @@ class ComprobanteGenerator {
                 doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
                 
                 let xPos = margin;
-                doc.fontSize(8).font('Helvetica-Bold');
+                doc.fontSize(config.tablaFontSize).font('Helvetica-Bold');
                 headers.forEach((header, i) => {
                     doc.fillColor('#ffffff').text(header, xPos + 4, y + 5, { 
                         width: colWidths[i] - 8, 
@@ -821,7 +873,7 @@ class ComprobanteGenerator {
                 y += 18;
 
                 // Datos de productos
-                doc.fontSize(8).fillColor(colors.text).font('Helvetica');
+                doc.fontSize(config.tablaFontSize).fillColor(colors.text).font('Helvetica');
 
                 if (datosPDF.ventas_agrupadas && datosPDF.ventas_agrupadas.length > 0) {
                     datosPDF.ventas_agrupadas.forEach((item, idx) => {
@@ -832,7 +884,7 @@ class ComprobanteGenerator {
                         }
 
                         const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
-                        doc.rect(margin, y, contentWidth, 16).fillAndStroke(bgColor, colors.border);
+                        doc.rect(margin, y, contentWidth, config.tablaRowHeight).fillAndStroke(bgColor, colors.border);
 
                         let xPos = margin;
                         const valores = [
@@ -850,7 +902,7 @@ class ComprobanteGenerator {
                             xPos += colWidths[i];
                         });
 
-                        y += 16;
+                        y += config.tablaRowHeight;
                     });
                 } else {
                     doc.fontSize(9).fillColor(colors.text).font('Helvetica')
@@ -878,7 +930,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 // SECCIÓN DE RECIBÍ
                 // ============================================================
-                y += 15;
+                y += config.espacioAntesRecibo;
                 
                 const montoEnLetras = formatearMoneda(datosPDF.monto_total);
                 
@@ -914,7 +966,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 // OBSERVACIONES
                 // ============================================================
-                y += 10;
+                y += config.espacioAntesObservaciones;
                 doc.fontSize(9).fillColor(colors.text).font('Helvetica-Bold')
                    .text('Observaciones:', margin, y);
                 y += 12;
@@ -933,7 +985,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 
                 // Añadir espacio después de observaciones
-                y += 30;
+                y += config.espacioAntesFirmas;
                 
                 // Espacio necesario para las firmas (estimado):
                 // - Firma: 25px
