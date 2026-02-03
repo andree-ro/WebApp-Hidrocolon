@@ -113,7 +113,6 @@ const crearVenta = async (req, res) => {
 
         for (const item of detalle) {
             const precio_total = parseFloat(item.precio_unitario) * parseInt(item.cantidad);
-            const monto_comision = (precio_total * parseFloat(item.porcentaje_comision || 0)) / 100;
 
             detalleConCalculos.push({
                 tipo_producto: item.tipo_producto,
@@ -123,7 +122,7 @@ const crearVenta = async (req, res) => {
                 precio_unitario: parseFloat(item.precio_unitario),
                 precio_total: precio_total,
                 porcentaje_comision: parseFloat(item.porcentaje_comision || 0),
-                monto_comision: monto_comision,
+                monto_comision: 0, // Se calculará después
                 doctora_id: item.doctora_id || null
             });
 
@@ -132,6 +131,45 @@ const crearVenta = async (req, res) => {
 
         const descuento = parseFloat(req.body.descuento || 0);
         const total = subtotal - descuento;
+
+        // ============================================================================
+        // CALCULAR COMISIONES CONSIDERANDO COMISIÓN BANCARIA DEL 7% EN TARJETA
+        // ============================================================================
+        
+        const tarjeta_monto_total = parseFloat(tarjeta_monto || 0);
+        
+        // Calcular proporción de tarjeta sobre el total
+        const proporcion_tarjeta = total > 0 ? tarjeta_monto_total / total : 0;
+        const proporcion_otros = 1 - proporcion_tarjeta;
+        
+        // Calcular comisiones para cada item
+        for (const item of detalleConCalculos) {
+            const porcentaje_comision = item.porcentaje_comision;
+            
+            if (porcentaje_comision > 0) {
+                const precio_item = item.precio_total;
+                
+                // Parte pagada con tarjeta de este item
+                const monto_tarjeta_item = precio_item * proporcion_tarjeta;
+                // Parte pagada con otros métodos
+                const monto_otros_item = precio_item * proporcion_otros;
+                
+                // Comisión sobre tarjeta (restando el 7% bancario primero)
+                const monto_tarjeta_neto = monto_tarjeta_item * 0.93; // Restar 7%
+                const comision_tarjeta = (monto_tarjeta_neto * porcentaje_comision) / 100;
+                
+                // Comisión sobre otros métodos (sin descuento)
+                const comision_otros = (monto_otros_item * porcentaje_comision) / 100;
+                
+                // Total comisión
+                const comision_total = comision_tarjeta + comision_otros;
+                
+                // Guardar con decimales - se redondeará al pagar
+                item.monto_comision = comision_total;
+            } else {
+                item.monto_comision = 0;
+            }
+        }
 
         // Validar montos según método de pago
         if (metodo_pago === 'efectivo') {
