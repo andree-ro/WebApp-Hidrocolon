@@ -872,9 +872,6 @@ class ComprobanteGenerator {
                 // ============================================================
                 // TABLA DE PRODUCTOS
                 // ============================================================
-                doc.fontSize(config.headerFontSize).fillColor(colors.text).font('Helvetica-Bold')
-                   .text('DETALLE DE VENTAS:', margin, y);
-                y += 18;
 
                 // Encabezados de tabla
                 const colWidths = [220, 50, 80, 60, 82];
