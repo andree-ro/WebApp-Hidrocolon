@@ -177,11 +177,10 @@
             </button>
 
             <button
-              v-if="pago.pdf_url"
-              @click="descargarPDF(pago)"
+              @click="reimprimirComprobante(pago)"
               class="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium"
             >
-              📄 PDF
+              📄 Reimprimir Comprobante
             </button>
           </div>
         </div>
@@ -352,6 +351,26 @@ function descargarPDF(pago) {
   
   console.log('📄 Descargando PDF:', pago.pdf_url)
   window.open(pago.pdf_url, '_blank')
+}
+
+/**
+ * Reimprimir comprobante (genera el PDF nuevamente desde el backend)
+ */
+async function reimprimirComprobante(pago) {
+  try {
+    console.log('📄 Reimprimiendo comprobante del pago:', pago.id)
+    
+    // Llamar al endpoint del backend para generar el PDF
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    const url = `${API_URL}/api/comisiones/pagos/${pago.id}/pdf`
+    
+    // Abrir el PDF en una nueva pestaña
+    window.open(url, '_blank')
+    
+  } catch (error) {
+    console.error('❌ Error reimprimiendo comprobante:', error)
+    alert('Error al reimprimir el comprobante. Por favor intenta nuevamente.')
+  }
 }
 </script>
 
