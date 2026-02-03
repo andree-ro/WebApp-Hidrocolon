@@ -362,10 +362,27 @@ async function reimprimirComprobante(pago) {
     
     // Llamar al endpoint del backend para generar el PDF
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    const url = `${API_URL}/api/comisiones/pagos/${pago.id}/pdf`
+    const url = `${API_URL}/api/comisiones/pdf/${pago.id}/generar`
     
-    // Abrir el PDF en una nueva pestaña
-    window.open(url, '_blank')
+    // Crear un formulario temporal para hacer POST y descargar el PDF
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = url
+    form.target = '_blank'
+    
+    // Agregar token de autenticación si existe
+    const token = localStorage.getItem('token')
+    if (token) {
+      const input = document.createElement('input')
+      input.type = 'hidden'
+      input.name = 'token'
+      input.value = token
+      form.appendChild(input)
+    }
+    
+    document.body.appendChild(form)
+    form.submit()
+    document.body.removeChild(form)
     
   } catch (error) {
     console.error('❌ Error reimprimiendo comprobante:', error)
