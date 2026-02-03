@@ -728,18 +728,39 @@ class ComprobanteGenerator {
                     espacioAntesFirmas: 30
                 };
                 
-                if (cantidadProductos > 40) {
-                    // Ultra compacto (41+ productos)
+                if (cantidadProductos > 35) {
+                    // Ultra compacto (36+ productos)
+                    config = {
+                        tablaFontSize: 5.5,
+                        tablaRowHeight: 9,
+                        headerFontSize: 9,
+                        espacioEntreEncabezado: 10,
+                        espacioAntesObservaciones: 3,
+                        espacioAntesRecibo: 5,
+                        espacioAntesFirmas: 10
+                    };
+                } else if (cantidadProductos > 25) {
+                    // Muy compacto (26-35 productos)
                     config = {
                         tablaFontSize: 6,
                         tablaRowHeight: 10,
+                        headerFontSize: 9,
+                        espacioEntreEncabezado: 12,
+                        espacioAntesObservaciones: 4,
+                        espacioAntesRecibo: 6,
+                        espacioAntesFirmas: 12
+                    };
+                } else if (cantidadProductos > 15) {
+                    // Compacto (16-25 productos)
+                    config = {
+                        tablaFontSize: 6.5,
+                        tablaRowHeight: 11,
                         headerFontSize: 10,
                         espacioEntreEncabezado: 15,
                         espacioAntesObservaciones: 5,
                         espacioAntesRecibo: 8,
                         espacioAntesFirmas: 15
                     };
-                } else if (cantidadProductos > 30) {
                     // Muy compacto (31-40 productos)
                     config = {
                         tablaFontSize: 6.5,
@@ -814,7 +835,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 doc.fontSize(16).fillColor(colors.primary).font('Helvetica-Bold')
                 .text('HIDROCOLON XELA - VIMESA', margin, y, { align: 'center', width: contentWidth });
-                y += 22;
+                y += 18;
 
                 doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
                 y += config.espacioEntreEncabezado;
@@ -996,13 +1017,7 @@ class ComprobanteGenerator {
                 // TOTAL: ~150px
                 const espacioNecesarioParaFirmas = 150;
                 const espacioDisponible = pageHeight - margin - y;
-                
-                // VALIDACIÓN: Si quedan menos de 200px, crear nueva página
-                if (espacioDisponible < 200) {
-                    console.log('⚠️ Espacio insuficiente para firmas, creando nueva página...');
-                    doc.addPage();
-                    y = margin + 40; // Empezar con margen superior en la nueva página
-                }
+            
 
                 // Ajuste de posición vertical de los textos (subirlos un poco)
                 const ajusteY = -3;

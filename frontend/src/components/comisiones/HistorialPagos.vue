@@ -203,6 +203,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useComisionesStore } from '@/store/comisionesStore'
+import { api } from '@/services/authService'
 
 // ============================================================================
 // EMITS
@@ -360,29 +361,25 @@ async function reimprimirComprobante(pago) {
   try {
     console.log('📄 Reimprimiendo comprobante del pago:', pago.id)
     
-    // Llamar al endpoint del backend para generar el PDF
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    const url = `${API_URL}/api/comisiones/pdf/${pago.id}/generar`
+    // Hacer la petición POST usando la instancia api configurada
+    const response = await api.post(
+      `/comisiones/pdf/${pago.id}/generar`,
+      {},
+      { responseType: 'blob' }
+    )
     
-    // Crear un formulario temporal para hacer POST y descargar el PDF
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = url
-    form.target = '_blank'
+    // Crear un URL temporal y descargarlo
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Comisiones_${pago.doctora_nombre}_Pago_${pago.id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
     
-    // Agregar token de autenticación si existe
-    const token = localStorage.getItem('token')
-    if (token) {
-      const input = document.createElement('input')
-      input.type = 'hidden'
-      input.name = 'token'
-      input.value = token
-      form.appendChild(input)
-    }
-    
-    document.body.appendChild(form)
-    form.submit()
-    document.body.removeChild(form)
+    console.log('✅ Comprobante descargado exitosamente')
     
   } catch (error) {
     console.error('❌ Error reimprimiendo comprobante:', error)
