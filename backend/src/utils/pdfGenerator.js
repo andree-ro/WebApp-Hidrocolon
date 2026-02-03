@@ -833,12 +833,12 @@ class ComprobanteGenerator {
                 // ============================================================
                 // ENCABEZADO
                 // ============================================================
-                doc.fontSize(16).fillColor(colors.primary).font('Helvetica-Bold')
+                doc.fontSize(14).fillColor(colors.primary).font('Helvetica-Bold')
                 .text('HIDROCOLON XELA - VIMESA', margin, y, { align: 'center', width: contentWidth });
-                y += 18;
+                y += 16;
 
-                doc.fontSize(14).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
-                y += config.espacioEntreEncabezado;
+                doc.fontSize(12).text('PAGO DE COMISIONES', margin, y, { align: 'center', width: contentWidth });
+                y += config.espacioEntreEncabezado + 5;
 
                 // RANGO DE FECHAS EN MAYÚSCULAS - Agregar T12:00:00 para evitar desfase
                 const fechaInicioString = datosPDF.fecha_inicio instanceof Date 
@@ -1047,7 +1047,7 @@ class ComprobanteGenerator {
                 // ============================================================
                 // PIE DE PÁGINA
                 // ============================================================
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
+                doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
                    .text(`QUETZALTENANGO, ${fechaHoy.toUpperCase()}`, margin, y, { align: 'center', width: contentWidth });
 
                 doc.end();
