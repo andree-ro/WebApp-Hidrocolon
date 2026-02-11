@@ -60,35 +60,49 @@ try {
 // FUNCIONES DE UTILIDAD
 // ============================================================================
 
-// Función para probar la conexión
-async function testConnection() {
-  try {
-    console.log('🔄 Probando conexión a la base de datos...');
-    
-    const connection = await pool.getConnection();
-    
-    // Test básico
-    const [rows] = await connection.execute('SELECT 1 as test, NOW() as timestamp, DATABASE() as db_name');
-    
-    console.log('✅ Base de datos conectada exitosamente:', {
-      host: dbConfig.host,
-      database: rows[0].db_name,
-      timestamp: rows[0].timestamp,
-      environment: process.env.NODE_ENV
-    });
-    
-    connection.release();
-    return { success: true, data: rows[0] };
-  } catch (error) {
-    console.error('❌ Error conectando a la base de datos:', {
-      error: error.message,
-      code: error.code,
-      sqlState: error.sqlState,
-      host: dbConfig.host,
-      database: dbConfig.database
-    });
-    return { success: false, error: error.message };
+// Función para probar la conexión con reintentos
+async function testConnection(retries = 5, delay = 2000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`🔄 Probando conexión a la base de datos... (intento ${attempt}/${retries})`);
+      
+      const connection = await pool.getConnection();
+      
+      // Test básico
+      const [rows] = await connection.execute('SELECT 1 as test, NOW() as timestamp, DATABASE() as db_name');
+      
+      console.log('✅ Base de datos conectada exitosamente:', {
+        host: dbConfig.host,
+        database: rows[0].db_name,
+        timestamp: rows[0].timestamp,
+        environment: process.env.NODE_ENV,
+        attempt: attempt
+      });
+      
+      connection.release();
+      return { success: true, data: rows[0] };
+    } catch (error) {
+      console.error(`❌ Error en intento ${attempt}/${retries}:`, {
+        error: error.message,
+        code: error.code,
+        sqlState: error.sqlState,
+        host: dbConfig.host,
+        database: dbConfig.database
+      });
+      
+      // Si es el último intento, retornar el error
+      if (attempt === retries) {
+        console.error('❌ No se pudo conectar después de todos los reintentos');
+        return { success: false, error: error.message };
+      }
+      
+      // Esperar antes del siguiente intento
+      console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+  
+  return { success: false, error: 'Max retries reached' };
 }
 
 // Función para obtener estadísticas de la base de datos
