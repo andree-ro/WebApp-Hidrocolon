@@ -17,12 +17,14 @@ const dbConfig = {
   charset: 'utf8mb4',
   timezone: '+00:00',
   
-  // Pool de conexiones para mejor rendimiento
-  connectionLimit: process.env.NODE_ENV === 'production' ? 10 : 5,
+  // Pool de conexiones optimizado para Railway
+  connectionLimit: process.env.NODE_ENV === 'production' ? 5 : 3,
   queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true,
+  acquireTimeout: 30000,
+  timeout: 30000,
+  waitForConnections: true,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
   
   // Configuraciones adicionales para Railway
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -33,7 +35,7 @@ const dbConfig = {
   
   // Configuración específica para Railway MySQL
   ...(process.env.NODE_ENV === 'production' && {
-    connectTimeout: 60000,
+    connectTimeout: 30000,
     authPlugins: {
       mysql_native_password: () => require('mysql2/lib/auth_plugins').mysql_native_password
     }
@@ -325,6 +327,31 @@ async function executeTransaction(queries) {
   }
 }
 
+// Función para cerrar gracefully el pool
+async function gracefulShutdown(signal) {
+  console.log(`\n🛑 Señal ${signal} recibida, cerrando pool de conexiones...`);
+  
+  try {
+    // Esperar a que las conexiones activas terminen (máximo 10 segundos)
+    const shutdownTimeout = setTimeout(() => {
+      console.warn('⚠️  Timeout de shutdown alcanzado, forzando cierre...');
+    }, 10000);
+    
+    await pool.end();
+    clearTimeout(shutdownTimeout);
+    
+    console.log('✅ Pool de conexiones cerrado correctamente');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error cerrando pool:', error);
+    process.exit(1);
+  }
+}
+
+// Registrar handlers de shutdown
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 // ============================================================================
 // MANEJO DE EVENTOS DEL POOL
 // ============================================================================
@@ -343,12 +370,20 @@ pool.on('error', (error) => {
     timestamp: new Date().toISOString()
   });
   
-  // En caso de error crítico, intentar reconectar
+  // Manejar diferentes tipos de errores
   if (error.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('🔄 Conexión perdida, intentando reconectar...');
-    setTimeout(() => {
-      testConnection();
-    }, 5000);
+    console.log('🔄 Conexión perdida, reconectando automáticamente...');
+  } else if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+    console.log('⚠️  Error de red, el pool intentará reconectar automáticamente');
+  } else if (error.fatal) {
+    console.error('💀 Error fatal en pool, el servidor debe reiniciarse');
+  }
+});
+
+pool.on('release', (connection) => {
+  // Log silencioso de liberación de conexiones (solo en debug)
+  if (process.env.DEBUG_POOL === 'true') {
+    console.log('🔓 Conexión liberada:', connection.threadId);
   }
 });
 
