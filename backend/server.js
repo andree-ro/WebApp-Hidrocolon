@@ -402,24 +402,21 @@ app.listen(PORT, () => {
 // MANEJO DE CIERRE
 // ============================================================================
 
-process.on('SIGINT', () => {
-    console.log('\n🛑 Cerrando servidor...');
-    process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-    console.log('\n🛑 Cerrando servidor...');
-    process.exit(0);
-});
+// Nota: SIGTERM y SIGINT son manejados por database.js (gracefulShutdown)
+// Solo manejamos errores no capturados aquí
 
 process.on('uncaughtException', (error) => {
     console.error('❌ Error no capturado:', error);
-    process.exit(1);
+    console.error('Stack:', error.stack);
+    // Dar tiempo para que se registre el error antes de salir
+    setTimeout(() => process.exit(1), 100);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promise rechazada:', reason);
-    process.exit(1);
+    console.error('Promise:', promise);
+    // Dar tiempo para que se registre el error antes de salir
+    setTimeout(() => process.exit(1), 100);
 });
 
 module.exports = app;
