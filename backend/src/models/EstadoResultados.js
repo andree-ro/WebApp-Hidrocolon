@@ -407,8 +407,8 @@ class EstadoResultados {
                     pc.id,
                     pc.fecha_pago,
                     pc.monto_total,
-                    pc.periodo_inicio,
-                    pc.periodo_fin,
+                    pc.fecha_inicio,
+                    pc.fecha_corte as periodo_fin,
                     pc.observaciones,
                     d.nombre as nombre_doctora
                  FROM pagos_comisiones pc
@@ -427,7 +427,7 @@ class EstadoResultados {
                     id: c.id,
                     fecha: c.fecha_pago,
                     monto: parseFloat(c.monto_total),
-                    periodo_inicio: c.periodo_inicio,
+                    periodo_inicio: c.fecha_inicio,
                     periodo_fin: c.periodo_fin,
                     observaciones: c.observaciones,
                     doctora: c.nombre_doctora
