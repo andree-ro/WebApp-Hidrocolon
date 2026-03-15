@@ -39,6 +39,15 @@ router.delete('/conceptos/:id', auth, estadoResultadosController.eliminarConcept
 // RUTAS DE EXPORTACIÓN
 // ============================================================================
 
+// GET /api/estado-resultados/detalle/ventas - Detalle de ventas por doctora
+router.get('/detalle/ventas', auth, estadoResultadosController.obtenerDetalleVentas);
+
+// GET /api/estado-resultados/detalle/servicios - Detalle de servicios por doctora
+router.get('/detalle/servicios', auth, estadoResultadosController.obtenerDetalleServicios);
+
+// GET /api/estado-resultados/detalle/comisiones - Detalle de comisiones por doctora
+router.get('/detalle/comisiones', auth, estadoResultadosController.obtenerDetalleComisiones);
+
 // GET /api/estado-resultados/exportar/pdf - Exportar a PDF
 router.get('/exportar/pdf', auth, estadoResultadosController.exportarPDF);
 

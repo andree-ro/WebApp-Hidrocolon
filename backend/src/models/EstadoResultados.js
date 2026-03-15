@@ -297,6 +297,149 @@ class EstadoResultados {
             throw error;
         }
     }
+// ============================================================================
+    // DETALLE DE VENTAS POR DOCTORA
+    // ============================================================================
+    static async detalleVentasPorDoctora(fechaInicio, fechaFin, doctoraId) {
+        try {
+            const esCli = doctoraId == 0;
+            const [ventas] = await pool.execute(
+                `SELECT 
+                    v.id as venta_id,
+                    v.fecha_creacion,
+                    v.metodo_pago,
+                    p.nombres as paciente_nombre,
+                    p.apellidos as paciente_apellido,
+                    dv.nombre_producto,
+                    dv.cantidad,
+                    dv.precio_unitario,
+                    dv.precio_total
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN pacientes p ON v.paciente_id = p.id
+                 WHERE dv.tipo_producto = 'medicamento'
+                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
+                 AND ${esCli ? 'dv.doctora_id IS NULL' : 'dv.doctora_id = ?'}
+                 ORDER BY v.fecha_creacion DESC`,
+                esCli ? [fechaInicio, fechaFin] : [fechaInicio, fechaFin, doctoraId]
+            );
+
+            const total = ventas.reduce((sum, v) => sum + parseFloat(v.precio_total), 0);
+
+            return {
+                ventas: ventas.map(v => ({
+                    venta_id: v.venta_id,
+                    fecha: v.fecha_creacion,
+                    paciente: v.paciente_nombre ? `${v.paciente_nombre} ${v.paciente_apellido}` : 'Sin paciente',
+                    producto: v.nombre_producto,
+                    cantidad: v.cantidad,
+                    precio_unitario: parseFloat(v.precio_unitario),
+                    precio_total: parseFloat(v.precio_total),
+                    metodo_pago: v.metodo_pago
+                })),
+                total: parseFloat(total.toFixed(2)),
+                cantidad: ventas.length
+            };
+        } catch (error) {
+            console.error('❌ Error obteniendo detalle de ventas:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // DETALLE DE SERVICIOS POR DOCTORA
+    // ============================================================================
+    static async detalleServiciosPorDoctora(fechaInicio, fechaFin, doctoraId) {
+        try {
+            const esCli = doctoraId == 0;
+            const [servicios] = await pool.execute(
+                `SELECT 
+                    v.id as venta_id,
+                    v.fecha_creacion,
+                    v.metodo_pago,
+                    p.nombres as paciente_nombre,
+                    p.apellidos as paciente_apellido,
+                    dv.nombre_producto,
+                    dv.cantidad,
+                    dv.precio_unitario,
+                    dv.precio_total
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN pacientes p ON v.paciente_id = p.id
+                 WHERE dv.tipo_producto = 'servicio'
+                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
+                 AND ${esCli ? 'dv.doctora_id IS NULL' : 'dv.doctora_id = ?'}
+                 ORDER BY v.fecha_creacion DESC`,
+                esCli ? [fechaInicio, fechaFin] : [fechaInicio, fechaFin, doctoraId]
+            );
+
+            const total = servicios.reduce((sum, s) => sum + parseFloat(s.precio_total), 0);
+
+            return {
+                servicios: servicios.map(s => ({
+                    venta_id: s.venta_id,
+                    fecha: s.fecha_creacion,
+                    paciente: s.paciente_nombre ? `${s.paciente_nombre} ${s.paciente_apellido}` : 'Sin paciente',
+                    servicio: s.nombre_producto,
+                    cantidad: s.cantidad,
+                    precio_unitario: parseFloat(s.precio_unitario),
+                    precio_total: parseFloat(s.precio_total),
+                    metodo_pago: s.metodo_pago
+                })),
+                total: parseFloat(total.toFixed(2)),
+                cantidad: servicios.length
+            };
+        } catch (error) {
+            console.error('❌ Error obteniendo detalle de servicios:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
+    // DETALLE DE COMISIONES POR DOCTORA
+    // ============================================================================
+    static async detalleComisionesPorDoctora(fechaInicio, fechaFin, doctoraId) {
+        try {
+            const [comisiones] = await pool.execute(
+                `SELECT 
+                    pc.id,
+                    pc.fecha_pago,
+                    pc.monto_total,
+                    pc.periodo_inicio,
+                    pc.periodo_fin,
+                    pc.observaciones,
+                    d.nombre as nombre_doctora
+                 FROM pagos_comisiones pc
+                 INNER JOIN doctoras d ON pc.doctora_id = d.id
+                 WHERE DATE(pc.fecha_pago) BETWEEN ? AND ?
+                 AND pc.estado = 'pagado'
+                 AND pc.doctora_id = ?
+                 ORDER BY pc.fecha_pago DESC`,
+                [fechaInicio, fechaFin, doctoraId]
+            );
+
+            const total = comisiones.reduce((sum, c) => sum + parseFloat(c.monto_total), 0);
+
+            return {
+                comisiones: comisiones.map(c => ({
+                    id: c.id,
+                    fecha: c.fecha_pago,
+                    monto: parseFloat(c.monto_total),
+                    periodo_inicio: c.periodo_inicio,
+                    periodo_fin: c.periodo_fin,
+                    observaciones: c.observaciones,
+                    doctora: c.nombre_doctora
+                })),
+                total: parseFloat(total.toFixed(2)),
+                cantidad: comisiones.length
+            };
+        } catch (error) {
+            console.error('❌ Error obteniendo detalle de comisiones:', error);
+            throw error;
+        }
+    }
 }
 
 class ConceptoEstadoResultados {

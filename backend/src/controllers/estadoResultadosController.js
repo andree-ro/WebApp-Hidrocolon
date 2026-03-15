@@ -788,6 +788,47 @@ const exportarExcel = async (req, res) => {
         });
     }
 };
+// ============================================================================
+// DETALLE POR DOCTORA (ventas, servicios, comisiones)
+// ============================================================================
+const obtenerDetalleVentas = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin, doctora_id } = req.query;
+        if (!fecha_inicio || !fecha_fin || doctora_id === undefined) {
+            return res.status(400).json({ success: false, message: 'Faltan parámetros: fecha_inicio, fecha_fin, doctora_id' });
+        }
+        const data = await EstadoResultados.detalleVentasPorDoctora(fecha_inicio, fecha_fin, doctora_id);
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener detalle de ventas', error: error.message });
+    }
+};
+
+const obtenerDetalleServicios = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin, doctora_id } = req.query;
+        if (!fecha_inicio || !fecha_fin || doctora_id === undefined) {
+            return res.status(400).json({ success: false, message: 'Faltan parámetros: fecha_inicio, fecha_fin, doctora_id' });
+        }
+        const data = await EstadoResultados.detalleServiciosPorDoctora(fecha_inicio, fecha_fin, doctora_id);
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener detalle de servicios', error: error.message });
+    }
+};
+
+const obtenerDetalleComisiones = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin, doctora_id } = req.query;
+        if (!fecha_inicio || !fecha_fin || !doctora_id) {
+            return res.status(400).json({ success: false, message: 'Faltan parámetros: fecha_inicio, fecha_fin, doctora_id' });
+        }
+        const data = await EstadoResultados.detalleComisionesPorDoctora(fecha_inicio, fecha_fin, doctora_id);
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener detalle de comisiones', error: error.message });
+    }
+};
 
 module.exports = {
     obtenerEstadoResultados,
@@ -797,5 +838,8 @@ module.exports = {
     actualizarConcepto,
     eliminarConcepto,
     exportarPDF,
-    exportarExcel
+    exportarExcel,
+    obtenerDetalleVentas,
+    obtenerDetalleServicios,
+    obtenerDetalleComisiones
 };
