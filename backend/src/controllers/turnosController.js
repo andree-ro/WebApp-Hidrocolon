@@ -387,7 +387,8 @@ const calcularCuadrePrevio = async (req, res) => {
         // ✅ CALCULAR VENTAS NETAS
         const ventasNetas = totalesVentas.total - 
                            impuestos.efectivo - 
-                           impuestos.tarjeta - 
+                           impuestos.detalle_tarjeta.comision_bancaria -
+                           impuestos.detalle_tarjeta.impuesto_sobre_restante - 
                            impuestos.transferencia - 
                            impuestos.depositos;
         
@@ -430,7 +431,7 @@ const calcularCuadrePrevio = async (req, res) => {
                 impuesto_tarjeta: impuestos.detalle_tarjeta.impuesto_sobre_restante,
                 impuesto_transferencia: impuestos.transferencia,
                 impuesto_depositos: impuestos.depositos,
-                total_impuestos: impuestos.efectivo + impuestos.detalle_tarjeta.impuesto_sobre_restante + impuestos.transferencia + impuestos.depositos,
+                total_impuestos: impuestos.efectivo + impuestos.detalle_tarjeta.impuesto_sobre_restante + impuestos.transferencia + impuestos.depositos + impuestos.detalle_tarjeta.comision_bancaria,
                 // ✅ VENTAS NETAS Y TOTAL A DEPOSITAR
                 ventas_netas: ventasNetas,
                 total_a_depositar: totalADepositar,
