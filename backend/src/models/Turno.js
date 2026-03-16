@@ -421,7 +421,8 @@ class Turno {
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN tarjeta_monto ELSE 0 END), 0) as mixto_tarjeta,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END), 0) as mixto_transferencia,
                     COALESCE(SUM(CASE WHEN metodo_pago = 'deposito' THEN total ELSE 0 END), 0) as deposito,
-                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN deposito_monto ELSE 0 END), 0) as mixto_deposito
+                    COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN deposito_monto ELSE 0 END), 0) as mixto_deposito,
+                    COALESCE(SUM(comision_bancaria_monto), 0) as comision_bancaria_total
                  FROM ventas
                  WHERE turno_id = ? 
                  AND (observaciones IS NULL OR observaciones NOT LIKE '%ANULADA:%')`,
@@ -430,14 +431,14 @@ class Turno {
 
             const totales = result[0];
 
-            // Sumar ventas mixtas a sus respectivos mÃƒÂ©todos
             return {
                 cantidad: parseInt(totales.cantidad),
                 total: parseFloat(totales.total),
                 efectivo: parseFloat(totales.efectivo) + parseFloat(totales.mixto_efectivo),
                 tarjeta: parseFloat(totales.tarjeta) + parseFloat(totales.mixto_tarjeta),
                 transferencia: parseFloat(totales.transferencia) + parseFloat(totales.mixto_transferencia),
-                deposito: parseFloat(totales.deposito) + parseFloat(totales.mixto_deposito)
+                deposito: parseFloat(totales.deposito) + parseFloat(totales.mixto_deposito),
+                comision_bancaria_total: parseFloat(totales.comision_bancaria_total)
             };
 
         } catch (error) {
@@ -715,26 +716,21 @@ class Turno {
     // CALCULAR IMPUESTOS
     // ============================================================================
     static calcularImpuestos(totalesVentas) {
-        // EFECTIVO/TRANSFERENCIA/DEPÃƒâ€œSITOS: 16% directo
         const impuestoEfectivo = totalesVentas.efectivo * 0.16;
         const impuestoTransferencia = totalesVentas.transferencia * 0.16;
         const impuestoDepositos = (totalesVentas.deposito || 0) * 0.16;
-        
-        // TARJETA: Doble impuesto
-        // 1. ComisiÃƒÂ³n bancaria 6%
-        const comisionBancaria = totalesVentas.tarjeta * 0.06;
-        // 2. Impuesto 16% sobre el restante (despuÃƒÂ©s de comisiÃƒÂ³n)
+
+        // TARJETA: usar comisión bancaria real acumulada de las ventas
+        const comisionBancaria = totalesVentas.comision_bancaria_total || 0;
         const montoRestante = totalesVentas.tarjeta - comisionBancaria;
         const impuestoSobreRestante = montoRestante * 0.16;
-        // 3. Total impuesto tarjeta = comisiÃƒÂ³n + impuesto
         const impuestoTarjeta = comisionBancaria + impuestoSobreRestante;
-        
+
         return {
             efectivo: impuestoEfectivo,
             tarjeta: impuestoTarjeta,
             transferencia: impuestoTransferencia,
             depositos: impuestoDepositos,
-            // Detalle para debugging/reportes
             detalle_tarjeta: {
                 comision_bancaria: comisionBancaria,
                 impuesto_sobre_restante: impuestoSobreRestante,
@@ -843,7 +839,7 @@ class Turno {
             const impuestoEfectivo = totalesVentas.efectivo * 0.16;
             const ventaNetaEfectivo = totalesVentas.efectivo - impuestoEfectivo;
             
-            const comisionTarjeta = totalesVentas.tarjeta * 0.06;
+            const comisionTarjeta = totalesVentas.comision_bancaria_total || 0;
             const restanteTarjeta = totalesVentas.tarjeta - comisionTarjeta;
             const impuestoTarjeta = restanteTarjeta * 0.16;
             const impuestoTotalTarjeta = comisionTarjeta + impuestoTarjeta;
