@@ -161,10 +161,19 @@
             <div
               v-for="venta in store.estadoResultados.ingresos.ventas"
               :key="venta.doctora_id || 'clinica'"
-              class="flex justify-between text-sm items-center py-1"
+              class="flex justify-between text-sm items-center py-1 group"
             >
               <span class="text-gray-700 flex-1">{{ venta.nombre_doctora || venta.nombre || 'Clínica' }}</span>
-              <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(venta.total) }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(venta.total) }}</span>
+                <button
+                  @click="abrirModalDetalleVentas(venta.doctora_id, venta.nombre_doctora || 'Clínica')"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  title="Ver detalle de ventas"
+                >
+                  🔍
+                </button>
+              </div>
             </div>
             <div class="flex justify-between font-semibold text-gray-900 pt-2 mt-2 border-t items-center">
               <span>TOTAL VENTAS</span>
@@ -180,10 +189,19 @@
             <div
               v-for="servicio in store.estadoResultados.ingresos.servicios"
               :key="servicio.doctora_id || 'clinica'"
-              class="flex justify-between text-sm items-center py-1"
+              class="flex justify-between text-sm items-center py-1 group"
             >
               <span class="text-gray-700 flex-1">{{ servicio.nombre_doctora || servicio.nombre || 'Clínica' }}</span>
-              <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(servicio.total) }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(servicio.total) }}</span>
+                <button
+                  @click="abrirModalDetalleServicios(servicio.doctora_id, servicio.nombre_doctora || 'Clínica')"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  title="Ver detalle de servicios"
+                >
+                  🔍
+                </button>
+              </div>
             </div>
             <div class="flex justify-between font-semibold text-gray-900 pt-2 mt-2 border-t items-center">
               <span>TOTAL SERVICIOS</span>
@@ -216,10 +234,19 @@
           <div
             v-for="comision in store.estadoResultados.costos_operacion.comisiones"
             :key="comision.doctora_id"
-            class="flex justify-between text-sm items-center py-1"
+            class="flex justify-between text-sm items-center py-1 group"
           >
             <span class="text-gray-700 flex-1">Comisiones {{ comision.nombre_doctora || comision.nombre || 'Doctora' }}</span>
-            <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(comision.total) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(comision.total) }}</span>
+              <button
+                @click="abrirModalDetalleComisiones(comision.doctora_id, comision.nombre_doctora || 'Doctora')"
+                class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                title="Ver detalle de comisiones"
+              >
+                🔍
+              </button>
+            </div>
           </div>
 
         <!-- Gastos en clínica -->
@@ -441,6 +468,33 @@
       :periodo="store.periodo"
       @cerrar="cerrarModalGastos"
     />
+
+    <!-- Modal Detalle Ventas -->
+    <ModalDetalleVentasER
+      v-if="modalDetalleVentas.abierto && store.periodo"
+      :periodo="store.periodo"
+      :doctora-id="modalDetalleVentas.doctoraId"
+      :nombre-doctora="modalDetalleVentas.nombreDoctora"
+      @cerrar="cerrarModalDetalleVentas"
+    />
+
+    <!-- Modal Detalle Servicios -->
+    <ModalDetalleServiciosER
+      v-if="modalDetalleServicios.abierto && store.periodo"
+      :periodo="store.periodo"
+      :doctora-id="modalDetalleServicios.doctoraId"
+      :nombre-doctora="modalDetalleServicios.nombreDoctora"
+      @cerrar="cerrarModalDetalleServicios"
+    />
+
+    <!-- Modal Detalle Comisiones -->
+    <ModalDetalleComisionesER
+      v-if="modalDetalleComisiones.abierto && store.periodo"
+      :periodo="store.periodo"
+      :doctora-id="modalDetalleComisiones.doctoraId"
+      :nombre-doctora="modalDetalleComisiones.nombreDoctora"
+      @cerrar="cerrarModalDetalleComisiones"
+    />
   </div>
 </template>
 
@@ -449,6 +503,9 @@ import { ref, onMounted } from 'vue'
 import { useEstadoResultadosStore } from '@/store/estadoResultadosStore'
 import ModalConcepto from '@/components/estadoResultados/ModalConcepto.vue'
 import ModalDetalleGastos from '@/components/estadoResultados/ModalDetalleGastos.vue'
+import ModalDetalleVentasER from '@/components/estadoResultados/ModalDetalleVentasER.vue'
+import ModalDetalleServiciosER from '@/components/estadoResultados/ModalDetalleServiciosER.vue'
+import ModalDetalleComisionesER from '@/components/estadoResultados/ModalDetalleComisionesER.vue'
 
 const store = useEstadoResultadosStore()
 
@@ -458,6 +515,11 @@ const fechaFin = ref(null)
 
 // Modal de detalle de gastos
 const modalGastosAbierto = ref(false)
+
+// Modales de detalle ventas, servicios y comisiones
+const modalDetalleVentas = ref({ abierto: false, doctoraId: null, nombreDoctora: '' })
+const modalDetalleServicios = ref({ abierto: false, doctoraId: null, nombreDoctora: '' })
+const modalDetalleComisiones = ref({ abierto: false, doctoraId: null, nombreDoctora: '' })
 
 // ============================================================================
 // LIFECYCLE
@@ -513,6 +575,27 @@ function abrirModalGastos() {
  */
 function cerrarModalGastos() {
   modalGastosAbierto.value = false
+}
+
+function abrirModalDetalleVentas(doctoraId, nombreDoctora) {
+  modalDetalleVentas.value = { abierto: true, doctoraId, nombreDoctora }
+}
+function cerrarModalDetalleVentas() {
+  modalDetalleVentas.value = { abierto: false, doctoraId: null, nombreDoctora: '' }
+}
+
+function abrirModalDetalleServicios(doctoraId, nombreDoctora) {
+  modalDetalleServicios.value = { abierto: true, doctoraId, nombreDoctora }
+}
+function cerrarModalDetalleServicios() {
+  modalDetalleServicios.value = { abierto: false, doctoraId: null, nombreDoctora: '' }
+}
+
+function abrirModalDetalleComisiones(doctoraId, nombreDoctora) {
+  modalDetalleComisiones.value = { abierto: true, doctoraId, nombreDoctora }
+}
+function cerrarModalDetalleComisiones() {
+  modalDetalleComisiones.value = { abierto: false, doctoraId: null, nombreDoctora: '' }
 }
 
 /**
