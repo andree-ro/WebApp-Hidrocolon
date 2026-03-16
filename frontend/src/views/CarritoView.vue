@@ -290,6 +290,70 @@
             </select>
           </div>
           
+          <!-- Selector procesador tarjeta -->
+          <div v-if="carritoStore.metodoPago === 'tarjeta'" class="mt-3">
+            
+            <!-- Botones BAC / NeoNet -->
+            <label class="block text-sm font-medium text-gray-700 mb-2">Procesador</label>
+            <div class="flex gap-2 mb-3">
+              
+              <!-- BAC -->
+              <button
+                @click="seleccionarProcesador('bac')"
+                :class="[
+                  'flex-1 py-3 rounded-lg font-bold text-white text-lg transition-all border-2',
+                  carritoStore.procesadorTarjeta === 'bac'
+                    ? 'bg-red-600 border-red-700 shadow-lg scale-105'
+                    : 'bg-red-200 border-red-300 text-red-800 hover:bg-red-400'
+                ]"
+              >
+                B
+              </button>
+
+              <!-- NeoNet -->
+              <button
+                @click="seleccionarProcesador('neonet')"
+                :class="[
+                  'flex-1 py-3 rounded-lg font-bold text-white text-lg transition-all border-2',
+                  carritoStore.procesadorTarjeta === 'neonet'
+                    ? 'bg-purple-600 border-purple-700 shadow-lg scale-105'
+                    : 'bg-purple-200 border-purple-300 text-purple-800 hover:bg-purple-400'
+                ]"
+              >
+                N
+              </button>
+            </div>
+
+            <!-- Selector de cuotas (aparece al elegir procesador) -->
+            <div v-if="carritoStore.procesadorTarjeta">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Cuotas</label>
+              <div class="flex gap-2">
+                <button
+                  v-for="cuota in [1, 3, 6]"
+                  :key="cuota"
+                  @click="carritoStore.cuotasTarjeta = cuota"
+                  :class="[
+                    'flex-1 py-2 rounded-lg font-semibold text-sm transition-all border-2',
+                    carritoStore.cuotasTarjeta === cuota
+                      ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  ]"
+                >
+                  {{ cuota === 1 ? '1 cuota' : `${cuota} cuotas` }}
+                </button>
+              </div>
+
+              <!-- Info comisión -->
+              <div class="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                <p class="text-xs text-yellow-800">
+                  💳 Comisión bancaria:
+                  <span class="font-bold">{{ porcentajeComisionActual() }}%</span>
+                  = Q{{ formatearNumero(carritoStore.total * porcentajeComisionActual() / 100) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Campos según método -->
           <div class="mt-3 space-y-2">
             <div v-if="carritoStore.metodoPago === 'efectivo'">
@@ -793,6 +857,26 @@ const procesandoVenta = ref(false)
 const descuentoTemporal = ref(0)
 
 // ============================================================================
+// VARIABLES PARA SELECTOR DE PROCESADOR DE TARJETA
+// ============================================================================
+const COMISIONES_BANCARIAS = {
+  neonet: { 1: 5.25, 3: 5.75, 6: 7.00 },
+  bac:    { 1: 4.61, 3: 6.00, 6: 6.00 }
+}
+
+function seleccionarProcesador(procesador) {
+  carritoStore.procesadorTarjeta = procesador
+  carritoStore.cuotasTarjeta = 1 // resetear a 1 cuota al cambiar procesador
+}
+
+function porcentajeComisionActual() {
+  const p = carritoStore.procesadorTarjeta
+  const c = carritoStore.cuotasTarjeta
+  if (!p) return 0
+  return COMISIONES_BANCARIAS[p][c] || 0
+}
+
+// ============================================================================
 // NUEVAS VARIABLES PARA MODALES DE VOUCHERS/TRANSFERENCIAS/DEPÓSITOS
 // ============================================================================
 const mostrarModalVoucher = ref(false)
@@ -1159,11 +1243,15 @@ async function procesarVenta() {
   // ✅ PASO 3: CAPTURAR DATOS DE VOUCHER/TRANSFERENCIA/DEPÓSITO SEGÚN MÉTODO DE PAGO
   const metodoPago = carritoStore.metodoPago
   
-  // 3.1 Si es TARJETA - solicitar número de voucher
+  // 3.1 Si es TARJETA - validar procesador y solicitar número de voucher
   if (metodoPago === 'tarjeta') {
+    if (!carritoStore.procesadorTarjeta) {
+      alert('❌ Debe seleccionar el procesador de tarjeta (BAC o NeoNet)')
+      return
+    }
     datosVoucher.value.monto = carritoStore.total
     mostrarModalVoucher.value = true
-    return // Esperar a que se complete el modal
+    return
   }
   
   // 3.2 Si es TRANSFERENCIA - solicitar número de boleta

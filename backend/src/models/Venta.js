@@ -38,8 +38,10 @@ class Venta {
                     efectivo_recibido, efectivo_cambio,
                     tarjeta_monto, transferencia_monto, deposito_monto,
                     cliente_nombre, cliente_telefono, cliente_nit, cliente_direccion,
-                    observaciones
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    observaciones,
+                    procesador_tarjeta, cuotas_tarjeta,
+                    comision_bancaria_monto, comision_bancaria_porcentaje
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     numeroFactura,
                     ventaData.turno_id,
@@ -58,7 +60,11 @@ class Venta {
                     ventaData.cliente_telefono || null,
                     ventaData.cliente_nit || 'CF',
                     ventaData.cliente_direccion || null,
-                    ventaData.observaciones || null
+                    ventaData.observaciones || null,
+                    ventaData.procesador_tarjeta || null,
+                    ventaData.cuotas_tarjeta || null,
+                    ventaData.comision_bancaria_monto || 0,
+                    ventaData.comision_bancaria_porcentaje || 0
                 ]
             );
 

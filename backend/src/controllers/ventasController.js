@@ -30,7 +30,9 @@ const crearVenta = async (req, res) => {
             // NUEVOS CAMPOS PARA REGISTRO AUTOMÁTICO
             voucher_numero,
             transferencia_numero,
-            deposito_numero
+            deposito_numero,
+            procesador_tarjeta,
+            cuotas_tarjeta
         } = req.body;
 
         // ============================================================================
@@ -133,38 +135,56 @@ const crearVenta = async (req, res) => {
         const total = subtotal - descuento;
 
         // ============================================================================
-        // CALCULAR COMISIONES CONSIDERANDO COMISIÓN BANCARIA DEL 7% EN TARJETA
+        // CALCULAR COMISIONES CONSIDERANDO COMISIÓN BANCARIA SEGÚN PROCESADOR Y CUOTAS
         // ============================================================================
-        
+
+        // Tabla de porcentajes de comisión bancaria
+        const COMISIONES_BANCARIAS = {
+            neonet: { 1: 5.25, 3: 5.75, 6: 7.00 },
+            bac:    { 1: 4.61, 3: 6.00, 6: 6.00 }
+        };
+
+        // Determinar % de comisión bancaria según procesador y cuotas
+        let porcentajeComisionBancaria = 0;
+        const procesador = procesador_tarjeta || null;
+        const cuotas = parseInt(cuotas_tarjeta) || 1;
+
+        if (procesador && COMISIONES_BANCARIAS[procesador]) {
+            porcentajeComisionBancaria = COMISIONES_BANCARIAS[procesador][cuotas] || 0;
+        }
+
         const tarjeta_monto_total = parseFloat(tarjeta_monto || 0);
-        
+
+        // Calcular monto de comisión bancaria
+        const comision_bancaria_monto_calculado = tarjeta_monto_total * (porcentajeComisionBancaria / 100);
+
         // Calcular proporción de tarjeta sobre el total
         const proporcion_tarjeta = total > 0 ? tarjeta_monto_total / total : 0;
         const proporcion_otros = 1 - proporcion_tarjeta;
-        
+
         // Calcular comisiones para cada item
         for (const item of detalleConCalculos) {
             const porcentaje_comision = item.porcentaje_comision;
-            
+
             if (porcentaje_comision > 0) {
                 const precio_item = item.precio_total;
-                
+
                 // Parte pagada con tarjeta de este item
                 const monto_tarjeta_item = precio_item * proporcion_tarjeta;
                 // Parte pagada con otros métodos
                 const monto_otros_item = precio_item * proporcion_otros;
-                
-                // Comisión sobre tarjeta (restando el 7% bancario primero)
-                const monto_tarjeta_neto = monto_tarjeta_item * 0.93; // Restar 7%
+
+                // Comisión sobre tarjeta (restando % bancario según procesador/cuotas)
+                const factor_neto = 1 - (porcentajeComisionBancaria / 100);
+                const monto_tarjeta_neto = monto_tarjeta_item * factor_neto;
                 const comision_tarjeta = (monto_tarjeta_neto * porcentaje_comision) / 100;
-                
+
                 // Comisión sobre otros métodos (sin descuento)
                 const comision_otros = (monto_otros_item * porcentaje_comision) / 100;
-                
+
                 // Total comisión
                 const comision_total = comision_tarjeta + comision_otros;
-                
-                // Guardar con decimales - se redondeará al pagar
+
                 item.monto_comision = comision_total;
             } else {
                 item.monto_comision = 0;
@@ -230,7 +250,11 @@ const crearVenta = async (req, res) => {
             // NUEVOS CAMPOS PARA REGISTRO AUTOMÁTICO
             voucher_numero: voucher_numero || null,
             transferencia_numero: transferencia_numero || null,
-            deposito_numero: deposito_numero || null
+            deposito_numero: deposito_numero || null,
+            procesador_tarjeta: procesador || null,
+            cuotas_tarjeta: cuotas_tarjeta || null,
+            comision_bancaria_monto: parseFloat(comision_bancaria_monto_calculado.toFixed(2)),
+            comision_bancaria_porcentaje: porcentajeComisionBancaria
         };
 
         console.log('💾 Guardando venta:', JSON.stringify(ventaData, null, 2));

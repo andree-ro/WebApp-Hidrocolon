@@ -16,6 +16,10 @@ export const useCarritoStore = defineStore('carrito', () => {
   const metodoPago = ref('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'deposito', 'mixto'
   const doctoraSeleccionada = ref(null)
   
+  // Para tarjeta de crédito
+  const procesadorTarjeta = ref(null) // 'neonet' o 'bac'
+  const cuotasTarjeta = ref(1) // 1, 3 o 6
+  
   // Para pago mixto
 const montoEfectivo = ref(0)
 const montoTarjeta = ref(0)
@@ -184,6 +188,8 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     montoTarjeta.value = 0
     montoTransferencia.value = 0
     montoDeposito.value = 0
+    procesadorTarjeta.value = null
+    cuotasTarjeta.value = 1
     console.log('🧹 Carrito vaciado')
   }
   
@@ -291,7 +297,9 @@ function actualizarCantidad(itemId, nuevaCantidad) {
       cliente_nit: pacienteSeleccionado.value?.nit || 'CF',
       cliente_direccion: pacienteSeleccionado.value?.direccion || null,
       observaciones: observaciones.value || null,
-      detalle: detalle
+      detalle: detalle,
+      procesador_tarjeta: metodoPago.value === 'tarjeta' ? procesadorTarjeta.value : null,
+      cuotas_tarjeta: metodoPago.value === 'tarjeta' ? cuotasTarjeta.value : null
     }
     
     console.log('📋 Datos de venta preparados:', datosVenta)
@@ -345,6 +353,8 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     montoTransferencia,
     montoDeposito,
     doctoraSeleccionada,
+    procesadorTarjeta,
+    cuotasTarjeta,
     
     // Computed
     subtotal,
