@@ -254,8 +254,8 @@ const listarTurnos = async (req, res) => {
             fecha_inicio,
             fecha_fin,
             usuario_id,
-            limit: limit || 50,
-            offset: offset || 0
+            limit: limit ? parseInt(limit) : 50,
+            offset: offset ? parseInt(offset) : 0
         });
 
         res.json({
