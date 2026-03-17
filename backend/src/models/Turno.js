@@ -1023,21 +1023,20 @@ class Turno {
     // FORMATEAR TURNO (convertir JSON strings)
     // ============================================================================
     static formatearTurno(turno) {
+        const parsearJSON = (valor) => {
+            if (!valor) return {};
+            if (typeof valor === 'string') {
+                try { return JSON.parse(valor); } catch { return {}; }
+            }
+            return valor;
+        };
+
         return {
             ...turno,
-            efectivo_billetes: typeof turno.efectivo_billetes === 'string' 
-                ? JSON.parse(turno.efectivo_billetes) 
-                : turno.efectivo_billetes,
-            efectivo_monedas: typeof turno.efectivo_monedas === 'string'
-                ? JSON.parse(turno.efectivo_monedas)
-                : turno.efectivo_monedas,
-            efectivo_final_billetes: typeof turno.efectivo_final_billetes === 'string'
-                ? JSON.parse(turno.efectivo_final_billetes)
-                : turno.efectivo_final_billetes,
-            efectivo_final_monedas: typeof turno.efectivo_final_monedas === 'string'
-                ? JSON.parse(turno.efectivo_final_monedas)
-                : turno.efectivo_final_monedas,
-            // Convertir a nÃƒÂºmeros
+            efectivo_billetes: parsearJSON(turno.efectivo_billetes),
+            efectivo_monedas: parsearJSON(turno.efectivo_monedas),
+            efectivo_final_billetes: parsearJSON(turno.efectivo_final_billetes),
+            efectivo_final_monedas: parsearJSON(turno.efectivo_final_monedas),
             efectivo_inicial_total: parseFloat(turno.efectivo_inicial_total || 0),
             efectivo_final_total: parseFloat(turno.efectivo_final_total || 0),
             venta_total: parseFloat(turno.venta_total || 0),
