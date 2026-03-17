@@ -601,7 +601,7 @@ const generarPDFReporte = async (req, res) => {
         }
 
         // Validar permisos
-        const esAdmin = usuarioActual.role === 'admin' || usuarioActual.rol === 'admin' || usuarioActual.role === 'administrador' || usuarioActual.rol === 'administrador';
+        const esAdmin = usuarioActual.rol_nombre === 'administrador';
         if (turno.usuario_id !== usuarioActual.id && !esAdmin) {
             return res.status(403).json({
                 success: false,
