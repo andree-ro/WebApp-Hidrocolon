@@ -459,7 +459,7 @@ function formatearFechaCorta(fecha) {
           <!-- Comisiones Bancarias -->
           <div class="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6">
             <div class="flex justify-between items-center">
-              <span class="text-orange-700 font-semibold">💳 Comisiones Bancarias (6%)</span>
+              <span class="text-orange-700 font-semibold">💳 Comisiones Bancarias</span>
               <span class="text-xl font-bold text-orange-900">Q{{ formatearNumero(cuadre.comision_bancaria || 0) }}</span>
             </div>
             <p class="text-xs text-orange-600 mt-1">Comisión por pagos con tarjeta</p>
@@ -487,7 +487,7 @@ function formatearFechaCorta(fecha) {
               </div>
               <div class="flex justify-between border-t pt-2">
                 <span class="font-bold text-purple-900">Total Impuestos</span>
-                <span class="font-bold text-purple-900">Q{{ formatearNumero(cuadre.total_impuestos) }}</span>
+                <span class="font-bold text-purple-900">Q{{ formatearNumero(cuadre.impuesto_efectivo + cuadre.impuesto_tarjeta + cuadre.impuesto_transferencia + (cuadre.impuesto_depositos || 0)) }}</span>
               </div>
             </div>
           </div>

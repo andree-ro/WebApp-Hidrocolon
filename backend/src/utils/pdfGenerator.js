@@ -370,323 +370,134 @@ class ComprobanteGenerator {
                     .text('No hay productos vendidos en este turno', margin, y);
                     y += 20;
                 }
-                                // ============================================================
-                // SECCIÓN 4: GASTOS DETALLADOS
                 // ============================================================
-                if (datosReporte.gastos && datosReporte.gastos.length > 0) {
-                    y = nuevaPaginaSiNecesario(150);
-                    y = agregarSeccionHeader('GASTOS DEL TURNO', y);
-                    y += 10;
-
-                    const colW = [40, 100, 250, 80, 62];
-                    const headersGastos = ['#', 'Categoría', 'Descripción', 'Monto', 'Fecha'];
-                    
-                    doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
-                    
-                    let xPos = margin;
-                    doc.fontSize(7).font('Helvetica-Bold');
-                    headersGastos.forEach((header, i) => {
-                        doc.fillColor('#ffffff').text(header, xPos + 2, y + 5, { width: colW[i] - 4, align: 'center' });
-                        xPos += colW[i];
-                    });
-                    y += 18;
-
-                    doc.fontSize(7).fillColor(colors.text).font('Helvetica');
-                    
-                    datosReporte.gastos.forEach((gasto, idx) => {
-                        y = nuevaPaginaSiNecesario(14);
-                        
-                        const bgColor = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
-                        doc.rect(margin, y, contentWidth, 14).fillAndStroke(bgColor, colors.border);
-
-                        let xPos = margin;
-                        const vals = [
-                            (idx + 1).toString(),
-                            gasto.categoria.substring(0, 18),
-                            gasto.descripcion.substring(0, 45),
-                            formatearMoneda(gasto.monto),
-                            new Date(gasto.fecha).toLocaleDateString('es-GT', { timeZone: 'America/Guatemala' })
-                        ];
-
-                        vals.forEach((val, i) => {
-                            doc.fillColor(colors.text).text(val, xPos + 2, y + 3, { width: colW[i] - 4, align: i === 2 ? 'left' : 'center' });
-                            xPos += colW[i];
-                        });
-                        
-                        y += 14;
-                    });
-
-                    // Total de gastos
-                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
-                    doc.fontSize(8).fillColor(colors.text).font('Helvetica-Bold')
-                    .text('TOTAL GASTOS', margin + 10, y + 4, { width: 200 });
-                    doc.text(formatearMoneda(datosReporte.gastos_resumen.total), pageWidth - margin - 90, y + 4, { width: 80, align: 'right' });
-                    y += 30;
-                }
-
+                // SECCIÓN 2: RESUMEN
                 // ============================================================
-                // SECCIÓN 2: CIERRE CRUDO (SIN IMPUESTOS)
-                // ============================================================
-                // Calcular espacio necesario para esta sección completa:
-                // - Encabezado: 40px
-                // - "Datos de Entrada" título: 28px
-                // - 7 líneas de datos entrada: 7 * 14 = 98px
-                // - Separación: 10px
-                // - "Resultados del Cierre" título: 28px
-                // - 3 líneas de resultados: 3 * 16 = 48px (última más alta)
-                // - Espacio final: 15px
-                // TOTAL: ~267px
-                const espacioNecesarioCierreConImpuestos = 350;
-                const espacioDisponible1 = pageHeight - margin - y;
-                
-                // Si no hay suficiente espacio, crear nueva página
-                if (espacioDisponible1 < espacioNecesarioCierreConImpuestos) {
-                    console.log('⚠️ Espacio insuficiente para CIERRE CON IMPUESTOS, creando nueva página...');
-                    doc.addPage();
-                    y = margin;
-                }
-                
-                // Encabezado con color azul oscuro
-                doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreConImpuestos, colors.cierreConImpuestos);
-                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
-                .text('CIERRE (CON IMPUESTOS)', margin + 10, y + 8);
-                y += 25;
-                y += 15;  // ← ESPACIO ADICIONAL
+                y = nuevaPaginaSiNecesario(200);
+                y = agregarSeccionHeader('RESUMEN', y);
+                y += 10;
 
-                // Datos de entrada
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Datos de Entrada:', margin, y);
+                // Calcular datos
+                const comisionBancariaTotal = datosReporte.impuestos.tarjeta.comision || 0;
+                const impuestoEfectivo = datosReporte.impuestos.efectivo.impuesto || 0;
+                const impuestoTarjeta = datosReporte.impuestos.tarjeta.impuesto_restante || 0;
+                const impuestoTransferencia = datosReporte.impuestos.transferencia.impuesto || 0;
+                const impuestoDeposito = datosReporte.impuestos.depositos?.impuesto || 0;
+                const impuestoTC_Dep_Trans = impuestoTarjeta + impuestoTransferencia + impuestoDeposito;
+
+                const ventasTarjeta = datosReporte.resumen_ventas.ventas_tarjeta || 0;
+                const ventasEfectivo = datosReporte.resumen_ventas.ventas_efectivo || 0;
+                const ventasTransferencia = datosReporte.resumen_ventas.ventas_transferencia || 0;
+                const ventasDeposito = datosReporte.resumen_ventas.ventas_deposito || 0;
+                const ventasTotal = datosReporte.resumen_ventas.venta_total || 0;
+
+                const totalIngresoDiaTarjeta = ventasTarjeta - comisionBancariaTotal - impuestoTarjeta;
+                const totalIngresoDiaEfectivo = ventasEfectivo - impuestoEfectivo;
+                const totalIngresoDiaTransferencia = ventasTransferencia - impuestoTransferencia;
+                const totalIngresoDiaDeposito = ventasDeposito - impuestoDeposito;
+                const totalIngresoDia = totalIngresoDiaTarjeta + totalIngresoDiaEfectivo + totalIngresoDiaTransferencia + totalIngresoDiaDeposito;
+
+                // Encabezados de tabla resumen
+                const colResumen = [130, 100, 100, 102];
+                const headersResumen = ['Descripción', 'Ingresos Brutos', 'Comisión BC TC', 'Impuestos', 'Total Ingreso del día'];
+                const colResumenFull = [130, 95, 95, 95, 117];
+
+                doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
+                let xR = margin;
+                doc.fontSize(7).font('Helvetica-Bold');
+                headersResumen.forEach((h, i) => {
+                    doc.fillColor('#ffffff').text(h, xR + 2, y + 5, { width: colResumenFull[i] - 4, align: i === 0 ? 'left' : 'center' });
+                    xR += colResumenFull[i];
+                });
                 y += 18;
 
-                const datosEntrada = [
-                    ['Ingreso Efectivo', formatearMoneda(datosReporte.resumen_ventas.ventas_efectivo)],
-                    ['Ingreso Tarjeta', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta)],
-                    ['Ingreso Transferencia', formatearMoneda(datosReporte.resumen_ventas.ventas_transferencia)],
-                    ['Ingreso Depósito', formatearMoneda(datosReporte.resumen_ventas.ventas_deposito || 0)],
-                    ['Total Gastos', formatearMoneda(datosReporte.gastos_resumen.total)],
-                    ['Total Real', formatearMoneda(datosReporte.resumen_ventas.venta_total)],
-                    ['Total Banco', formatearMoneda(datosReporte.resumen_ventas.ventas_tarjeta + datosReporte.resumen_ventas.ventas_transferencia + (datosReporte.resumen_ventas.ventas_deposito || 0))]
+                // Filas del resumen
+                const filasResumen = [
+                    ['Tarjeta',        ventasTarjeta,        comisionBancariaTotal, impuestoTarjeta,        totalIngresoDiaTarjeta],
+                    ['Efectivo',       ventasEfectivo,       0,                     impuestoEfectivo,        totalIngresoDiaEfectivo],
+                    ['Transferencia',  ventasTransferencia,  0,                     impuestoTransferencia,   totalIngresoDiaTransferencia],
+                    ['Depósito',       ventasDeposito,       0,                     impuestoDeposito,        totalIngresoDiaDeposito],
                 ];
 
-                doc.fontSize(9).font('Helvetica');
-                datosEntrada.forEach(([label, value]) => {
-                    doc.fillColor(colors.text).text(label, margin + 20, y, { width: 200 });
-                    doc.fillColor(colors.primary).font('Helvetica-Bold').text(value, margin + 240, y, { width: 100, align: 'right' });
-                    doc.font('Helvetica');
+                doc.fontSize(8).font('Helvetica');
+                filasResumen.forEach(([desc, bruto, comision, impuesto, total], idx) => {
+                    const bg = idx % 2 === 0 ? '#ffffff' : colors.lightGray;
+                    doc.rect(margin, y, contentWidth, 14).fillAndStroke(bg, colors.border);
+                    let xF = margin;
+                    const vals = [desc, formatearMoneda(bruto), comision > 0 ? formatearMoneda(comision) : '-', formatearMoneda(impuesto), formatearMoneda(total)];
+                    vals.forEach((v, i) => {
+                        doc.fillColor(colors.text).text(v, xF + 3, y + 3, { width: colResumenFull[i] - 6, align: i === 0 ? 'left' : 'center' });
+                        xF += colResumenFull[i];
+                    });
                     y += 14;
                 });
 
+                // Fila total
+                doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
+                let xT = margin;
+                const totalesResumen = ['Total de Ingresos Brutos', formatearMoneda(ventasTotal), formatearMoneda(comisionBancariaTotal), formatearMoneda(impuestoEfectivo + impuestoTarjeta + impuestoTransferencia + impuestoDeposito), formatearMoneda(totalIngresoDia)];
+                doc.fontSize(8).font('Helvetica-Bold');
+                totalesResumen.forEach((v, i) => {
+                    doc.fillColor(colors.text).text(v, xT + 3, y + 4, { width: colResumenFull[i] - 6, align: i === 0 ? 'left' : 'center' });
+                    xT += colResumenFull[i];
+                });
+                y += 25;
+
+                // ============================================================
+                // SECCIÓN 3: RESUMEN PARA DEPÓSITO
+                // ============================================================
+                y = nuevaPaginaSiNecesario(250);
+                y = agregarSeccionHeader('RESUMEN PARA DEPÓSITO', y);
+                y += 15;
+
+                const totalGastos = parseFloat(datosReporte.gastos_resumen?.total) || 0;
+                const totalComisiones = parseFloat(datosReporte.deposito?.comisiones) || 0;
+                const ingresoTransferenciaNeto = ventasTransferencia - impuestoTransferencia;
+                const ingresoDepositoNeto = ventasDeposito - impuestoDeposito;
+                const ingresosTarjetaDeduccion = ventasTarjeta - impuestoTarjeta;
+
+                const totalADepositar = ventasTotal - ingresosTarjetaDeduccion - impuestoTC_Dep_Trans - totalGastos - totalComisiones - ingresoTransferenciaNeto - ingresoDepositoNeto;
+
+                const itemsDeposito = [
+                    { label: 'Total de ingresos', valor: formatearMoneda(ventasTotal), esTitulo: true },
+                    { label: '(-) Ingresos Tarjeta', valor: formatearMoneda(ingresosTarjetaDeduccion), esDed: true },
+                    { label: '(-) Impuestos TC/Depósito/Transferencia', valor: formatearMoneda(impuestoTC_Dep_Trans), esDed: true },
+                    { label: '(-) Gastos', valor: formatearMoneda(totalGastos), esDed: true },
+                    { label: '(-) Comisiones Dr(a)', valor: formatearMoneda(totalComisiones), esDed: true },
+                    { label: '(-) Ingreso Transferencia', valor: formatearMoneda(ingresoTransferenciaNeto), esDed: true },
+                    { label: '(-) Ingreso Depósito', valor: formatearMoneda(ingresoDepositoNeto), esDed: true },
+                ];
+
+                const colLabel = 300;
+                const colValor = contentWidth - colLabel;
+
+                itemsDeposito.forEach(({ label, valor, esTitulo }) => {
+                    doc.fontSize(esTitulo ? 10 : 9)
+                       .font(esTitulo ? 'Helvetica-Bold' : 'Helvetica')
+                       .fillColor(colors.text)
+                       .text(label, margin + 10, y, { width: colLabel });
+                    doc.fontSize(esTitulo ? 10 : 9)
+                       .font(esTitulo ? 'Helvetica-Bold' : 'Helvetica')
+                       .fillColor(esTitulo ? colors.primary : colors.text)
+                       .text(valor, margin + colLabel, y, { width: colValor - 10, align: 'right' });
+                    y += esTitulo ? 16 : 14;
+                });
+
+                // Línea separadora
+                y += 5;
+                doc.moveTo(margin + 10, y).lineTo(pageWidth - margin - 10, y).lineWidth(1).stroke(colors.border);
                 y += 10;
 
-                // Resultados del cierre crudo
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Resultados del Cierre sin impuestos:', margin, y);
-                y += 18;
-
-                const ventaBruta = datosReporte.resumen_ventas.venta_total;
-                const gastos = datosReporte.gastos_resumen.total;
-
-                const resultadosCrudo = [
-                    ['VENTA BRUTA', formatearMoneda(ventaBruta)],
-                    ['GASTOS', formatearMoneda(gastos)],
-                    ['TOTAL INGRESOS DEL DIA', formatearMoneda(ventaBruta - gastos)]
-                ];
-
-                doc.fontSize(9).font('Helvetica');
-                resultadosCrudo.forEach(([label, value], idx) => {
-                    const esFinal = idx === resultadosCrudo.length - 1;
-                    if (esFinal) {
-                        // Resultado final con fondo azul claro y borde azul oscuro
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke(colors.fondoCierreConImpuestos, colors.cierreConImpuestos);
-                        doc.lineWidth(2);
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.cierreConImpuestos);
-                        doc.lineWidth(1);
-                        doc.fillColor(colors.cierreConImpuestos).font('Helvetica-Bold').fontSize(11);
-                    }
-                    doc.text(label, margin + 25, y + (esFinal ? 5 : 0), { width: 200 });
-                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica').fontSize(9);
-                    y += esFinal ? 30 : 14;
-                });
-
-                y += 15;
-
-                // ============================================================
-                // SECCIÓN 3: CIERRE NETO (SIN IMPUESTOS)
-                // ============================================================
-                // Calcular espacio necesario para esta sección completa:
-                // - Encabezado: 40px
-                // - "Ingresos Netos" título: 28px
-                // - 5 líneas de ingresos: 5 * 16 = 80px (última más alta)
-                // - Separación: 15px
-                // - "Gastos y Deducciones" título: 28px
-                // - 9 líneas de deducciones: 9 * 16 = 144px (última más alta)
-                // - Separación: 15px
-                // TOTAL: ~350px
-                const espacioNecesarioCierreNeto = 400;
-                const espacioDisponible2 = pageHeight - margin - y;
-                
-                // Si no hay suficiente espacio, crear nueva página
-                if (espacioDisponible2 < espacioNecesarioCierreNeto) {
-                    console.log('⚠️ Espacio insuficiente para CIERRE NETO SIN IMPUESTOS, creando nueva página...');
-                    doc.addPage();
-                    y = margin;
-                }
-                
-                // Encabezado con color verde oscuro
-                doc.rect(margin, y, contentWidth, 25).fillAndStroke(colors.cierreNeto, colors.cierreNeto);
-                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
-                .text('CIERRE NETO (SIN IMPUESTOS)', margin + 10, y + 8);
-                y += 25;
-                y += 15;  // ← ESPACIO ADICIONAL
-
-                // Ingresos netos
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Ingresos Netos:', margin, y);
-                y += 18;
-
-                const ingresosNetos = [
-                    ['Efectivo Neto', formatearMoneda(datosReporte.impuestos.efectivo.venta_neta)],
-                    ['Tarjeta Neta', formatearMoneda(datosReporte.impuestos.tarjeta.venta_neta)],
-                    ['Transferencia Neta', formatearMoneda(datosReporte.impuestos.transferencia.venta_neta)],
-                    ['Depósito Neto', formatearMoneda(datosReporte.impuestos.depositos?.venta_neta || 0)],
-                    ['Total Ingresos Netos', formatearMoneda(datosReporte.impuestos.total_ventas_netas)]
-                ];
-
-                doc.fontSize(9).font('Helvetica');
-                ingresosNetos.forEach(([label, value], idx) => {
-                    const esFinal = idx === ingresosNetos.length - 1;
-                    if (esFinal) {
-                        // Total con fondo verde claro y borde verde oscuro
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke(colors.fondoCierreNeto, colors.cierreNeto);
-                        doc.lineWidth(2);
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.cierreNeto);
-                        doc.lineWidth(1);
-                        doc.fillColor(colors.cierreNeto).font('Helvetica-Bold').fontSize(11);
-                    }
-                    doc.fillColor(esFinal ? colors.cierreNeto : colors.text).text(label, margin + 25, y + (esFinal ? 5 : 0), { width: 200 });
-                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica').fontSize(9);
-                    y += esFinal ? 30 : 14;
-                });
-
-                y += 15;
-
-                // Gastos y deducciones
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica-Bold')
-                .text('Gastos y Deducciones:', margin, y);
-                y += 18;
-
-                const totalGastos = parseFloat(datosReporte.gastos_resumen.total) || 0;
-                const comisionBancaria = parseFloat(datosReporte.impuestos.tarjeta.comision) || 0;
-                const totalImpuestosSolos = parseFloat(datosReporte.impuestos.efectivo.impuesto) + 
-                                           parseFloat(datosReporte.impuestos.tarjeta.impuesto_restante) + 
-                                           parseFloat(datosReporte.impuestos.transferencia.impuesto) + 
-                                           parseFloat(datosReporte.impuestos.depositos?.impuesto || 0);
-                const totalComisiones = parseFloat(datosReporte.deposito.comisiones) || 0;
-                const totalDeducciones = totalGastos + comisionBancaria + totalImpuestosSolos + totalComisiones;
-
-                const deducciones = [
-                    ['Total Gastos', formatearMoneda(totalGastos)],
-                    ['Comisiones Bancarias (6%)', formatearMoneda(comisionBancaria)],
-                    ['Total Impuestos', formatearMoneda(totalImpuestosSolos)],
-                    ['  - Impuesto Efectivo (16%)', formatearMoneda(datosReporte.impuestos.efectivo.impuesto)],
-                    ['  - Impuesto Tarjeta (16%)', formatearMoneda(datosReporte.impuestos.tarjeta.impuesto_restante)],
-                    ['  - Impuesto Transferencia (16%)', formatearMoneda(datosReporte.impuestos.transferencia.impuesto)],
-                    ['  - Impuesto Depósito (16%)', formatearMoneda(datosReporte.impuestos.depositos?.impuesto || 0)],
-                    ['Comisiones', formatearMoneda(totalComisiones)],
-                    ['Total Deducciones', formatearMoneda(totalDeducciones)]
-                ];
-
-                doc.fontSize(9).font('Helvetica');
-                deducciones.forEach(([label, value], idx) => {
-                    const esFinal = idx === deducciones.length - 1;
-                    const esSubtotal = label.startsWith('  -');
-                    
-                    if (esFinal) {
-                        // Total deducciones con fondo rojo claro y borde rojo
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).fillAndStroke('#fee2e2', colors.error);
-                        doc.lineWidth(2);
-                        doc.rect(margin + 20, y - 2, contentWidth - 40, 25).stroke(colors.error);
-                        doc.lineWidth(1);
-                        doc.fillColor(colors.error).font('Helvetica-Bold').fontSize(11);
-                    }
-                    
-                    doc.fillColor(esFinal ? colors.error : colors.text).text(label, margin + (esSubtotal ? 35 : 25), y + (esFinal ? 5 : 0), { width: 200 });
-                    doc.fontSize(esFinal ? 12 : 9).text(value, margin + 240, y + (esFinal ? 5 : 0), { width: 100, align: 'right' });
-                    if (!esFinal) doc.font('Helvetica').fontSize(9);
-                    y += esFinal ? 30 : 14;
-                });
-
-                y += 15;
-
-                // ============================================================
-                // TOTAL A DEPOSITAR EFECTIVO
-                // ============================================================
-                // Calcular espacio necesario para esta sección completa:
-                // - Encabezado: 40px
-                // - Total Real: 18px
-                // - Ingresos Tarjeta: 18px
-                // - Gastos: 18px
-                // - Comisiones: 25px
-                // - Total a depositar (caja destacada): 40px
-                // TOTAL: ~159px
-                const espacioNecesarioDeposito = 200;
-                const espacioDisponible3 = pageHeight - margin - y;
-                
-                // Si no hay suficiente espacio, crear nueva página
-                if (espacioDisponible3 < espacioNecesarioDeposito) {
-                    console.log('⚠️ Espacio insuficiente para TOTAL A DEPOSITAR EFECTIVO, creando nueva página...');
-                    doc.addPage();
-                    y = margin;
-                }
-                
-                // Encabezado con color turquesa/cyan
-                doc.rect(margin, y, contentWidth, 25).fillAndStroke('#14b8a6', '#14b8a6');
-                doc.fontSize(12).fillColor('#ffffff').font('Helvetica-Bold')
-                .text('TOTAL A DEPOSITAR EFECTIVO', margin + 10, y + 8);
-                y += 25;
-                y += 15;
-
-                // Desglose
-                const totalReal = datosReporte.resumen_ventas.venta_total;
-                const ingresosTarjeta = datosReporte.resumen_ventas.ventas_tarjeta;
-                const gastosTotal = totalGastos;
-                const comisionesTotal = totalComisiones;
-                const totalDepositarEfectivo = totalReal - ingresosTarjeta - gastosTotal - comisionesTotal;
-
-                doc.fontSize(10).fillColor(colors.text).font('Helvetica');
-                
-                // Total Real
-                doc.text('Total Real', margin + 25, y, { width: 200 });
-                doc.fillColor(colors.text).font('Helvetica-Bold').text(formatearMoneda(totalReal), margin + 240, y, { width: 100, align: 'right' });
-                y += 18;
-
-                // Ingresos Tarjeta
-                doc.fillColor(colors.text).font('Helvetica').text('- Ingresos Tarjeta', margin + 25, y, { width: 200 });
-                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(ingresosTarjeta), margin + 240, y, { width: 100, align: 'right' });
-                y += 18;
-
-                // Gastos
-                doc.fillColor(colors.text).font('Helvetica').text('- Gastos', margin + 25, y, { width: 200 });
-                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(gastosTotal), margin + 240, y, { width: 100, align: 'right' });
-                y += 18;
-
-                // Comisiones Doctor(a)
-                doc.fillColor(colors.text).font('Helvetica').text('- Comisiones Doctor(a)', margin + 25, y, { width: 200 });
-                doc.fillColor('#dc2626').font('Helvetica-Bold').text(formatearMoneda(comisionesTotal), margin + 240, y, { width: 100, align: 'right' });
-                y += 25;
-
-                // Total a depositar - MUY VISTOSO
-                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).fillAndStroke('#ccfbf1', '#14b8a6');
+                // TOTAL A DEPOSITAR - vistoso en verde
+                doc.rect(margin + 10, y - 2, contentWidth - 20, 38).fillAndStroke('#dcfce7', '#15803d');
                 doc.lineWidth(3);
-                doc.rect(margin + 15, y - 2, contentWidth - 30, 35).stroke('#14b8a6');
+                doc.rect(margin + 10, y - 2, contentWidth - 20, 38).stroke('#15803d');
                 doc.lineWidth(1);
-                
-                doc.fontSize(14).fillColor('#14b8a6').font('Helvetica-Bold')
-                .text('TOTAL A DEPOSITAR', margin + 25, y + 10, { width: 200 });
-                doc.fontSize(16).text(formatearMoneda(totalDepositarEfectivo), margin + 240, y + 9, { width: 120, align: 'right' });
-                y += 40;
+
+                doc.fontSize(14).fillColor('#15803d').font('Helvetica-Bold')
+                .text('TOTAL A DEPOSITAR', margin + 20, y + 10, { width: colLabel - 10 });
+                doc.fontSize(16).text(formatearMoneda(totalADepositar), margin + colLabel, y + 9, { width: colValor - 20, align: 'right' });
+                y += 45;
 
                 doc.end();
             } catch (error) {
