@@ -90,13 +90,20 @@
         </div>
 
         <!-- Botón para abrir turno -->
-        <div class="text-center">
+        <div class="text-center flex flex-col items-center gap-4">
           <button
             @click="financieroStore.abrirModalApertura()"
             class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-lg font-semibold rounded-lg hover:from-orange-600 hover:to-orange-700 shadow-lg transform transition-all hover:scale-105"
           >
             <span class="text-2xl">🔓</span>
             <span>Abrir Turno</span>
+          </button>
+          <button
+            @click="mostrarHistorialReportes = true"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <span>📋</span>
+            <span>Historial de Reportes</span>
           </button>
         </div>
 
@@ -163,6 +170,12 @@
               🔄 Refrescar
             </button>
             <button
+              @click="mostrarHistorialReportes = true"
+              class="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg transition-colors"
+            >
+              📋 Historial
+            </button>
+            <button
               @click="financieroStore.abrirModalCierre()"
               class="px-6 py-2 bg-white text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors"
             >
@@ -224,6 +237,11 @@
       @deposito-registrado="onDepositoRegistrado"
       @cancelar="financieroStore.toggleModalDeposito()"
     />
+
+    <HistorialReportes
+      v-if="mostrarHistorialReportes"
+      @cerrar="mostrarHistorialReportes = false"
+    />
   </div>
 </template>
 
@@ -240,11 +258,13 @@ import ModalGasto from '@/components/financiero/ModalGasto.vue'
 import ModalVoucher from '@/components/financiero/ModalVoucher.vue'
 import ModalTransferencia from '@/components/financiero/ModalTransferencia.vue'
 import ModalDeposito from '@/components/financiero/ModalDeposito.vue'
+import HistorialReportes from '@/components/financiero/HistorialReportes.vue'
 
 const financieroStore = useFinancieroStore()
 const router = useRouter()
 
 const estadisticas = ref(null)
+const mostrarHistorialReportes = ref(false)
 
 // ============================================================================
 // LIFECYCLE
