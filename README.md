@@ -2,24 +2,28 @@
 
 Sistema integral de gestión para clínica Hidrocolon que incluye módulos de farmacia, servicios, pacientes, finanzas y más.
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **Backend**: Node.js + Express
 - **Frontend**: Vue.js 3 + Composition API
 - **Base de Datos**: MySQL
-- **Despliegue**: Railway
+- **Despliegue**: Railway (backend, bd) Vercel (frontend)
 - **Control de Versiones**: Git + GitHub
 
-## 📋 Módulos del Sistema
+## Módulos del Sistema
 
-- 🏥 **Farmacia**: Gestión de medicamentos e inventario
-- 🛍️ **Servicios**: Administración de servicios médicos
-- 👥 **Pacientes**: Registro y seguimiento de pacientes
-- 💰 **Financiero**: Control de ingresos, gastos y cierres
-- 🔔 **Notificaciones**: Alertas automáticas del sistema
-- 🛒 **Carrito**: Procesamiento de ventas
-- 👤 **Usuarios**: Gestión de roles y permisos
-- 📊 **Bitácora**: Registro de actividades del sistema
+- **Farmacia**: Gestión de medicamentos e inventario
+- **Extras**: Gestión inventario de extras
+- **Servicios**: Administración de servicios médicos
+- **Pacientes**: Registro y seguimiento de pacientes
+- **Doctor(as)**: Control y registro de médicos
+- **Carrito**: Ventas de farmacia y servicios
+- **Historial de Ventas**: Control de ventas 
+- **Financiero**: Control de ingresos, gastos y cierres
+- **Libro bancos**
+- **Estado de Resultados**
+- **Usuarios**: Gestión de roles y permisos
+  
 
 ## 🛠️ Instalación
 
