@@ -666,6 +666,8 @@ class Turno {
                     v.metodo_pago,
                     v.total as venta_total,
                     v.fecha_creacion,
+                    v.procesador_tarjeta,
+                    v.cuotas_tarjeta,
                     dv.producto_nombre,
                     dv.cantidad,
                     dv.precio_unitario,
@@ -966,7 +968,9 @@ class Turno {
                     transferencia: parseFloat(p.transferencia_producto),
                     deposito: parseFloat(p.deposito_producto || 0),
                     usuario: `${p.nombres} ${p.apellidos}`,
-                    fecha: p.fecha_creacion
+                    fecha: p.fecha_creacion,
+                    procesador_tarjeta: p.procesador_tarjeta || null,
+                    cuotas_tarjeta: p.cuotas_tarjeta || null
                 })),
 
                 impuestos: {

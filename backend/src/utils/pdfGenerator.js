@@ -321,8 +321,8 @@ class ComprobanteGenerator {
 
                 if (datosReporte.productos_vendidos && datosReporte.productos_vendidos.length > 0) {
                     // Tabla de productos
-                    const colWidths = [25, 130, 30, 50, 50, 50, 50, 50, 65];
-                    const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Depósito', 'Total', 'Usuario'];
+                    const colWidths = [22, 100, 25, 45, 45, 45, 45, 45, 55, 45, 30];
+                    const headers = ['ID', 'Nombre', 'Cant', 'Tarjeta', 'Efectivo', 'Transfer', 'Depósito', 'Total', 'Usuario', 'Procesador', 'Cuotas'];
                     
                     // Encabezados
                     doc.rect(margin, y, contentWidth, 18).fillAndStroke(colors.primary, colors.border);
@@ -346,14 +346,16 @@ class ComprobanteGenerator {
                         let xPos = margin;
                         const valores = [
                             prod.venta_id.toString(),
-                            prod.producto_nombre.substring(0, 22),
+                            prod.producto_nombre.substring(0, 18),
                             prod.cantidad.toString(),
                             formatearMoneda(prod.tarjeta || 0),
                             formatearMoneda(prod.efectivo || 0),
                             formatearMoneda(prod.transferencia || 0),
                             formatearMoneda(prod.deposito || 0),
                             formatearMoneda(prod.precio_total),
-                            prod.usuario.substring(0, 11)
+                            prod.usuario.substring(0, 10),
+                            prod.procesador_tarjeta ? prod.procesador_tarjeta.toUpperCase() : '-',
+                            prod.cuotas_tarjeta ? prod.cuotas_tarjeta.toString() : '-'
                         ];
 
                         valores.forEach((val, i) => {
