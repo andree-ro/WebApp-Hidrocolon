@@ -301,26 +301,26 @@
               <button
                 @click="seleccionarProcesador('bac')"
                 :class="[
-                  'flex-1 py-3 rounded-lg font-bold text-white text-lg transition-all border-2',
+                  'flex-1 py-2 rounded-lg font-bold text-white text-sm transition-all border-2',
                   carritoStore.procesadorTarjeta === 'bac'
                     ? 'bg-red-600 border-red-700 shadow-lg scale-105'
                     : 'bg-red-200 border-red-300 text-red-800 hover:bg-red-400'
                 ]"
               >
-                B
+                BAC
               </button>
 
               <!-- NeoNet -->
               <button
                 @click="seleccionarProcesador('neonet')"
                 :class="[
-                  'flex-1 py-3 rounded-lg font-bold text-white text-lg transition-all border-2',
+                  'flex-1 py-2 rounded-lg font-bold text-white text-sm transition-all border-2',
                   carritoStore.procesadorTarjeta === 'neonet'
                     ? 'bg-purple-600 border-purple-700 shadow-lg scale-105'
                     : 'bg-purple-200 border-purple-300 text-purple-800 hover:bg-purple-400'
                 ]"
               >
-                N
+                NeoNet
               </button>
             </div>
 
