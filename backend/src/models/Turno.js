@@ -311,12 +311,10 @@ class Turno {
 
             // PaginaciÃƒÂ³n
             if (filtros.limit) {
-                query += ' LIMIT ?';
-                params.push(parseInt(filtros.limit));
+                query += ` LIMIT ${parseInt(filtros.limit)}`;
                 
                 if (filtros.offset) {
-                    query += ' OFFSET ?';
-                    params.push(parseInt(filtros.offset));
+                    query += ` OFFSET ${parseInt(filtros.offset)}`;
                 }
             }
 
