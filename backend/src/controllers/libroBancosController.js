@@ -356,7 +356,7 @@ const exportarPDF = async (req, res) => {
         // ============================================================================
         // ENCABEZADO
         // ============================================================================
-        doc.fontSize(16).font('Helvetica-Bold').text('VIMESA CENTRAL ZONA 3', { align: 'center' });
+        doc.fontSize(16).font('Helvetica-Bold').text(process.env.SUCURSAL_NOMBRE || 'VIMESA CENTRAL ZONA 3', { align: 'center' });
         doc.moveDown(0.3);
         doc.fontSize(14).font('Helvetica-Bold').text('LIBRO DE BANCOS', { align: 'center' });
         doc.moveDown(0.5);
@@ -525,7 +525,7 @@ const exportarExcel = async (req, res) => {
 
         // Título
         worksheet.mergeCells('A1:I1');
-        worksheet.getCell('A1').value = 'VIMESA CENTRAL ZONA 3';
+        worksheet.getCell('A1').value = process.env.SUCURSAL_NOMBRE || 'VIMESA CENTRAL ZONA 3';
         worksheet.getCell('A1').font = { bold: true, size: 14 };
         worksheet.getCell('A1').alignment = { horizontal: 'center' };
 

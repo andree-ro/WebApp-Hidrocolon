@@ -819,7 +819,7 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
 
         return {
             // Encabezado
-            titulo: 'HIDROCOLON XELA - VIMESA',
+            titulo: process.env.SUCURSAL_NOMBRE || 'HIDROCOLON XELA - VIMESA',
             subtitulo: 'PAGO•A2•K70 DE COMISIONES',
             
             // Período
@@ -836,7 +836,7 @@ async function prepararDatosParaPDF(doctoraId, fechaInicio, fechaFin, ventasAgru
             totales: ventasAgrupadas.totales,
             
             // Texto legal
-            texto_recibo: `RECIBI DE VIMESA LA CANTIDAD DE ${montoEnLetras.toUpperCase()} (Q.${ventasAgrupadas.totales.total_comisiones.toFixed(2)}), EN CONCEPTO DE COMISIONES POR VENTAS REALIZADAS DEL ${fechaInicioObj.getDate()} DE ${meses[fechaInicioObj.getMonth()].toUpperCase()} AL ${fechaFinObj.getDate()} DE ${meses[fechaFinObj.getMonth()].toUpperCase()} DE ACUERDO AL DETALLE SIGUIENTE:`,
+            texto_recibo: `RECIBI DE ${process.env.SUCURSAL_NOMBRE || 'VIMESA'} LA CANTIDAD DE ${montoEnLetras.toUpperCase()} (Q.${ventasAgrupadas.totales.total_comisiones.toFixed(2)}), EN CONCEPTO DE COMISIONES POR VENTAS REALIZADAS DEL ${fechaInicioObj.getDate()} DE ${meses[fechaInicioObj.getMonth()].toUpperCase()} AL ${fechaFinObj.getDate()} DE ${meses[fechaFinObj.getMonth()].toUpperCase()} DE ACUERDO AL DETALLE SIGUIENTE:`,
             
             // Resumen
             resumen_texto: `COMISIONES DEL ${fechaInicioObj.getDate()} AL ${fechaFinObj.getDate()} DE ${meses[fechaFinObj.getMonth()].toUpperCase()}`,
