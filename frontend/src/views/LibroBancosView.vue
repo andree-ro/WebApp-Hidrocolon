@@ -223,14 +223,14 @@
           <div class="flex gap-2 ml-auto">
             <button
               @click="store.exportarPDF()"
-              :disabled="store.cargando || store.operaciones.length === 0"
+              :disabled="store.cargando || (store.operaciones.length === 0 && store.operacionesAgrupadas.length === 0)"
               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300 transition-colors"
             >
               📄 PDF
             </button>
             <button
               @click="store.exportarExcel()"
-              :disabled="store.cargando || store.operaciones.length === 0"
+              :disabled="store.cargando || (store.operaciones.length === 0 && store.operacionesAgrupadas.length === 0)"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 transition-colors"
             >
               📊 Excel
