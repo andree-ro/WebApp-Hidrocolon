@@ -15,7 +15,7 @@
               </svg>
             </button>
             <h1 class="ml-2 lg:ml-0 text-lg sm:text-2xl font-bold text-gray-900">
-              Sistema Hidrocolon/Vimesa
+              {{ sucursalNombre }}
             </h1>
           </div>
 
@@ -326,6 +326,7 @@ export default {
   
   data() {
     return {
+      sucursalNombre: import.meta.env.VITE_SUCURSAL_NOMBRE || 'Sistema Hidrocolon/Vimesa',
       user: null,
       loggingOut: false,
       sidebarOpen: false,

@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="text-center">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          Sistema Hidrocolon
+          {{ sucursalNombre }}
         </h1>
         <p class="text-gray-600">
           Ingresa tus credenciales para acceder
@@ -110,7 +110,7 @@
 
       <!-- Footer -->
       <div class="text-center text-xs text-gray-500">
-        Sistema Hidrocolon v1.0 - Guatemala<br>
+        {{ sucursalNombre }} v1.0 - Guatemala<br>
         <span class="text-primary-600">Conectado a Railway</span>
       </div>
     </div>
@@ -140,6 +140,7 @@ export default {
   name: 'LoginView',
   data() {
     return {
+      sucursalNombre: import.meta.env.VITE_SUCURSAL_NOMBRE || 'Sistema Hidrocolon',
       form: {
         usuario: 'admin@hidrocolon.com',
         password: 'admin123'
