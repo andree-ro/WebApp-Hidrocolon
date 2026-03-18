@@ -5,20 +5,20 @@ import axios from 'axios'
 
 // Detectar el entorno y configurar la URL base correctamente
 const getBaseURL = () => {
-  // Si estamos en producción (Vercel), usar Railway directamente
+  // Si hay variable de entorno configurada, usarla
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // Fallback para producción
   if (import.meta.env.PROD) {
     return 'https://webapp-hidrocolon-production.up.railway.app/api'
   }
   
   // Si estamos en desarrollo local
-  if (import.meta.env.DEV) {
-    // Intentar usar proxy primero, si falla usar Railway directamente
-    return window.location.hostname === 'localhost' 
-      ? 'https://webapp-hidrocolon-production.up.railway.app/api'  // Cambio aquí
-      : '/api'
-  }
-  
-  return '/api'
+  return window.location.hostname === 'localhost' 
+    ? 'https://webapp-hidrocolon-production.up.railway.app/api'
+    : '/api'
 }
 
 // Configuración base de Axios
