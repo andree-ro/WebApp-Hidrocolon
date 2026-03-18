@@ -18,6 +18,7 @@ pids
 .env.test.local
 .env.production.local
 .env.backup-produccion
+.env.sucursalZ9
 
 # IDE files
 .vscode/
