@@ -149,7 +149,10 @@ const crearVenta = async (req, res) => {
         const procesador = procesador_tarjeta || null;
         const cuotas = parseInt(cuotas_tarjeta) || 1;
 
-        if (procesador && COMISIONES_BANCARIAS[procesador]) {
+        if (metodo_pago === 'mixto' && parseFloat(tarjeta_monto || 0) > 0) {
+            // Pago mixto con tarjeta siempre es BAC 1 cuota = 4.61%
+            porcentajeComisionBancaria = 4.61;
+        } else if (procesador && COMISIONES_BANCARIAS[procesador]) {
             porcentajeComisionBancaria = COMISIONES_BANCARIAS[procesador][cuotas] || 0;
         }
 
