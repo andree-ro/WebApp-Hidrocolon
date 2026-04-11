@@ -328,7 +328,7 @@ function volverAlDashboard() {
  * Cuando se abre un turno
  */
 async function onTurnoAbierto() {
-  console.log('✅✅✅ onTurnoAbierto EJECUTÁNDOSE')
+  console.log('onTurnoAbierto EJECUTÁNDOSE')
     financieroStore.cerrarModalApertura()
     await new Promise(resolve => setTimeout(resolve, 300))
     console.log('🚀 REDIRIGIENDO')

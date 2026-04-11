@@ -568,6 +568,7 @@ const exportarExcel = async (req, res) => {
 
         // Obtener datos
         const estadoResultados = await EstadoResultados.obtenerEstadoResultados(fecha_inicio, fecha_fin);
+        const comisionesBancarias = await EstadoResultados.calcularComisionesBancarias(fecha_inicio, fecha_fin);
 
         // Generar Excel
         const ExcelJS = require('exceljs');
@@ -643,10 +644,74 @@ const exportarExcel = async (req, res) => {
             currentRow += 2;
         }
 
-        // TOTAL INGRESOS
+        // TOTAL INGRESOS (subtotal antes de comisiones bancarias)
         worksheet.getCell(`A${currentRow}`).value = 'TOTAL DE INGRESOS';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ingresos.total_ingresos);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // COMISIONES BANCARIAS
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = 'COMISIONES BANCARIAS';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        // Comisiones bancarias de ventas por doctora
+        if (comisionesBancarias.comisiones_ventas?.length > 0) {
+            for (const c of comisionesBancarias.comisiones_ventas) {
+                worksheet.getCell(`B${currentRow}`).value = c.nombre_doctora;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(c.total);
+                currentRow++;
+            }
+        } else {
+            worksheet.getCell(`B${currentRow}`).value = 'Clínica';
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(0);
+            currentRow++;
+        }
+
+        worksheet.getCell(`B${currentRow}`).value = 'TOTAL COMISIONES BANCARIAS';
+        worksheet.getCell(`B${currentRow}`).font = { bold: true };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(comisionesBancarias.total_comisiones_ventas);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // Servicios comisión bancaria por doctora
+        worksheet.getCell(`A${currentRow}`).value = 'SERVICIOS COMISIÓN BANCARIA';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        if (comisionesBancarias.comisiones_servicios?.length > 0) {
+            for (const c of comisionesBancarias.comisiones_servicios) {
+                worksheet.getCell(`B${currentRow}`).value = c.nombre_doctora;
+                worksheet.getCell(`C${currentRow}`).value = formatearMoneda(c.total);
+                currentRow++;
+            }
+        } else {
+            worksheet.getCell(`B${currentRow}`).value = 'Sin comisiones';
+            worksheet.getCell(`C${currentRow}`).value = formatearMoneda(0);
+            currentRow++;
+        }
+
+        worksheet.getCell(`B${currentRow}`).value = 'TOTAL SERVICIOS COMISIÓN BANCARIA';
+        worksheet.getCell(`B${currentRow}`).font = { bold: true };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(comisionesBancarias.total_comisiones_servicios);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // Total general comisiones bancarias
+        worksheet.getCell(`A${currentRow}`).value = 'TOTAL DE COMISIONES BANCARIAS';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(comisionesBancarias.total_bancarias);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // INGRESOS BRUTOS (total ingresos - comisiones bancarias)
+        const ingresosBrutos = estadoResultados.ingresos.total_ingresos - comisionesBancarias.total_bancarias;
+        worksheet.getCell(`A${currentRow}`).value = 'INGRESOS BRUTOS';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(ingresosBrutos);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
         currentRow += 2;
 
@@ -689,9 +754,22 @@ const exportarExcel = async (req, res) => {
         currentRow += 2;
 
         // ============================================================================
-        // GANANCIA BRUTA
+        // GASTOS DE OPERACIÓN (CHEQUES)
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = 'GANANCIA BRUTA';
+        worksheet.getCell(`A${currentRow}`).value = 'GASTOS DE OPERACIÓN (CHEQUES)';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+        currentRow++;
+
+        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operación (CHEQUES)';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true };
+        worksheet.getCell(`C${currentRow}`).value = formatearMoneda(comisionesBancarias.gastos_cheque);
+        worksheet.getCell(`C${currentRow}`).font = { bold: true };
+        currentRow += 2;
+
+        // ============================================================================
+        // UTILIDAD BRUTA
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = 'UTILIDA BRUTA';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 11 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.ganancia_bruta);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -712,7 +790,7 @@ const exportarExcel = async (req, res) => {
             }
         }
 
-        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operacion';
+        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operación';
         worksheet.getCell(`A${currentRow}`).font = { bold: true };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.gastos_operacion.total_gastos);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -738,7 +816,7 @@ const exportarExcel = async (req, res) => {
 
             // Impuestos
             if (estadoResultados.otros_gastos?.impuestos > 0) {
-                worksheet.getCell(`A${currentRow}`).value = 'Impuestos (Automatico)';
+                worksheet.getCell(`A${currentRow}`).value = 'Impuestos (Automatico) 16%';
                 worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.otros_gastos.impuestos);
                 currentRow++;
             }
@@ -762,7 +840,7 @@ const exportarExcel = async (req, res) => {
         // ============================================================================
         // UTILIDAD DEL EJERCICIO
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD DEL EJERCICIO';
+        worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD NETA';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_ejercicio);
         worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };

@@ -298,6 +298,85 @@ class EstadoResultados {
         }
     }
 // ============================================================================
+    // CALCULAR COMISIONES BANCARIAS POR DOCTORA (para Excel)
+    // ============================================================================
+    static async calcularComisionesBancarias(fechaInicio, fechaFin) {
+        try {
+            // Comisiones bancarias de VENTAS (medicamentos) por doctora
+            const [comisionesVentas] = await pool.execute(
+                `SELECT 
+                    COALESCE(d.nombre, 'Clínica') as nombre_doctora,
+                    COALESCE(dv.doctora_id, 0) as doctora_id,
+                    SUM(v.comision_bancaria_monto * (dv.precio_total / v.total)) as total_comision
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN doctoras d ON dv.doctora_id = d.id
+                 WHERE dv.tipo_producto = 'medicamento'
+                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
+                 AND v.comision_bancaria_monto > 0
+                 GROUP BY dv.doctora_id, d.nombre
+                 ORDER BY dv.doctora_id`,
+                [fechaInicio, fechaFin]
+            );
+
+            // Comisiones bancarias de SERVICIOS por doctora
+            const [comisionesServicios] = await pool.execute(
+                `SELECT 
+                    COALESCE(d.nombre, 'Clínica') as nombre_doctora,
+                    COALESCE(dv.doctora_id, 0) as doctora_id,
+                    SUM(v.comision_bancaria_monto * (dv.precio_total / v.total)) as total_comision
+                 FROM detalle_ventas dv
+                 INNER JOIN ventas v ON dv.venta_id = v.id
+                 LEFT JOIN doctoras d ON dv.doctora_id = d.id
+                 WHERE dv.tipo_producto = 'servicio'
+                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
+                 AND v.comision_bancaria_monto > 0
+                 GROUP BY dv.doctora_id, d.nombre
+                 ORDER BY dv.doctora_id`,
+                [fechaInicio, fechaFin]
+            );
+
+            // Gastos de operación con cheque desde libro de bancos
+            const [gastosCheque] = await pool.execute(
+                `SELECT SUM(egreso) as total_cheques
+                 FROM libro_bancos
+                 WHERE fecha BETWEEN ? AND ?
+                 AND tipo_operacion = 'egreso'
+                 AND numero_cheque IS NOT NULL
+                 AND numero_cheque != ''`,
+                [fechaInicio, fechaFin]
+            );
+
+            const totalComisionesVentas = comisionesVentas.reduce((sum, c) => sum + parseFloat(c.total_comision || 0), 0);
+            const totalComisionesServicios = comisionesServicios.reduce((sum, c) => sum + parseFloat(c.total_comision || 0), 0);
+            const totalCheques = parseFloat(gastosCheque[0].total_cheques || 0);
+
+            return {
+                comisiones_ventas: comisionesVentas.map(c => ({
+                    doctora_id: c.doctora_id,
+                    nombre_doctora: c.nombre_doctora,
+                    total: parseFloat(parseFloat(c.total_comision || 0).toFixed(2))
+                })),
+                total_comisiones_ventas: parseFloat(totalComisionesVentas.toFixed(2)),
+                comisiones_servicios: comisionesServicios.map(c => ({
+                    doctora_id: c.doctora_id,
+                    nombre_doctora: c.nombre_doctora,
+                    total: parseFloat(parseFloat(c.total_comision || 0).toFixed(2))
+                })),
+                total_comisiones_servicios: parseFloat(totalComisionesServicios.toFixed(2)),
+                total_bancarias: parseFloat((totalComisionesVentas + totalComisionesServicios).toFixed(2)),
+                gastos_cheque: parseFloat(totalCheques.toFixed(2))
+            };
+
+        } catch (error) {
+            console.error('❌ Error calculando comisiones bancarias:', error);
+            throw error;
+        }
+    }
+
+    // ============================================================================
     // DETALLE DE VENTAS POR DOCTORA
     // ============================================================================
     static async detalleVentasPorDoctora(fechaInicio, fechaFin, doctoraId) {
