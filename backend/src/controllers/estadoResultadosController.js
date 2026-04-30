@@ -652,6 +652,13 @@ const exportarExcel = async (req, res) => {
         currentRow += 2;
 
         // ============================================================================
+        // COSTOS DE OPERACIÓN (encabezado sección)
+        // ============================================================================
+        worksheet.getCell(`A${currentRow}`).value = 'COSTOS DE OPERACIÓN';
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 13 };
+        currentRow += 2;
+
+        // ============================================================================
         // COMISIONES BANCARIAS
         // ============================================================================
         worksheet.getCell(`A${currentRow}`).value = 'COMISIONES BANCARIAS';
@@ -718,7 +725,7 @@ const exportarExcel = async (req, res) => {
         // ============================================================================
         // COSTOS DE OPERACIÓN
         // ============================================================================
-        worksheet.getCell(`A${currentRow}`).value = 'COSTOS DE OPERACION';
+        worksheet.getCell(`A${currentRow}`).value = 'GASTOS DE OPERACIÓN';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
         currentRow++;
 
@@ -747,7 +754,7 @@ const exportarExcel = async (req, res) => {
             }
         }
 
-        worksheet.getCell(`A${currentRow}`).value = 'Total de costo de operacion';
+        worksheet.getCell(`A${currentRow}`).value = 'Total Gastos de Operación';
         worksheet.getCell(`A${currentRow}`).font = { bold: true };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.costos_operacion.total_costos);
         worksheet.getCell(`C${currentRow}`).font = { bold: true };
@@ -843,7 +850,7 @@ const exportarExcel = async (req, res) => {
         worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD NETA';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_ejercicio);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };
+        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };estadoResultadosController.js
 
         // Ajustar anchos de columnas
         worksheet.getColumn('A').width = 40;
