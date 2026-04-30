@@ -850,7 +850,7 @@ const exportarExcel = async (req, res) => {
         worksheet.getCell(`A${currentRow}`).value = 'UTILIDAD NETA';
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
         worksheet.getCell(`C${currentRow}`).value = formatearMoneda(estadoResultados.utilidad_ejercicio);
-        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };estadoResultadosController.js
+        worksheet.getCell(`C${currentRow}`).font = { bold: true, size: 14 };
 
         // Ajustar anchos de columnas
         worksheet.getColumn('A').width = 40;
