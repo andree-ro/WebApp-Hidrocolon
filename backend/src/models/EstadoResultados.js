@@ -24,7 +24,7 @@ class EstadoResultados {
             const costosOperacion = await this.calcularCostosOperacion(fechaInicio, fechaFin);
 
             // 5. GANANCIA BRUTA
-            const gananciaBruta = ingresosBrutos - costosOperacion.total_costos;
+            const gananciaBruta = ingresos.total_ingresos - costosOperacion.total_costos;
 
             // 6. GASTOS DE OPERACIÓN
             const gastosOperacion = await this.calcularGastosOperacion(fechaInicio, fechaFin);
