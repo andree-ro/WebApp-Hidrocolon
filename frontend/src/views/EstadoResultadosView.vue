@@ -357,6 +357,21 @@
             <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.costos_operacion.total_costos) }}</span>
           </div>
         </div>
+
+        <!-- GASTOS DE OPERACIÓN (CHEQUES) -->
+        <div class="mt-4 space-y-2">
+          <h4 class="font-bold text-gray-900">GASTOS DE OPERACIÓN (CHEQUES)</h4>
+          <div class="flex justify-between font-bold text-gray-900 pt-2 mt-2 border-t items-center">
+            <span>Total Gastos de Operación (CHEQUES)</span>
+            <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.gastos_cheque) }}</span>
+          </div>
+        </div>
+
+        <!-- UTILIDA BRUTA -->
+        <div class="flex justify-between text-lg font-bold text-green-900 mt-4 pt-3 border-t-2 border-green-200 bg-green-50 px-4 py-2 rounded">
+          <span>UTILIDA BRUTA</span>
+          <span>Q{{ formatearMoneda(store.estadoResultados.ganancia_bruta) }}</span>
+        </div>
       </div>
 
       <!-- 3. GASTOS DE OPERACIÓN -->
@@ -405,21 +420,6 @@
             <span>Total Gastos de Operación</span>
             <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.gastos_operacion.total_gastos) }}</span>
           </div>
-        </div>
-
-        <!-- GASTOS DE OPERACIÓN (CHEQUES) -->
-        <div class="mt-4 space-y-2">
-          <h4 class="font-bold text-gray-900">GASTOS DE OPERACIÓN (CHEQUES)</h4>
-          <div class="flex justify-between font-bold text-gray-900 pt-2 mt-2 border-t items-center">
-            <span>Total Gastos de Operación (CHEQUES)</span>
-            <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.gastos_cheque) }}</span>
-          </div>
-        </div>
-
-        <!-- UTILIDA BRUTA -->
-        <div class="flex justify-between text-lg font-bold text-green-900 mt-4 pt-3 border-t-2 border-green-200 bg-green-50 px-4 py-2 rounded">
-          <span>UTILIDA BRUTA</span>
-          <span>Q{{ formatearMoneda(store.estadoResultados.ganancia_bruta) }}</span>
         </div>
 
         <!-- Ganancia/Pérdida en Operación -->
