@@ -217,10 +217,65 @@
         </div>
       </div>
 
+      <!-- COSTOS DE OPERACIÓN (encabezado sección) -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-gray-200">💸 COSTOS DE OPERACIÓN</h3>
+
+        <!-- COMISIONES BANCARIAS -->
+        <div class="mb-4">
+          <h4 class="font-semibold text-gray-800 mb-2">COMISIONES BANCARIAS</h4>
+          <div class="ml-4 space-y-1">
+            <div
+              v-for="c in store.estadoResultados.comisiones_bancarias.comisiones_ventas"
+              :key="c.doctora_id"
+              class="flex justify-between text-sm py-1"
+            >
+              <span class="text-gray-700">{{ c.nombre_doctora }}</span>
+              <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(c.total) }}</span>
+            </div>
+            <div class="flex justify-between font-semibold text-gray-900 pt-2 mt-2 border-t">
+              <span>TOTAL COMISIONES BANCARIAS</span>
+              <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.total_comisiones_ventas) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVICIOS COMISIÓN BANCARIA -->
+        <div class="mb-4">
+          <h4 class="font-semibold text-gray-800 mb-2">SERVICIOS COMISIÓN BANCARIA</h4>
+          <div class="ml-4 space-y-1">
+            <div
+              v-for="c in store.estadoResultados.comisiones_bancarias.comisiones_servicios"
+              :key="c.doctora_id"
+              class="flex justify-between text-sm py-1"
+            >
+              <span class="text-gray-700">{{ c.nombre_doctora }}</span>
+              <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(c.total) }}</span>
+            </div>
+            <div class="flex justify-between font-semibold text-gray-900 pt-2 mt-2 border-t">
+              <span>TOTAL SERVICIOS COMISIÓN BANCARIA</span>
+              <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.total_comisiones_servicios) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total de Comisiones Bancarias -->
+        <div class="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t-2 border-gray-300 bg-gray-50 px-4 py-2 rounded mb-4">
+          <span>TOTAL DE COMISIONES BANCARIAS</span>
+          <span>Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.total_bancarias) }}</span>
+        </div>
+
+        <!-- Ingresos Brutos -->
+        <div class="flex justify-between text-lg font-bold text-blue-900 pt-3 border-t-2 border-blue-200 bg-blue-50 px-4 py-2 rounded">
+          <span>INGRESOS BRUTOS</span>
+          <span>Q{{ formatearMoneda(store.estadoResultados.ingresos_brutos) }}</span>
+        </div>
+      </div>
+
       <!-- 2. COSTOS DE OPERACIÓN -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-200">
-          <h3 class="text-lg font-bold text-gray-900">💸 COSTOS DE OPERACIÓN</h3>
+          <h3 class="text-lg font-bold text-gray-900">💸 GASTOS DE OPERACIÓN</h3>
           <button
             @click="store.abrirModalNuevoConcepto('costo_operacion')"
             class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
@@ -298,7 +353,7 @@
 
           <!-- Total -->
           <div class="flex justify-between font-bold text-gray-900 pt-2 mt-2 border-t items-center">
-            <span>Total de costo de operación</span>
+            <span>Total Gastos de Operación</span>
             <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.costos_operacion.total_costos) }}</span>
           </div>
         </div>

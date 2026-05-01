@@ -14,22 +14,28 @@ class EstadoResultados {
             // 1. INGRESOS
             const ingresos = await this.calcularIngresos(fechaInicio, fechaFin);
 
-            // 2. COSTOS DE OPERACIÓN
+            // 2. COMISIONES BANCARIAS
+            const comisionesBancarias = await this.calcularComisionesBancarias(fechaInicio, fechaFin);
+
+            // 3. INGRESOS BRUTOS
+            const ingresosBrutos = parseFloat((ingresos.total_ingresos - comisionesBancarias.total_bancarias).toFixed(2));
+
+            // 4. COSTOS DE OPERACIÓN
             const costosOperacion = await this.calcularCostosOperacion(fechaInicio, fechaFin);
 
-            // 3. GANANCIA BRUTA
-            const gananciaBruta = ingresos.total_ingresos - costosOperacion.total_costos;
+            // 5. GANANCIA BRUTA
+            const gananciaBruta = ingresosBrutos - costosOperacion.total_costos;
 
-            // 4. GASTOS DE OPERACIÓN
+            // 6. GASTOS DE OPERACIÓN
             const gastosOperacion = await this.calcularGastosOperacion(fechaInicio, fechaFin);
 
-            // 5. GANANCIA/PÉRDIDA EN OPERACIÓN
+            // 7. GANANCIA/PÉRDIDA EN OPERACIÓN
             const gananciaPerdidaOperacion = gananciaBruta - gastosOperacion.total_gastos;
 
-            // 6. OTROS GASTOS Y PRODUCTOS FINANCIEROS
+            // 8. OTROS GASTOS Y PRODUCTOS FINANCIEROS
             const otrosGastos = await this.calcularOtrosGastos(fechaInicio, fechaFin);
 
-            // 7. UTILIDAD DEL EJERCICIO
+            // 9. UTILIDAD DEL EJERCICIO
             const utilidadEjercicio = gananciaPerdidaOperacion - otrosGastos.total_otros_gastos;
 
             return {
@@ -38,6 +44,8 @@ class EstadoResultados {
                     fecha_fin: fechaFin
                 },
                 ingresos,
+                comisiones_bancarias: comisionesBancarias,
+                ingresos_brutos: ingresosBrutos,
                 costos_operacion: costosOperacion,
                 ganancia_bruta: parseFloat(gananciaBruta.toFixed(2)),
                 gastos_operacion: gastosOperacion,
