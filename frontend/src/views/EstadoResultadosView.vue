@@ -357,12 +357,6 @@
             <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.costos_operacion.total_costos) }}</span>
           </div>
         </div>
-
-        <!-- Ganancia Bruta -->
-        <div class="flex justify-between text-lg font-bold text-green-900 mt-4 pt-3 border-t-2 border-green-200 bg-green-50 px-4 py-2 rounded">
-          <span>GANANCIA BRUTA</span>
-          <span>Q{{ formatearMoneda(store.estadoResultados.ganancia_bruta) }}</span>
-        </div>
       </div>
 
       <!-- 3. GASTOS DE OPERACIÓN -->
@@ -413,6 +407,21 @@
           </div>
         </div>
 
+        <!-- GASTOS DE OPERACIÓN (CHEQUES) -->
+        <div class="mt-4 space-y-2">
+          <h4 class="font-bold text-gray-900">GASTOS DE OPERACIÓN (CHEQUES)</h4>
+          <div class="flex justify-between font-bold text-gray-900 pt-2 mt-2 border-t items-center">
+            <span>Total Gastos de Operación (CHEQUES)</span>
+            <span class="text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.comisiones_bancarias.gastos_cheque) }}</span>
+          </div>
+        </div>
+
+        <!-- UTILIDA BRUTA -->
+        <div class="flex justify-between text-lg font-bold text-green-900 mt-4 pt-3 border-t-2 border-green-200 bg-green-50 px-4 py-2 rounded">
+          <span>UTILIDA BRUTA</span>
+          <span>Q{{ formatearMoneda(store.estadoResultados.ganancia_bruta) }}</span>
+        </div>
+
         <!-- Ganancia/Pérdida en Operación -->
         <div 
           :class="[
@@ -442,7 +451,7 @@
         <div class="space-y-2">
           <!-- Impuestos (Automático) -->
           <div class="flex justify-between text-sm items-center py-1">
-            <span class="text-gray-700 flex-1">Impuestos (Automático)</span>
+            <span class="text-gray-700 flex-1">Impuestos (Automatico) 16%</span>
             <span class="font-medium text-right min-w-[120px]">Q{{ formatearMoneda(store.estadoResultados.otros_gastos.impuestos) }}</span>
           </div>
 
@@ -490,7 +499,7 @@
               : 'text-red-900 border-red-300 bg-red-100'
           ]"
         >
-          <span>UTILIDAD DEL EJERCICIO</span>
+          <span>UTILIDAD NETA</span>
           <span>Q{{ formatearMoneda(store.estadoResultados.utilidad_ejercicio) }}</span>
         </div>
       </div>
