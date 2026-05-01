@@ -366,6 +366,23 @@ class ComprobanteGenerator {
                         y += 14;
                     });
 
+                    // Fila de totales
+                    const totalTarjeta = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.tarjeta || 0), 0);
+                    const totalEfectivo = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.efectivo || 0), 0);
+                    const totalTransferencia = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.transferencia || 0), 0);
+                    const totalDeposito = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.deposito || 0), 0);
+                    const totalGeneral = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.precio_total || 0), 0);
+
+                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
+                    let xTot = margin;
+                    const valesTotales = ['', 'TOTALES', '', formatearMoneda(totalTarjeta), formatearMoneda(totalEfectivo), formatearMoneda(totalTransferencia), formatearMoneda(totalDeposito), formatearMoneda(totalGeneral), '', '', ''];
+                    doc.fontSize(7).font('Helvetica-Bold').fillColor(colors.text);
+                    valesTotales.forEach((val, i) => {
+                        doc.text(val, xTot + 2, y + 4, { width: colWidths[i] - 4, align: i === 1 ? 'left' : 'center' });
+                        xTot += colWidths[i];
+                    });
+                    y += 16;
+
                     y += 10;
                 } else {
                     doc.fontSize(9).fillColor(colors.secondary).font('Helvetica')
