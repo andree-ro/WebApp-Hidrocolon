@@ -266,7 +266,7 @@
         </div>
 
         <!-- Ingresos Brutos -->
-        <div class="flex justify-between text-lg font-bold text-blue-900 pt-3 border-t-2 border-blue-200 bg-blue-50 px-4 py-2 rounded">
+        <div class="flex justify-between text-lg font-bold text-white pt-3 border-t-2 border-pink-600 bg-pink-600 px-4 py-2 rounded">
           <span>INGRESOS BRUTOS</span>
           <span>Q{{ formatearMoneda(store.estadoResultados.ingresos_brutos) }}</span>
         </div>
