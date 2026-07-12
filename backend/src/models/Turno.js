@@ -671,25 +671,35 @@ class Turno {
                     dv.producto_nombre,
                     dv.cantidad,
                     dv.precio_unitario,
-                    dv.precio_total,
+                    -- ✅ FIX: precio_total ahora prorratea el descuento de la venta
                     CASE 
-                        WHEN v.metodo_pago = 'efectivo' THEN dv.precio_total
-                        WHEN v.metodo_pago = 'mixto' THEN (v.total - COALESCE(v.tarjeta_monto, 0) - COALESCE(v.transferencia_monto, 0) - COALESCE(v.deposito_monto, 0)) * (dv.precio_total / v.total)
+                        WHEN v.subtotal > 0 THEN dv.precio_total * (v.total / v.subtotal)
+                        ELSE dv.precio_total 
+                    END as precio_total,
+                    CASE 
+                        WHEN v.metodo_pago = 'efectivo' THEN 
+                            CASE WHEN v.subtotal > 0 THEN dv.precio_total * (v.total / v.subtotal) ELSE dv.precio_total END
+                        WHEN v.metodo_pago = 'mixto' THEN 
+                            (v.total - COALESCE(v.tarjeta_monto, 0) - COALESCE(v.transferencia_monto, 0) - COALESCE(v.deposito_monto, 0)) 
+                            * (dv.precio_total / v.subtotal)
                         ELSE 0 
                     END as efectivo_producto,
                     CASE 
-                        WHEN v.metodo_pago = 'tarjeta' THEN dv.precio_total
-                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.tarjeta_monto, 0) * (dv.precio_total / v.total)
+                        WHEN v.metodo_pago = 'tarjeta' THEN 
+                            CASE WHEN v.subtotal > 0 THEN dv.precio_total * (v.total / v.subtotal) ELSE dv.precio_total END
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.tarjeta_monto, 0) * (dv.precio_total / v.subtotal)
                         ELSE 0 
                     END as tarjeta_producto,
                     CASE 
-                        WHEN v.metodo_pago = 'transferencia' THEN dv.precio_total
-                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.transferencia_monto, 0) * (dv.precio_total / v.total)
+                        WHEN v.metodo_pago = 'transferencia' THEN 
+                            CASE WHEN v.subtotal > 0 THEN dv.precio_total * (v.total / v.subtotal) ELSE dv.precio_total END
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.transferencia_monto, 0) * (dv.precio_total / v.subtotal)
                         ELSE 0 
                     END as transferencia_producto,
                     CASE 
-                        WHEN v.metodo_pago = 'deposito' THEN dv.precio_total
-                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.deposito_monto, 0) * (dv.precio_total / v.total)
+                        WHEN v.metodo_pago = 'deposito' THEN 
+                            CASE WHEN v.subtotal > 0 THEN dv.precio_total * (v.total / v.subtotal) ELSE dv.precio_total END
+                        WHEN v.metodo_pago = 'mixto' THEN COALESCE(v.deposito_monto, 0) * (dv.precio_total / v.subtotal)
                         ELSE 0 
                     END as deposito_producto,
                     u.nombres,
@@ -698,6 +708,8 @@ class Turno {
                 INNER JOIN detalle_ventas dv ON v.id = dv.venta_id
                 INNER JOIN usuarios u ON v.usuario_vendedor_id = u.id
                 WHERE v.turno_id = ?
+                -- ✅ FIX: excluir ventas anuladas
+                AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                 ORDER BY v.id ASC, dv.id ASC`,
                 [turnoId]
             );
