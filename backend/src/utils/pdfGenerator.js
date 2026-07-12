@@ -217,7 +217,6 @@ class ComprobanteGenerator {
             try {
                 const ANCHO_TICKET = 226; // 80mm en puntos
                 const MARGEN = 8;
-                const MARGEN_SUPERIOR = 2; // reducido para no desperdiciar papel
 
                 const alturaBase = 260;
                 const alturaPorProducto = 18;
@@ -225,7 +224,7 @@ class ComprobanteGenerator {
 
                 const doc = new PDFDocument({
                     size: [ANCHO_TICKET, alturaEstimada],
-                    margins: { top: MARGEN_SUPERIOR, bottom: MARGEN, left: MARGEN, right: MARGEN }
+                    margins: { top: MARGEN, bottom: MARGEN, left: MARGEN, right: MARGEN }
                 });
 
                 const chunks = [];
@@ -252,7 +251,7 @@ class ComprobanteGenerator {
                 .text('COMPROBANTE DE VENTA', { align: 'center', width: anchoUtil });
 
                 doc.moveDown(0.3);
-                doc.fontSize(7)
+                doc.fontSize(6)
                 .font('Helvetica')
                 .text(`No: ${venta.numero_factura}`);
                 doc.text(`Fecha: ${new Date(venta.fecha_creacion).toLocaleString('es-GT', {
@@ -274,7 +273,7 @@ class ComprobanteGenerator {
                 doc.moveTo(MARGEN, doc.y).lineTo(ANCHO_TICKET - MARGEN, doc.y).dash(2, { space: 2 }).stroke().undash();
                 doc.moveDown(0.3);
 
-                doc.fontSize(7).font('Helvetica');
+                doc.fontSize(6).font('Helvetica');
                 for (const item of venta.detalle) {
                     doc.font('Helvetica-Bold')
                     .text(item.producto_nombre, { width: anchoUtil });
@@ -289,17 +288,17 @@ class ComprobanteGenerator {
                 doc.moveTo(MARGEN, doc.y).lineTo(ANCHO_TICKET - MARGEN, doc.y).dash(2, { space: 2 }).stroke().undash();
                 doc.moveDown(0.3);
 
-                // Solo mostrar DESCUENTO si aplica (ya no se muestra SUBTOTAL porque siempre es igual al TOTAL cuando no hay descuento)
+                doc.fontSize(7).font('Helvetica-Bold');
+                doc.text(`SUBTOTAL: Q${parseFloat(venta.subtotal).toFixed(2)}`, { align: 'right', width: anchoUtil });
+
                 if (parseFloat(venta.descuento) > 0) {
-                    doc.fontSize(7).font('Helvetica-Bold');
-                    doc.text(`SUBTOTAL: Q${parseFloat(venta.subtotal).toFixed(2)}`, { align: 'right', width: anchoUtil });
                     doc.text(`DESCUENTO: Q${parseFloat(venta.descuento).toFixed(2)}`, { align: 'right', width: anchoUtil });
                 }
 
-                doc.fontSize(9).font('Helvetica-Bold');
+                doc.fontSize(9);
                 doc.text(`TOTAL: Q${parseFloat(venta.total).toFixed(2)}`, { align: 'right', width: anchoUtil });
 
-                doc.fontSize(7).font('Helvetica');
+                doc.fontSize(6).font('Helvetica');
                 if (venta.metodo_pago === 'efectivo') {
                     doc.text(`Efectivo: Q${parseFloat(venta.efectivo_recibido).toFixed(2)}`);
                     doc.text(`Cambio: Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`);
@@ -312,7 +311,7 @@ class ComprobanteGenerator {
                 }
 
                 doc.moveDown(0.5);
-                doc.fontSize(7)
+                doc.fontSize(6)
                 .font('Helvetica-Oblique')
                 .text('¡Gracias por su compra!', { align: 'center', width: anchoUtil });
 
