@@ -2,20 +2,7 @@
 const PDFDocument = require('pdfkit');
 
 class ComprobanteGenerator {
-    // ============================================================================
-    // DISPATCHER: decide formato según la variable de entorno FORMATO_COMPROBANTE
-    // ============================================================================
     static async generar(venta) {
-        if (process.env.FORMATO_COMPROBANTE === 'termico') {
-            return ComprobanteGenerator.generarTermico(venta);
-        }
-        return ComprobanteGenerator.generarNormal(venta);
-    }
-
-    // ============================================================================
-    // FORMATO NORMAL (carta) - USADO POR ZONA 3 (comportamiento sin cambios)
-    // ============================================================================
-    static async generarNormal(venta) {
         return new Promise((resolve, reject) => {
             try {
                 const doc = new PDFDocument({ 
@@ -31,6 +18,7 @@ class ComprobanteGenerator {
 
                 const MEDIA_CARTA_LIMITE = 396;
 
+                // ENCABEZADO ACTUALIZADO
                 doc.fontSize(18)
                 .font('Helvetica-Bold')
                 .text(process.env.SUCURSAL_NOMBRE || 'VIMESA CENTRAL', { align: 'center' });
@@ -54,6 +42,7 @@ class ComprobanteGenerator {
                 
                 doc.moveDown(0.5);
 
+                // INFORMACIÓN DE LA VENTA
                 const startY = doc.y;
                 
                 doc.fontSize(8)
@@ -84,6 +73,7 @@ class ComprobanteGenerator {
                 doc.font('Helvetica')
                 .text(venta.metodo_pago.toUpperCase(), 340, startY + 12);
 
+                // Agregar información de la doctora si existe
                 const doctoraNombre = venta.detalle && venta.detalle.length > 0 && venta.detalle[0].doctora_nombre 
                     ? venta.detalle[0].doctora_nombre 
                     : 'No asignado';
@@ -93,6 +83,7 @@ class ComprobanteGenerator {
                 doc.font('Helvetica')
                 .text(doctoraNombre, 100, startY + 24);
 
+                // DATOS DEL CLIENTE (ahora debajo de Doctor(a))
                 doc.fontSize(8)
                 .font('Helvetica-Bold')
                 .text('Cliente:', 40, startY + 36);
@@ -101,6 +92,7 @@ class ComprobanteGenerator {
 
                 doc.moveDown(1.5);
 
+                // TABLA DE PRODUCTOS
                 const tableTop = doc.y;
                 const col1 = 40;
                 const col2 = 75;
@@ -156,6 +148,7 @@ class ComprobanteGenerator {
                 .stroke();
                 yPosition += 8;
 
+                // TOTALES
                 doc.fontSize(8)
                 .font('Helvetica-Bold');
 
@@ -177,6 +170,7 @@ class ComprobanteGenerator {
                 .text('TOTAL:', 420, yPosition)
                 .text(`Q${parseFloat(venta.total).toFixed(2)}`, 495, yPosition);
 
+                // DETALLES DE PAGO
                 if (venta.metodo_pago === 'efectivo') {
                     yPosition += 12;
                     doc.fontSize(7)
@@ -201,119 +195,6 @@ class ComprobanteGenerator {
                 .lineTo(555, MEDIA_CARTA_LIMITE)
                 .dash(5, { space: 3 })
                 .stroke();
-
-                doc.end();
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    // ============================================================================
-    // FORMATO TÉRMICO (80mm) - USADO SOLO POR ZONA 9
-    // ============================================================================
-    static async generarTermico(venta) {
-        return new Promise((resolve, reject) => {
-            try {
-                const ANCHO_TICKET = 226; // 80mm en puntos
-                const MARGEN = 8;
-
-                const alturaBase = 260;
-                const alturaPorProducto = 18;
-                const alturaEstimada = alturaBase + (venta.detalle.length * alturaPorProducto);
-
-                const doc = new PDFDocument({
-                    size: [ANCHO_TICKET, alturaEstimada],
-                    margins: { top: MARGEN, bottom: MARGEN, left: MARGEN, right: MARGEN }
-                });
-
-                const chunks = [];
-                doc.on('data', (chunk) => chunks.push(chunk));
-                doc.on('end', () => resolve(Buffer.concat(chunks)));
-                doc.on('error', reject);
-
-                const anchoUtil = ANCHO_TICKET - (MARGEN * 2);
-
-                doc.fontSize(10)
-                .font('Helvetica-Bold')
-                .text(process.env.SUCURSAL_NOMBRE || 'VIMESA', { align: 'center', width: anchoUtil });
-
-                doc.fontSize(6)
-                .font('Helvetica')
-                .text(process.env.SUCURSAL_DIRECCION || '', { align: 'center', width: anchoUtil });
-
-                doc.fontSize(6)
-                .text(process.env.SUCURSAL_TELEFONO || '', { align: 'center', width: anchoUtil });
-
-                doc.moveDown(0.3);
-                doc.fontSize(8)
-                .font('Helvetica-Bold')
-                .text('COMPROBANTE DE VENTA', { align: 'center', width: anchoUtil });
-
-                doc.moveDown(0.3);
-                doc.fontSize(6)
-                .font('Helvetica')
-                .text(`No: ${venta.numero_factura}`);
-                doc.text(`Fecha: ${new Date(venta.fecha_creacion).toLocaleString('es-GT', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                    timeZone: 'America/Guatemala'
-                })}`);
-                doc.text(`Vendedor: ${venta.vendedor_nombres} ${venta.vendedor_apellidos}`);
-                doc.text(`Pago: ${venta.metodo_pago.toUpperCase()}`);
-
-                const doctoraNombre = venta.detalle && venta.detalle.length > 0 && venta.detalle[0].doctora_nombre
-                    ? venta.detalle[0].doctora_nombre
-                    : 'No asignado';
-                doc.text(`Doctor(a): ${doctoraNombre}`);
-                doc.text(`Cliente: ${venta.cliente_nombre}`);
-                doc.text(`NIT: ${venta.cliente_nit}`);
-
-                doc.moveDown(0.3);
-                doc.moveTo(MARGEN, doc.y).lineTo(ANCHO_TICKET - MARGEN, doc.y).dash(2, { space: 2 }).stroke().undash();
-                doc.moveDown(0.3);
-
-                doc.fontSize(6).font('Helvetica');
-                for (const item of venta.detalle) {
-                    doc.font('Helvetica-Bold')
-                    .text(item.producto_nombre, { width: anchoUtil });
-                    doc.font('Helvetica')
-                    .text(
-                        `${item.cantidad} x Q${parseFloat(item.precio_unitario).toFixed(2)} = Q${parseFloat(item.precio_total).toFixed(2)}`,
-                        { width: anchoUtil }
-                    );
-                }
-
-                doc.moveDown(0.2);
-                doc.moveTo(MARGEN, doc.y).lineTo(ANCHO_TICKET - MARGEN, doc.y).dash(2, { space: 2 }).stroke().undash();
-                doc.moveDown(0.3);
-
-                doc.fontSize(7).font('Helvetica-Bold');
-                doc.text(`SUBTOTAL: Q${parseFloat(venta.subtotal).toFixed(2)}`, { align: 'right', width: anchoUtil });
-
-                if (parseFloat(venta.descuento) > 0) {
-                    doc.text(`DESCUENTO: Q${parseFloat(venta.descuento).toFixed(2)}`, { align: 'right', width: anchoUtil });
-                }
-
-                doc.fontSize(9);
-                doc.text(`TOTAL: Q${parseFloat(venta.total).toFixed(2)}`, { align: 'right', width: anchoUtil });
-
-                doc.fontSize(6).font('Helvetica');
-                if (venta.metodo_pago === 'efectivo') {
-                    doc.text(`Efectivo: Q${parseFloat(venta.efectivo_recibido).toFixed(2)}`);
-                    doc.text(`Cambio: Q${parseFloat(venta.efectivo_cambio).toFixed(2)}`);
-                }
-
-                if (venta.metodo_pago === 'mixto') {
-                    if (parseFloat(venta.tarjeta_monto || 0) > 0) doc.text(`Tarjeta: Q${parseFloat(venta.tarjeta_monto).toFixed(2)}`);
-                    if (parseFloat(venta.transferencia_monto || 0) > 0) doc.text(`Transf: Q${parseFloat(venta.transferencia_monto).toFixed(2)}`);
-                    if (parseFloat(venta.deposito_monto || 0) > 0) doc.text(`Depósito: Q${parseFloat(venta.deposito_monto).toFixed(2)}`);
-                }
-
-                doc.moveDown(0.5);
-                doc.fontSize(6)
-                .font('Helvetica-Oblique')
-                .text('¡Gracias por su compra!', { align: 'center', width: anchoUtil });
 
                 doc.end();
             } catch (error) {
