@@ -56,3 +56,8 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# Archivos locales que no deben subirse
+backend/.env.local.download
+frontend/.env.local.download
+/package-lock.json
