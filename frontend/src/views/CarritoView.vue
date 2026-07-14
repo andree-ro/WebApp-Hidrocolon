@@ -1395,6 +1395,41 @@ async function ejecutarVenta(datosAdicionales = {}) {
           }, 100)
           
           console.log('✅ PDF descargado automáticamente')
+
+          // 🖨️ IMPRESIÓN AUTOMÁTICA (solo activa si VITE_IMPRESION_AUTOMATICA=true, exclusivo zona 9)
+          if (import.meta.env.VITE_IMPRESION_AUTOMATICA === 'true') {
+            console.log('🖨️ Enviando comprobante a imprimir automáticamente...')
+
+            try {
+              const urlImpresion = window.URL.createObjectURL(blob)
+              const iframeImpresion = document.createElement('iframe')
+              iframeImpresion.style.display = 'none'
+              iframeImpresion.src = urlImpresion
+
+              iframeImpresion.onload = () => {
+                setTimeout(() => {
+                  try {
+                    iframeImpresion.contentWindow.print()
+                  } catch (errorPrint) {
+                    console.error('❌ Error al llamar impresión automática:', errorPrint)
+                  }
+                }, 300)
+              }
+
+              document.body.appendChild(iframeImpresion)
+
+              // Limpiar el iframe después de un tiempo prudente
+              setTimeout(() => {
+                window.URL.revokeObjectURL(urlImpresion)
+                if (document.body.contains(iframeImpresion)) {
+                  document.body.removeChild(iframeImpresion)
+                }
+              }, 60000)
+
+            } catch (errorImpresion) {
+              console.error('❌ Error preparando impresión automática:', errorImpresion)
+            }
+          }
           
         } catch (pdfError) {
           console.error('❌ Error descargando PDF:', pdfError)
