@@ -75,7 +75,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'medicamento'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  GROUP BY dv.doctora_id, d.nombre
                  ORDER BY dv.doctora_id`,
@@ -92,7 +92,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'servicio'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  GROUP BY dv.doctora_id, d.nombre
                  ORDER BY dv.doctora_id`,
@@ -240,7 +240,7 @@ class EstadoResultados {
                     SUM(CASE WHEN metodo_pago = 'mixto' THEN transferencia_monto ELSE 0 END) as total_mixto_transferencia,
                     SUM(CASE WHEN metodo_pago = 'mixto' THEN deposito_monto ELSE 0 END) as total_mixto_deposito
                  FROM ventas
-                 WHERE DATE(fecha_creacion) BETWEEN ? AND ?`,
+                 WHERE DATE(DATE_SUB(fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?`,
                 [fechaInicio, fechaFin]
             );
 
@@ -320,7 +320,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'medicamento'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  AND v.comision_bancaria_monto > 0
                  GROUP BY dv.doctora_id, d.nombre
@@ -338,7 +338,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN doctoras d ON dv.doctora_id = d.id
                  WHERE dv.tipo_producto = 'servicio'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  AND v.comision_bancaria_monto > 0
                  GROUP BY dv.doctora_id, d.nombre
@@ -405,7 +405,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN pacientes p ON v.paciente_id = p.id
                  WHERE dv.tipo_producto = 'medicamento'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  AND ${esCli ? 'dv.doctora_id IS NULL' : 'dv.doctora_id = ?'}
                  ORDER BY v.fecha_creacion DESC`,
@@ -455,7 +455,7 @@ class EstadoResultados {
                  INNER JOIN ventas v ON dv.venta_id = v.id
                  LEFT JOIN pacientes p ON v.paciente_id = p.id
                  WHERE dv.tipo_producto = 'servicio'
-                 AND DATE(v.fecha_creacion) BETWEEN ? AND ?
+                 AND DATE(DATE_SUB(v.fecha_creacion, INTERVAL 6 HOUR)) BETWEEN ? AND ?
                  AND (v.observaciones IS NULL OR v.observaciones NOT LIKE '%ANULADA:%')
                  AND ${esCli ? 'dv.doctora_id IS NULL' : 'dv.doctora_id = ?'}
                  ORDER BY v.fecha_creacion DESC`,
