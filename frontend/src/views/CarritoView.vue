@@ -415,7 +415,7 @@
                 />
               </div>
               <div class="text-sm">
-                Total ingresado: Q{{ formatearNumero(carritoStore.montoEfectivo + carritoStore.montoTarjeta + carritoStore.montoTransferencia + carritoStore.montoDeposito) }}
+                Total ingresado: Q{{ formatearNumero((Number(carritoStore.montoEfectivo) || 0) + (Number(carritoStore.montoTarjeta) || 0) + (Number(carritoStore.montoTransferencia) || 0) + (Number(carritoStore.montoDeposito) || 0)) }}
               </div>
             </div>
           </div>
@@ -427,7 +427,7 @@
               :disabled="!carritoStore.pacienteSeleccionado || carritoStore.carritoVacio || procesandoVenta"
               class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
             >
-              {{ procesandoVenta ? '⏳ Procesando...' : '✅ Procesar Venta (Testing)' }}
+              {{ procesandoVenta ? '⏳ Procesando...' : '✅ Procesar Venta' }}
             </button>
             
             <button
