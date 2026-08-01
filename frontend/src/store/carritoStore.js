@@ -318,7 +318,7 @@ function actualizarCantidad(itemId, nuevaCantidad) {
     
     // Validar montos en pago mixto
     if (metodoPago.value === 'mixto') {
-      const sumaPagos = montoEfectivo.value + montoTarjeta.value + montoTransferencia.value + montoDeposito.value
+      const sumaPagos = (Number(montoEfectivo.value) || 0) + (Number(montoTarjeta.value) || 0) + (Number(montoTransferencia.value) || 0) + (Number(montoDeposito.value) || 0)
       const diferencia = Math.abs(sumaPagos - total.value)
       
       if (diferencia > 0.01) { // Tolerancia de 1 centavo por redondeo
