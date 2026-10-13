@@ -517,6 +517,11 @@ class ComprobanteGenerator {
                     const totalDeposito = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.deposito || 0), 0);
                     const totalGeneral = datosReporte.productos_vendidos.reduce((sum, p) => sum + parseFloat(p.precio_total || 0), 0);
 
+                    // Verificar que la fila de TOTALES quepa en la página actual.
+                    // Si no cabe, se pasa completa a una página nueva (evita que
+                    // PDFKit cree una página por cada celda).
+                    y = nuevaPaginaSiNecesario(20);
+
                     doc.rect(margin, y, contentWidth, 16).fillAndStroke(colors.lightGray, colors.border);
                     let xTot = margin;
                     const valesTotales = ['', 'TOTALES', '', formatearMoneda(totalTarjeta), formatearMoneda(totalEfectivo), formatearMoneda(totalTransferencia), formatearMoneda(totalDeposito), formatearMoneda(totalGeneral), '', '', ''];
